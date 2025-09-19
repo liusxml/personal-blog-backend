@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.blog</groupId>
+        <artifactId>blog-modules</artifactId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>blog-module-system</artifactId>
+    <packaging>pom</packaging>
+
+    <name>blog-module-system (System Module Aggregator)</name>
+    <description>系统、用户、角色、权限领域模块聚合器 (聚合 API 和 Service)</description>
+
+    <modules>
+        <module>blog-system-api</module>
+        <module>blog-system-service</module>
+    </modules>
+
+    <!-- 移除了不必要的 <url> 标签，保持聚合器纯净 -->
+
+</project>

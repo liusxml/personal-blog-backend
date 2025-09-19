@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.blog</groupId>
+        <artifactId>personal-blog-backend</artifactId>
+        <version>1.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>blog-application</artifactId>
+    <packaging>jar</packaging>
+
+    <name>blog-application (Application Runner)</name>
+    <description>应用启动模块，组装所有业务模块并提供程序入口。</description>
+
+    <dependencies>
+        <!-- 1. 关键修正：依赖所有业务模块的 service 实现层 -->
+        <dependency>
+            <groupId>com.blog</groupId>
+            <artifactId>blog-system-service</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.blog</groupId>
+            <artifactId>blog-article-service</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.blog</groupId>
+            <artifactId>blog-comment-service</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.blog</groupId>
+            <artifactId>blog-file-service</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <!-- 注意：这里不再需要单独引入 mybatis-plus-boot-starter，
+             因为它会通过依赖的各个 service 模块传递过来。 -->
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- 4. 添加 Spring Boot 插件，用于将应用打包成可执行的 JAR -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

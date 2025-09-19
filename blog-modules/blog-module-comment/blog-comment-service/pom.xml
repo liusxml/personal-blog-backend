@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.blog</groupId>
+        <artifactId>blog-module-comment</artifactId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>blog-comment-service</artifactId>
+    <packaging>jar</packaging>
+
+    <name>blog-comment-service (Comment Module Service)</name>
+    <description>评论模块的具体业务逻辑实现。</description>
+
+    <dependencies>
+        <!-- 1. 核心依赖：必须依赖自己的 API 模块 -->
+        <dependency>
+            <groupId>com.blog</groupId>
+            <artifactId>blog-comment-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- 2. 跨模块API依赖：评论服务需要校验文章是否存在，因此依赖 article-api -->
+        <dependency>
+            <groupId>com.blog</groupId>
+            <artifactId>blog-article-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- 5. 依赖公共模块 -->
+        <dependency>
+            <groupId>com.blog</groupId>
+            <artifactId>blog-common</artifactId>
+        </dependency>
+    </dependencies>
+
+</project>

@@ -1,0 +1,57 @@
+# 服务器配置
+server:
+  port: 8080
+# Spring 应用配置
+spring:
+  application:
+    name: personal-blog-service # 应用名称
+  # 数据库数据源配置
+  datasource:
+    # 默认连接池 HikariCP
+    type: com.zaxxer.hikari.HikariDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # [请修改] 替换为您的数据库连接信息
+    url: jdbc:mysql://127.0.0.1:3306/personal_blog?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    username: root          # [请修改] 您的数据库用户名
+    password: s3cr3t_r00t_p@ssw0rd # [请修改] 您的数据库密码
+    hikari:
+      # 推荐配置
+      pool-name: BlogHikariPool
+      minimum-idle: 10
+      maximum-pool-size: 10
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+# MyBatis-Plus 配置
+mybatis-plus:
+  # Mapper XML 文件位置
+  mapper-locations: classpath*:/mapper/**/*.xml
+  # 全局配置
+  global-config:
+    db-config:
+      # 表名下划线转驼峰
+      table-underline: true
+springdoc:
+  api-docs:
+    # 是否启用 API 文档，默认为 true
+    enabled: true
+
+  # 文档页面的基本信息
+  info:
+    title: "个人博客系统 API 文档"
+    description: "这是我的个人博客项目的后端 API 文档，包含了文章、评论、用户等模块。"
+    version: "v1.0.0"
+    contact:
+      name: "Mack"
+      email: "your-email@example.com"
+      url: "https://your.blog.com"
+
+  # Swagger UI 的相关配置
+  swagger-ui:
+    # 路径可以自定义，默认为 /swagger-ui.html
+    path: /swagger-ui.html
+    # 是否在访问根路径时自动重定向到 swagger-ui.html
+    display-request-duration: true
+    # 是否在文档中默认展开所有标签
+    tags-sorter: alpha
+    operations-sorter: alpha

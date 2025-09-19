@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <!-- 父级是 article 领域的聚合器，正确 -->
+    <parent>
+        <groupId>com.blog</groupId>
+        <artifactId>blog-module-article</artifactId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+    <artifactId>blog-article-api</artifactId>
+    <!-- packaging 是 jar，正确 -->
+    <packaging>jar</packaging>
+    <name>blog-article-api (Article Module API)</name>
+    <description>定义文章模块的接口(API)和数据传输对象(DTO)。</description>
+    <dependencies>
+        <!-- 如果有所有模块都必须使用的公共类（如BaseResponse），则引入 -->
+        <dependency>
+            <groupId>com.blog</groupId>
+            <artifactId>blog-common</artifactId>
+        </dependency>
+    </dependencies>
+
+</project>
