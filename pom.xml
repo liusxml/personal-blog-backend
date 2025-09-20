@@ -3,40 +3,50 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <groupId>com.blog</groupId>
     <artifactId>personal-blog-backend</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
-
     <name>personal-blog-backend (Root POM)</name>
     <description>个人博客后台项目 - 根模块，统一管理所有依赖、插件和模块</description>
-
-    <!-- 1. 统一管理项目的所有顶级模块 -->
     <modules>
         <module>blog-common</module>
         <module>blog-modules</module>
         <module>blog-application</module>
     </modules>
-
-    <!-- 2. 统一管理所有版本号 (Single Source of Truth) -->
+    <!--
+     优化点: 真正的“单一事实来源 (Single Source of Truth)”。
+     将所有第三方库版本在此处集中定义，按功能分组，便于未来统一查看和升级。
+    -->
     <properties>
-        <java.version>21</java.version> <!-- 推荐使用稳定的LTS版本，如 17 或 21 -->
+        <java.version>21</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
-        <!-- 核心框架与插件版本 -->
-        <spring-boot.version>3.5.5</spring-boot.version>
-        <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
-
-        <!-- 主要三方库版本 -->
+        <!-- 核心框架 -->
+        <spring-boot.version>3.5.6</spring-boot.version>
+        <!-- 持久化与数据库 -->
+        <mybatis-plus.version>3.5.14</mybatis-plus.version>
+        <mysql-connector.version>9.4.0</mysql-connector.version> <!-- 新增: 数据库驱动 -->
+        <flyway.version>11.13.1</flyway.version>
+        <!-- 安全框架 -->
+        <jjwt.version>0.13.0</jjwt.version> <!-- 新增: JWT Token 处理库 -->
+        <!-- API 文档 -->
+        <springdoc.version>2.8.13</springdoc.version>
+        <!-- 缓存 -->
+        <caffeine.version>3.2.2</caffeine.version>
+        <!-- 开发工具 (注解处理器等) -->
         <lombok.version>1.18.42</lombok.version>
         <mapstruct.version>1.6.3</mapstruct.version>
+        <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version> <!-- 新增: 增强 Lombok 与 MapStruct 协作 -->
+        <!-- 常用工具库 -->
+        <commons-lang3.version>3.18.0</commons-lang3.version>
+        <commons-collections4.version>4.5.0</commons-collections4.version>
+        <guava.version>33.5.0-jre</guava.version>
+        <!-- Maven 插件 -->
+        <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
     </properties>
-
-    <!-- 3. 统一声明依赖版本，子模块按需引入，无需指定版本 -->
     <dependencyManagement>
         <dependencies>
-            <!-- Spring Boot BOM (Bill of Materials)，导入所有官方管理的依赖版本，这是最佳实践 -->
+            <!-- Spring Boot BOM (Bill of Materials)，导入所有官方管理的依赖版本 -->
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
@@ -44,12 +54,87 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-
             <!-- =================================================== -->
-            <!-- ============= 第三方库版本管理 ============= -->
+            <!-- ============== 持久化与数据库 ============== -->
             <!-- =================================================== -->
-
-
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+                <version>${mybatis-plus.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.mysql</groupId>
+                <artifactId>mysql-connector-j</artifactId>
+                <version>${mysql-connector.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-core</artifactId>
+                <version>${flyway.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-mysql</artifactId>
+                <version>${flyway.version}</version>
+            </dependency>
+            <!-- =================================================== -->
+            <!-- =================== 安全框架 =================== -->
+            <!-- =================================================== -->
+            <!--
+             优化点: 移除 spring-boot-starter-security 的版本号, 由 Spring Boot BOM 统一管理。
+             新增 JWT 实现库，用于生成和解析 Token。
+            -->
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-api</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-impl</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-jackson</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <!-- =================================================== -->
+            <!-- =================== Web & API =================== -->
+            <!-- =================================================== -->
+            <!-- 优化点: spring-boot-starter-web 和 validation 的版本号已移除，交由 BOM 管理 -->
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc.version}</version>
+            </dependency>
+            <!-- =================================================== -->
+            <!-- ===================== 缓存 ===================== -->
+            <!-- =================================================== -->
+            <!-- 优化点: spring-boot-starter-cache 和 data-redis 的版本号已移除，交由 BOM 管理 -->
+            <dependency>
+                <groupId>com.github.ben-manes.caffeine</groupId>
+                <artifactId>caffeine</artifactId>
+                <version>${caffeine.version}</version>
+            </dependency>
+            <!-- =================================================== -->
+            <!-- =================== 工具库 =================== -->
+            <!-- =================================================== -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons-lang3.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-collections4</artifactId>
+                <version>${commons-collections4.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${guava.version}</version>
+            </dependency>
             <!-- =================================================== -->
             <!-- ============= 项目内部模块版本管理 ============= -->
             <!-- =================================================== -->
@@ -105,8 +190,6 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-
-    <!-- 4. 统一声明插件版本和全局配置 -->
     <build>
         <pluginManagement>
             <plugins>
@@ -115,8 +198,11 @@
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>
                     <version>${spring-boot.version}</version>
+                    <configuration>
+                        <!-- 确保 devtools 在生产打包时被排除 -->
+                        <excludeDevtools>true</excludeDevtools>
+                    </configuration>
                 </plugin>
-
                 <!-- Java 编译器插件，配置 JDK 版本和注解处理器 -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -126,17 +212,21 @@
                         <source>${java.version}</source>
                         <target>${java.version}</target>
                         <annotationProcessorPaths>
-                            <!-- Lombok 注解处理器 -->
                             <path>
                                 <groupId>org.projectlombok</groupId>
                                 <artifactId>lombok</artifactId>
                                 <version>${lombok.version}</version>
                             </path>
-                            <!-- MapStruct 注解处理器 -->
                             <path>
                                 <groupId>org.mapstruct</groupId>
                                 <artifactId>mapstruct-processor</artifactId>
                                 <version>${mapstruct.version}</version>
+                            </path>
+                            <!-- 优化点: 新增，确保 Lombok 和 MapStruct 完美协作 -->
+                            <path>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok-mapstruct-binding</artifactId>
+                                <version>${lombok-mapstruct-binding.version}</version>
                             </path>
                         </annotationProcessorPaths>
                     </configuration>

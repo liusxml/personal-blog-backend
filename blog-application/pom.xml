@@ -1,13 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
+    <!-- 继承自根 POM，获取统一的版本和插件管理 -->
     <parent>
         <groupId>com.blog</groupId>
         <artifactId>personal-blog-backend</artifactId>
         <version>1.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
+        <relativePath>../pom.xml</relativePath> <!-- 指向父 POM 的相对路径 -->
     </parent>
 
     <artifactId>blog-application</artifactId>
@@ -17,7 +19,30 @@
     <description>应用启动模块，组装所有业务模块并提供程序入口。</description>
 
     <dependencies>
-        <!-- 1. 关键修正：依赖所有业务模块的 service 实现层 -->
+        <!-- =================================================== -->
+        <!-- ============== Spring Boot 核心 Starters ============== -->
+        <!-- =================================================== -->
+        <!-- Web 应用核心 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+        </dependency>
+        <!-- =================================================== -->
+        <!-- ================ 项目内部业务模块 ================ -->
+        <!-- =================================================== -->
+        <!-- 依赖所有业务模块的 service 实现层 -->
         <dependency>
             <groupId>com.blog</groupId>
             <artifactId>blog-system-service</artifactId>
@@ -34,22 +59,32 @@
             <groupId>com.blog</groupId>
             <artifactId>blog-file-service</artifactId>
         </dependency>
+
+        <!-- =================================================== -->
+        <!-- ================== 开发与测试工具 ================== -->
+        <!-- =================================================== -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
         </dependency>
-        <!-- 注意：这里不再需要单独引入 mybatis-plus-boot-starter，
-             因为它会通过依赖的各个 service 模块传递过来。 -->
+        <!--
+         优化点 4: 添加测试支持。
+         应用启动模块本身也应该有测试，例如验证整个 Spring Context 能否成功加载。
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
-
     <build>
         <plugins>
-            <!-- 4. 添加 Spring Boot 插件，用于将应用打包成可执行的 JAR -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
         </plugins>
     </build>
-
 </project>

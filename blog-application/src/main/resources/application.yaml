@@ -7,51 +7,30 @@ spring:
     name: personal-blog-service # 应用名称
   # 数据库数据源配置
   datasource:
-    # 默认连接池 HikariCP
-    type: com.zaxxer.hikari.HikariDataSource
+    # 你的数据库驱动和URL
     driver-class-name: com.mysql.cj.jdbc.Driver
-    # [请修改] 替换为您的数据库连接信息
     url: jdbc:mysql://127.0.0.1:3306/personal_blog?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
     username: root          # [请修改] 您的数据库用户名
     password: s3cr3t_r00t_p@ssw0rd # [请修改] 您的数据库密码
+    # 指定连接池类型（虽然默认就是HikariCP，但显式指定更清晰）
+    type: com.zaxxer.hikari.HikariDataSource
+    # HikariCP 的核心配置
     hikari:
-      # 推荐配置
-      pool-name: BlogHikariPool
-      minimum-idle: 10
-      maximum-pool-size: 10
+      # 连接池中允许的最大连接数。默认为10。
+      # 这是最重要的参数，需要根据你的业务并发量和数据库承载能力来调整。
+      maximum-pool-size: 20
+      # 连接池中维护的最小空闲连接数。默认为 maximum-pool-size 的值。
+      # 建议设置为与 maximum-pool-size 相同的值，以获得最佳性能和对峰值负载的响应能力。
+      minimum-idle: 20
+      # 从连接池获取连接的超时时间。默认为30秒。
+      # 如果在30秒内无法获取到连接（比如连接池已满），则会抛出异常。
       connection-timeout: 30000
+      # 一个连接在池中允许的最长空闲时间。默认为10分钟。
+      # 空闲时间超过该值的连接将被释放。
       idle-timeout: 600000
+      # 一个连接在池中最长的生命周期。默认为30分钟。
+      # 建议设置一个比数据库连接超时参数（如MySQL的wait_timeout）短的值。
       max-lifetime: 1800000
-# MyBatis-Plus 配置
-mybatis-plus:
-  # Mapper XML 文件位置
-  mapper-locations: classpath*:/mapper/**/*.xml
-  # 全局配置
-  global-config:
-    db-config:
-      # 表名下划线转驼峰
-      table-underline: true
-springdoc:
-  api-docs:
-    # 是否启用 API 文档，默认为 true
-    enabled: true
-
-  # 文档页面的基本信息
-  info:
-    title: "个人博客系统 API 文档"
-    description: "这是我的个人博客项目的后端 API 文档，包含了文章、评论、用户等模块。"
-    version: "v1.0.0"
-    contact:
-      name: "Mack"
-      email: "your-email@example.com"
-      url: "https://your.blog.com"
-
-  # Swagger UI 的相关配置
-  swagger-ui:
-    # 路径可以自定义，默认为 /swagger-ui.html
-    path: /swagger-ui.html
-    # 是否在访问根路径时自动重定向到 swagger-ui.html
-    display-request-duration: true
-    # 是否在文档中默认展开所有标签
-    tags-sorter: alpha
-    operations-sorter: alpha
+      # 用于测试连接是否有效的查询语句。
+      # 如果驱动支持JDBC4，建议不配置此项，HikariCP会自动处理。
+      # connection-test-query: SELECT 1
