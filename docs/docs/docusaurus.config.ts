@@ -2,147 +2,161 @@ import {themes as prismThemes} from 'prism-react-renderer';
 import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 
-// This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
-
 const config: Config = {
-  title: 'My Site',
-  tagline: 'Dinosaurs are cool',
-  favicon: 'img/favicon.ico',
+    // --- 1. 核心站点信息 ---
+    title: '个人博客后台系统',
+    tagline: '一个高性能、易扩展的个人博客后端系统', // 直接来自你的项目描述，非常棒！
+    favicon: 'img/logo.ico', // 建议你设计一个 Logo
 
-  // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
-  future: {
-    v4: true, // Improve compatibility with the upcoming Docusaurus v4
-  },
+    // --- 2. 部署与 GitHub 集成 (关键配置) ---
+    url: 'https://liusxml.github.io', // 你的 GitHub Pages 域名
+    baseUrl: '/personal-blog-backend/', // 你的仓库名称
+    organizationName: 'liusxml', // 你的 GitHub 用户名
+    projectName: 'personal-blog-backend', // 你的 GitHub 仓库名
 
-  // Set the production url of your site here
-  url: 'https://your-docusaurus-site.example.com',
-  // Set the /<baseUrl>/ pathname under which your site is served
-  // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/',
+    onBrokenLinks: 'throw',
+    onBrokenMarkdownLinks: 'warn',
 
-  // GitHub pages deployment config.
-  // If you aren't using GitHub pages, you don't need these.
-  organizationName: 'facebook', // Usually your GitHub org/user name.
-  projectName: 'docusaurus', // Usually your repo name.
+    // --- 3. 国际化配置 ---
+    i18n: {
+        defaultLocale: 'zh-Hans', // 设置为简体中文
+        locales: ['zh-Hans'],
+    },
 
-  onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
-
-  // Even if you don't use internationalization, you can use this field to set
-  // useful metadata like html lang. For example, if your site is Chinese, you
-  // may want to replace "en" with "zh-Hans".
-  i18n: {
-    defaultLocale: 'en',
-    locales: ['en'],
-  },
-
-  presets: [
-    [
-      'classic',
-      {
-        docs: {
-          sidebarPath: './sidebars.ts',
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
-          editUrl:
-            'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
-        },
-        blog: {
-          showReadingTime: true,
-          feedOptions: {
-            type: ['rss', 'atom'],
-            xslt: true,
-          },
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
-          editUrl:
-            'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
-          // Useful options to enforce blogging best practices
-          onInlineTags: 'warn',
-          onInlineAuthors: 'warn',
-          onUntruncatedBlogPosts: 'warn',
-        },
-        theme: {
-          customCss: './src/css/custom.css',
-        },
-      } satisfies Preset.Options,
+    presets: [
+        [
+            'classic',
+            {
+                docs: {
+                    sidebarPath: './sidebars.ts',
+                    // --- 4. 内容编辑链接 (关键配置) ---
+                    // 假设你的 Docusaurus 站点位于仓库根目录的 'docs' 文件夹下
+                    editUrl:
+                        'https://github.com/liusxml/personal-blog-backend/tree/main/docs/',
+                },
+                blog: {
+                    showReadingTime: true,
+                    // --- 同样，修改博客的编辑链接 ---
+                    editUrl:
+                        'https://github.com/liusxml/personal-blog-backend/tree/main/docs/',
+                },
+                theme: {
+                    customCss: './src/css/custom.css',
+                },
+            } satisfies Preset.Options,
+        ],
     ],
-  ],
 
-  themeConfig: {
-    // Replace with your project's social card
-    image: 'img/docusaurus-social-card.jpg',
-    navbar: {
-      title: 'My Site',
-      logo: {
-        alt: 'My Site Logo',
-        src: 'img/logo.svg',
-      },
-      items: [
-        {
-          type: 'docSidebar',
-          sidebarId: 'tutorialSidebar',
-          position: 'left',
-          label: 'Tutorial',
+    themeConfig: {
+        image: 'img/social-card.png', // 建议你创建一个项目社交预览图
+
+        // --- 5. 导航栏定制 (核心体验) ---
+        navbar: {
+            title: '个人博客后台系统',
+            logo: {
+                alt: '项目 Logo',
+                src: 'img/logo.svg',
+            },
+            items: [
+                {
+                    type: 'docSidebar',
+                    sidebarId: 'tutorialSidebar',
+                    position: 'left',
+                    label: '开发指南', // 例如：快速上手、架构设计等
+                },
+                // 新增一个下拉菜单，专门用于展示各个核心模块的文档
+                {
+                    type: 'dropdown',
+                    label: '模块详解',
+                    position: 'left',
+                    items: [
+                        {
+                            label: '系统模块 (System)',
+                            to: '/docs/modules/system/intro', // 链接到系统模块的介绍页
+                        },
+                        {
+                            label: '文章模块 (Article)',
+                            to: '/docs/modules/article/intro', // 链接到文章模块的介绍页
+                        },
+                        {
+                            label: '评论模块 (Comment)',
+                            to: '/docs/modules/comment/intro', // 链接到评论模块的介绍页
+                        },
+                        {
+                            label: '文件模块 (File)',
+                            to: '/docs/modules/file/intro', // 链接到文件模块的介绍页
+                        },
+                    ],
+                },
+                {
+                    to: '/docs/api/overview', // 专门的 API 参考入口
+                    label: 'API 参考',
+                    position: 'left',
+                },
+                {to: '/blog', label: '项目博客', position: 'left'}, // 用于发布更新日志、技术分享等
+                {
+                    href: 'https://github.com/liusxml/personal-blog-backend',
+                    label: 'GitHub',
+                    position: 'right',
+                },
+            ],
         },
-        {to: '/blog', label: 'Blog', position: 'left'},
-        {
-          href: 'https://github.com/facebook/docusaurus',
-          label: 'GitHub',
-          position: 'right',
+
+        // --- 6. 页脚定制 ---
+        footer: {
+            style: 'dark',
+            links: [
+                {
+                    title: '文档',
+                    items: [
+                        {
+                            label: '快速上手',
+                            to: '/docs/intro',
+                        },
+                        {
+                            label: 'API 参考',
+                            to: '/docs/api/overview',
+                        },
+                    ],
+                },
+                {
+                    title: '社区',
+                    items: [
+                        {
+                            label: '提交 Issue',
+                            href: 'https://github.com/liusxml/personal-blog-backend/issues',
+                        },
+                        {
+                            label: '发起讨论',
+                            href: 'https://github.com/liusxml/personal-blog-backend/discussions',
+                        },
+                    ],
+                },
+                {
+                    title: '更多',
+                    items: [
+                        {
+                            label: '项目博客',
+                            to: '/blog',
+                        },
+                        {
+                            label: 'GitHub',
+                            href: 'https://github.com/liusxml/personal-blog-backend',
+                        },
+                    ],
+                },
+            ],
+            copyright: `Copyright © ${new Date().getFullYear()} 个人博客后台系统. Built with Docusaurus.`,
         },
-      ],
-    },
-    footer: {
-      style: 'dark',
-      links: [
-        {
-          title: 'Docs',
-          items: [
-            {
-              label: 'Tutorial',
-              to: '/docs/intro',
-            },
-          ],
+
+        // --- 7. 代码块主题 ---
+        prism: {
+            theme: prismThemes.github,
+            darkTheme: prismThemes.dracula,
+            // 增加对 Java 和 Maven POM 的语法高亮支持
+            additionalLanguages: ['java', 'bash', 'json', 'markup'],
         },
-        {
-          title: 'Community',
-          items: [
-            {
-              label: 'Stack Overflow',
-              href: 'https://stackoverflow.com/questions/tagged/docusaurus',
-            },
-            {
-              label: 'Discord',
-              href: 'https://discordapp.com/invite/docusaurus',
-            },
-            {
-              label: 'X',
-              href: 'https://x.com/docusaurus',
-            },
-          ],
-        },
-        {
-          title: 'More',
-          items: [
-            {
-              label: 'Blog',
-              to: '/blog',
-            },
-            {
-              label: 'GitHub',
-              href: 'https://github.com/facebook/docusaurus',
-            },
-          ],
-        },
-      ],
-      copyright: `Copyright © ${new Date().getFullYear()} My Project, Inc. Built with Docusaurus.`,
-    },
-    prism: {
-      theme: prismThemes.github,
-      darkTheme: prismThemes.dracula,
-    },
-  } satisfies Preset.ThemeConfig,
+    } satisfies Preset.ThemeConfig,
 };
 
 export default config;
