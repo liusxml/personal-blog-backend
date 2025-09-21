@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- 引入 Spring Boot 默认的 base.xml 配置 -->
+    <include resource="org/springframework/boot/logging/logback/base.xml"/>
+
+    <!-- 定义日志文件路径和名称的变量 -->
+    <property name="LOG_HOME" value="./logs"/>
+    <property name="FILE_NAME" value="personal-blog-backend"/>
+
+    <!-- =================================================== -->
+    <!-- ============== Appenders (与之前保持一致) ============== -->
+    <!-- =================================================== -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/${FILE_NAME}.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/${FILE_NAME}-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>200MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{40}: %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="FILE"/>
+        <queueSize>512</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <includeCallerData>false</includeCallerData>
+    </appender>
+
+    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/${FILE_NAME}-error.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/${FILE_NAME}-error-%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{40}: %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+    </appender>
+
+    <!-- =================================================== -->
+    <!-- ==================== Loggers (核心修正区域) ==================== -->
+    <!-- =================================================== -->
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ASYNC_FILE"/>
+        <appender-ref ref="ERROR_FILE"/>
+    </root>
+
+    <springProfile name="dev,debug">
+        <root level="DEBUG">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="ASYNC_FILE"/>
+            <appender-ref ref="ERROR_FILE"/>
+        </root>
+
+        <logger name="com.blog" level="DEBUG" additivity="false">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="ASYNC_FILE"/>
+            <appender-ref ref="ERROR_FILE"/>
+        </logger>
+
+        <logger name="com.baomidou.mybatisplus.extension.ddl" level="DEBUG" additivity="false">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="ASYNC_FILE"/>
+            <appender-ref ref="ERROR_FILE"/>
+        </logger>
+
+        <!-- 【已修复】抑制 DevTools 热重启时产生的良性 JMX 异常日志 -->
+        <logger name="javax.management.remote.rmi" level="WARN" />
+        <logger name="sun.rmi" level="WARN" />
+
+        <!-- Mybatis 相关的 SQL 输出 -->
+        <logger name="com.baomidou.mybatisplus.core.mapper.BaseMapper" level="DEBUG" />
+        <logger name="com.baomidou.mybatisplus.core.metadata.TableInfoHelper" level="DEBUG" />
+        <logger name="com.baomidou.mybatisplus.generator.config.builder.ConfigBuilder" level="DEBUG" />
+        <logger name="java.sql.Connection" level="DEBUG"/>
+        <logger name="java.sql.Statement" level="DEBUG"/>
+        <logger name="java.sql.PreparedStatement" level="DEBUG"/>
+        <logger name="com.alibaba.druid" level="DEBUG" additivity="false">
+            <appender-ref ref="CONSOLE"/>
+        </logger>
+
+        <!-- Spring 框架日志 -->
+        <logger name="org.springframework.security" level="DEBUG" />
+        <logger name="org.springframework.web" level="DEBUG"/>
+        <logger name="org.springframework.data.redis" level="DEBUG"/>
+    </springProfile>
+
+    <!-- PROD profile (保持不变) -->
+    <springProfile name="prod">
+        <root level="WARN">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="ASYNC_FILE"/>
+            <appender-ref ref="ERROR_FILE"/>
+        </root>
+        <logger name="com.blog" level="INFO" additivity="false">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="ASYNC_FILE"/>
+            <appender-ref ref="ERROR_FILE"/>
+        </logger>
+        <logger name="com.baomidou.mybatisplus.core.mapper.BaseMapper" level="INFO" />
+        <logger name="java.sql.PreparedStatement" level="INFO"/>
+    </springProfile>
+
+</configuration>

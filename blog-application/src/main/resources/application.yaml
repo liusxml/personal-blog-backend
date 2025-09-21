@@ -3,13 +3,19 @@ server:
   port: 8080
 # Spring 应用配置
 spring:
+  profiles:
+    active: dev # 激活的开发环境配置
   application:
     name: personal-blog-service # 应用名称
+  devtools:
+    restart:
+      # 排除 db 目录下的任何变动触发重启
+      exclude: "db/**"
   # 数据库数据源配置
   datasource:
     # 你的数据库驱动和URL
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://127.0.0.1:3306/personal_blog?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://127.0.0.1:3306/blog_db?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
     username: root          # [请修改] 您的数据库用户名
     password: s3cr3t_r00t_p@ssw0rd # [请修改] 您的数据库密码
     # 指定连接池类型（虽然默认就是HikariCP，但显式指定更清晰）
@@ -34,3 +40,15 @@ spring:
       # 用于测试连接是否有效的查询语句。
       # 如果驱动支持JDBC4，建议不配置此项，HikariCP会自动处理。
       # connection-test-query: SELECT 1
+logging:
+  level:
+    root: DEBUG # 全局默认日志级别
+    com.blog: DEBUG # 仅 com.blog 包下的日志级别为 DEBUG
+    com.baomidou.mybatisplus.extension.ddl: DEBUG # Mybatis-Plus DDL 日志级别
+    org.springframework.web: INFO # Spring Web 模块的日志级别
+    # 如果想在不修改 logback-spring.xml 的情况下改变核心日志文件名，可以使用此项
+  # file:
+  #   name: app.log # 日志文件名称，会覆盖 logback-spring.xml 中未明确设置的默认文件输出
+  # pattern: # 也可以在这里自定义日志格式，但通常在 logback-spring.xml 中进行
+  #   console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %highlight(%-5level) %green([%thread]) %cyan(%logger{40}): %msg%n"
+# =========================================================================

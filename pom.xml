@@ -26,7 +26,6 @@
         <!-- 持久化与数据库 -->
         <mybatis-plus.version>3.5.14</mybatis-plus.version>
         <mysql-connector.version>9.4.0</mysql-connector.version> <!-- 新增: 数据库驱动 -->
-        <flyway.version>11.13.1</flyway.version>
         <!-- 安全框架 -->
         <jjwt.version>0.13.0</jjwt.version> <!-- 新增: JWT Token 处理库 -->
         <!-- API 文档 -->
@@ -40,6 +39,7 @@
         <!-- 常用工具库 -->
         <commons-lang3.version>3.18.0</commons-lang3.version>
         <commons-collections4.version>4.5.0</commons-collections4.version>
+        <commons-io.version>2.20.0</commons-io.version>
         <guava.version>33.5.0-jre</guava.version>
         <!-- Maven 插件 -->
         <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
@@ -59,23 +59,13 @@
             <!-- =================================================== -->
             <dependency>
                 <groupId>com.baomidou</groupId>
-                <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+                <artifactId>mybatis-plus-spring-boot4-starter</artifactId>
                 <version>${mybatis-plus.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.mysql</groupId>
                 <artifactId>mysql-connector-j</artifactId>
                 <version>${mysql-connector.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.flywaydb</groupId>
-                <artifactId>flyway-core</artifactId>
-                <version>${flyway.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.flywaydb</groupId>
-                <artifactId>flyway-mysql</artifactId>
-                <version>${flyway.version}</version>
             </dependency>
             <!-- =================================================== -->
             <!-- =================== 安全框架 =================== -->
@@ -129,6 +119,11 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-collections4</artifactId>
                 <version>${commons-collections4.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${commons-io.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
