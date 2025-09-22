@@ -42,13 +42,40 @@ spring:
       # connection-test-query: SELECT 1
 logging:
   level:
-    root: DEBUG # 全局默认日志级别
-    com.blog: DEBUG # 仅 com.blog 包下的日志级别为 DEBUG
-    com.baomidou.mybatisplus.extension.ddl: DEBUG # Mybatis-Plus DDL 日志级别
+    root: INFO # 全局默认日志级别
+    com.blog: INFO # 仅 com.blog 包下的日志级别为 DEBUG
+    com.baomidou.mybatisplus.extension.ddl: INFO # Mybatis-Plus DDL 日志级别
     org.springframework.web: INFO # Spring Web 模块的日志级别
-    # 如果想在不修改 logback-spring.xml 的情况下改变核心日志文件名，可以使用此项
-  # file:
-  #   name: app.log # 日志文件名称，会覆盖 logback-spring.xml 中未明确设置的默认文件输出
-  # pattern: # 也可以在这里自定义日志格式，但通常在 logback-spring.xml 中进行
-  #   console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %highlight(%-5level) %green([%thread]) %cyan(%logger{40}): %msg%n"
-# =========================================================================
+mybatis-plus:
+  # Mapper.xml 文件的位置。
+  # classpath*: 会扫描所有 JAR 包和类路径。
+  # /mapper/**/*.xml: 匹配 mapper 目录及其所有子目录下的所有 .xml 文件。
+  mapper-locations: classpath*:/mapper/**/*.xml
+  # 实体类（POJO）所在的包路径。
+  # 配置后，在 Mapper.xml 中使用 resultType 或 parameterType 时，可以直接写类名，而无需写完整的包名。
+  type-aliases-package: com.blog.**.entity # 请根据您的项目结构调整，** 表示匹配所有模块
+  # 全局配置
+  global-config:
+    # 关闭启动时 MyBatis-Plus 的 Banner 日志，保持控制台清洁
+    banner: false
+    # 数据库相关配置
+    db-config:
+      # 主键生成策略。AUTO 表示使用数据库的自增策略。
+      id-type: auto
+      # 逻辑删除配置（极其重要，强烈推荐）
+      # 全局指定逻辑删除的实体字段名。
+      logic-delete-field: isDeleted # 假设你的 BaseEntity 中有 @TableLogic private Integer isDeleted; 字段
+      # 逻辑删除时，数据库中该字段的值。
+      logic-delete-value: 1
+      # 未删除时，数据库中该字段的值。
+      logic-not-delete-value: 0
+  # MyBatis 原生配置
+  configuration:
+    # 开启数据库字段下划线到 Java 实体驼峰命名的自动映射。
+    # 例如：数据库字段 last_name 会自动映射到实体属性 lastName。
+    map-underscore-to-camel-case: true
+    # 当查询结果为 null 时，MyBatis 是否调用 setter 或 map 的 put 方法。
+    # `NULL` 表示会调用，这可以确保所有字段都被初始化，避免了基本类型（如 int）的默认值问题。
+    call-setters-on-nulls: true
+    # 指定 MyBatis 使用的日志实现，与 Spring Boot 的日志框架集成。
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl

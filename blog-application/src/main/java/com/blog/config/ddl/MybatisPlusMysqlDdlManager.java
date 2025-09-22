@@ -6,6 +6,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.io.support.ResourcePatternResolver;
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Component
+@Profile("!test") // 同样，在测试环境中排除这个 Bean
 public class MybatisPlusMysqlDdlManager implements IDdl {
 
     @Autowired

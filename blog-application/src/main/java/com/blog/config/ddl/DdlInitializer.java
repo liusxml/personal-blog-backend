@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +25,7 @@ import java.util.List;
 @Slf4j
 @Configuration
 @Order(0) // 可选：设置高优先级，确保它在其他 ApplicationRunner 之前执行
+@Profile("!test") // 关键新增：表示当 "test" profile 未激活时，此Bean才生效
 public class DdlInitializer implements ApplicationRunner {
 
     // Spring 会自动注入所有 IDdl 接口的实现，也就是我们的 MybatisPlusMysqlDdlManager

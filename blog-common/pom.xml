@@ -20,18 +20,36 @@
         <!--
         ============== Spring Framework Core ==============
         我们不引入 spring-boot-starter，因为 common 模块不应成为一个可执行的 Spring Boot 应用。
-        我们仅引入 spring-context，它提供了核心的 IoC 功能和一些基础注解（如我们用到的 @Nullable）。
+        我们仅引入 spring-context，它提供了核心的 IoC 功能和一些基础注解。
         这是一个保持模块轻量和职责单一的最佳实践。
-       -->
+        -->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
         </dependency>
         <!--
+        ============== MyBatis-Plus Core Dependencies ==============
+        common 模块需要 MyBatis-Plus 的核心类来定义 BaseService。
+        - mybatis-plus-core: 提供了 IService, Wrapper, BaseMapper 等核心接口和类。
+        - mybatis-plus-extension: 提供了 ServiceImpl, Page 等扩展功能，我们的 BaseServiceImpl 依赖它。
+        注意：此处不应包含版本号，版本由根 POM 的 dependencyManagement 统一管理。
+        -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-extension</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-spring</artifactId>
+        </dependency>
+        <!--
          ============== 开发工具 ==============
-         Lombok 用于在编译期自动生成代码（如 getter, setter）。
-         scope 设置为 provided，意味着它只在编译和测试阶段需要，
-         最终打包的 JAR 文件中不会包含 Lombok，因为生成的字节码已经包含了所需方法。
+         Lombok 用于在编译期自动生成代码。
+         scope 设置为 provided，意味着它只在编译和测试阶段需要，最终打包的 JAR 不会包含它。
         -->
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -40,9 +58,7 @@
         </dependency>
         <!--
          ============== 常用工具库 ==============
-         这些是项目级别的基础工具库，定义在 common 模块中，
-         这样任何依赖 common 的模块（如 blog-system-service）都可以直接使用它们，
-         无需在自己的 pom.xml 中重复声明。
+         项目级别的基础工具库，定义在 common 模块中，供所有其他模块复用。
         -->
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -55,10 +71,6 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.tomcat.embed</groupId>
-            <artifactId>tomcat-embed-core</artifactId>
         </dependency>
     </dependencies>
 

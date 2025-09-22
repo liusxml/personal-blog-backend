@@ -12,7 +12,7 @@ public class BusinessException extends RuntimeException {
 
     public BusinessException(ErrorCode errorCode) {
         // 不调用父类的构造方法，因为我们不需要填充 cause 和 stack trace，以提高性能
-        super(errorCode.getMessage());
+        super(errorCode.getMessage(), null, false, false);
         this.errorCode = errorCode;
     }
 

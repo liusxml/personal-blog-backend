@@ -1,0 +1,24 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:blog_test_db;MODE=MySQL;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  # 明确指示 Spring Boot 在测试启动时执行 schema.sql
+  sql:
+    init:
+      mode: embedded # 'embedded' 模式只对内存数据库生效，非常适合测试
+
+  # 保持关闭 Hibernate 的自动操作，避免冲突
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+
+mybatis-plus:
+  global-config:
+    db-config:
+      # 彻底关闭 MyBatis-Plus 的 DDL，因为它会和 Spring 的初始化冲突
+      ddl-type: NONE
+      id-type: auto
