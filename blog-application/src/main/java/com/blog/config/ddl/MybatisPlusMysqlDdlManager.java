@@ -31,15 +31,17 @@ import java.util.stream.Collectors;
 @Profile("!test") // 同样，在测试环境中排除这个 Bean
 public class MybatisPlusMysqlDdlManager implements IDdl {
 
-    @Autowired
-    private DataSource dataSource;
-
+    private final DataSource dataSource;
+    private final ApplicationContext applicationContext;
     // 从 application.yml 读取 DDL 脚本目录，并提供一个安全的默认值
     @Value("${mybatis-plus.ddl.dir.mysql:db/}")
     private String ddlDirPath;
 
-    @Autowired
-    private ApplicationContext applicationContext;
+    public MybatisPlusMysqlDdlManager(DataSource dataSource, ApplicationContext applicationContext) {
+        this.dataSource = dataSource;
+        this.applicationContext = applicationContext;
+    }
+
 
     @Override
     public void runScript(Consumer<DataSource> consumer) {

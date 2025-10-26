@@ -7,7 +7,7 @@
     1.  [完全掌控] 不依赖 Spring Boot 的 `base.xml`，手动定义所有组件，确保配置的确定性和可维护性。
     2.  [环境隔离] 使用 `<springProfile>` 标签，为“开发/调试(dev,debug)”、“生产(prod)”和“测试(test)”等环境提供量身定制的日志策略。
     3.  [性能优先] 对文件输出采用 `AsyncAppender`，将日志I/O操作从业务线程中剥离，大幅降低对应用性能的影响。
-    4.  [问题导向] 将 `ERROR` 级别的日志独立记录到专门文件，便于在生产环境快速定位和分析问题。
+    4.  [问题导向] 将 `ERROR` 级别的日志独立记录到专门的文件，便于在生产环境快速定位和分析问题。
     5.  [可读性强] 在控制台输出中使用颜色高亮，提升开发体验；文件日志则保持朴素格式，便于机器解析。
 -->
 <configuration>
@@ -16,106 +16,49 @@
     <!--  1. 核心属性与规则定义 (Core Properties & Rules)                               -->
     <!-- ================================================================================= -->
 
-    <!-- 从 Spring 环境中动态获取应用名称，如果获取不到，则使用 'personal-blog-backend' 作为默认值。 -->
-    <!-- 这使得日志配置可以随 `spring.application.name` 的变化而自动调整，增强了可移植性。 -->
     <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="personal-blog-backend"/>
-
-    <!-- 定义日志文件存放的根目录。推荐使用相对路径以便于在不同服务器上部署。 -->
     <property name="LOG_HOME" value="./logs"/>
 
-    <!--
-        【关键修复】手动注册 Spring Boot 提供的颜色转换器 (ColorConverter)。
-        当我们不再 <include> Spring Boot 的 base.xml 时，就必须手动注册 `clr` 关键字，
-        否则 Logback 无法识别日志 pattern 中的 `%clr`，导致启动失败。
-    -->
-    <conversionRule conversionWord="clr" converterClass="org.springframework.boot.logging.logback.ColorConverter" />
-
+    <conversionRule conversionWord="clr" class="org.springframework.boot.logging.logback.ColorConverter"/>
 
     <!-- ================================================================================= -->
     <!--  2. Appender 定义 (配置日志的输出目的地)                                          -->
     <!-- ================================================================================= -->
 
-    <!-- 2.1 控制台输出 Appender (CONSOLE) -->
-    <!--
-        职责: 将日志实时打印到标准控制台（例如 IDE 的 Console 窗口或 Docker 日志流）。
-        用途: 主要用于本地开发、调试以及云原生环境的日志收集。
-    -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <!--
-                格式化日志输出，并使用 `%clr` 添加颜色高亮，提升开发时的可读性。
-                - %d{...}: 日期时间
-                - %clr(%-5level){color}: 带颜色的日志级别，左对齐，占5个字符
-                - %clr(%thread){color}: 带颜色的线程名
-                - %clr(%logger{40}){color}: 带颜色的 Logger 名称，最长40个字符
-                - %msg: 日志消息
-                - %n: 换行
-            -->
             <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %clr(%-5level){blue} [%clr(%thread){magenta}] %clr(%logger{40}){cyan}: %msg%n</pattern>
             <charset>UTF-8</charset>
         </encoder>
     </appender>
 
-    <!-- 2.2 滚动文件输出 Appender (FILE) - "日志写入的工人" -->
-    <!--
-        职责: 这是真正负责将日志写入磁盘文件的组件。它本身是同步操作。
-        策略: 结合了按天滚动和按大小滚动，确保日志文件不会无限增长。
-    -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <!-- 当前正在写入的活动日志文件路径和名称 -->
         <file>${LOG_HOME}/${APP_NAME}.log</file>
-        <!-- 滚动策略定义 -->
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <!-- 归档文件的命名格式。%d{yyyy-MM-dd}确保每天生成一个新文件，%i是当天的文件索引（当文件大小超限时递增）。 -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
             <fileNamePattern>${LOG_HOME}/${APP_NAME}-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
-            <!-- 日志文件最长保留时间，例如30天。 -->
+            <maxFileSize>200MB</maxFileSize>
             <maxHistory>30</maxHistory>
-            <!-- 结合时间和大小的触发策略 -->
-            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
-                <!-- 当单个日志文件达到此大小时，会触发滚动，生成一个新文件（当天的索引`%i`会增加）。 -->
-                <maxFileSize>200MB</maxFileSize>
-            </timeBasedFileNamingAndTriggeringPolicy>
+            <totalSizeCap>3GB</totalSizeCap>
         </rollingPolicy>
         <encoder>
-            <!-- 文件日志的格式，通常不加颜色，保持纯文本以方便 grep/awk 等工具处理。 -->
             <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{40}: %msg%n</pattern>
             <charset>UTF-8</charset>
         </encoder>
     </appender>
 
-    <!-- 2.3 异步文件输出 Appender (ASYNC_FILE) - “高效的项目经理” -->
-    <!--
-        职责: 将同步的 FILE Appender 包装成异步模式，这是提升应用性能的关键优化。
-        原理: 内部维护一个日志事件队列。业务线程只需将日志事件快速放入队列即可返回，
-               由一个独立的后台线程消费队列中的事件，并委托给 FILE Appender 进行实际的磁盘写入。
-        注意: 在 Logger 中应引用此 ASYNC_FILE，而非直接引用 FILE。
-    -->
     <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
-        <!-- 关联实际执行写入任务的 Appender -->
         <appender-ref ref="FILE"/>
-        <!--
-            当日志队列满时，默认会阻塞业务线程。此设置为 false 可改为直接丢弃日志，
-            但在多数场景下，我们倾向于阻塞以保证日志不丢失。
-        -->
         <neverBlock>false</neverBlock>
-        <!-- 内部队列的大小。如果队列满，将阻塞或丢弃日志。默认为256。 -->
         <queueSize>512</queueSize>
     </appender>
 
-    <!-- 2.4 错误日志专门文件输出 Appender (ERROR_FILE) -->
-    <!--
-        职责: 专门收集所有 ERROR 级别的日志，并保存到独立文件中。
-        用途: 极大地方便了生产环境的问题排查，运维人员可以直接查看此文件快速定位错误。
-    -->
     <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_HOME}/${APP_NAME}-error.log</file>
-        <!-- 过滤器，精确地只捕获 ERROR 级别的日志 -->
         <filter class="ch.qos.logback.classic.filter.LevelFilter">
             <level>ERROR</level>
-            <onMatch>ACCEPT</onMatch> <!-- 匹配到 ERROR 级别，接受 -->
-            <onMismatch>DENY</onMismatch>  <!-- 所有其他级别，拒绝 -->
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
         </filter>
-        <!-- 错误日志通常量较小，只按天滚动即可 -->
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <fileNamePattern>${LOG_HOME}/${APP_NAME}-error-%d{yyyy-MM-dd}.log</fileNamePattern>
             <maxHistory>30</maxHistory>
@@ -126,59 +69,43 @@
         </encoder>
     </appender>
 
-
     <!-- ================================================================================= -->
     <!--  3. Logger 定义 (配置哪些包使用哪个级别的日志，并输出到哪里)                   -->
     <!-- ================================================================================= -->
 
-    <!-- 全局根 Logger 定义 -->
-    <!-- 这是所有 Logger 的最终“祖先”，定义了默认的日志级别和输出目的地。 -->
-    <!-- 如果一个 Logger 没有配置 `additivity="false"`，它的日志在被自己的 Appender 处理后，还会向上传递给 root。 -->
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="ASYNC_FILE"/>
         <appender-ref ref="ERROR_FILE"/>
     </root>
 
-    <!-- 3.1 开发(dev) & 调试(debug) 环境的专属配置 -->
     <springProfile name="dev, debug">
-        <!-- 将 root 日志级别调整为 DEBUG，让开发时能看到最详细的框架和业务日志 -->
         <root level="DEBUG">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="ASYNC_FILE"/>
             <appender-ref ref="ERROR_FILE"/>
         </root>
 
-        <!-- 为 MyBatis-Plus/MyBatis 配置 SQL 日志打印 -->
         <logger name="com.baomidou.mybatisplus.core.mapper" level="DEBUG"/>
         <logger name="java.sql.PreparedStatement" level="DEBUG"/>
     </springProfile>
 
-    <!-- 3.2 生产(prod) 环境的专属配置 -->
     <springProfile name="prod">
-        <!--
-            在生产环境，将 root 日志级别设为 INFO 或 WARN，以减少不必要的日志输出，节约磁盘I/O和存储空间。
-            这里设为 INFO，是一个兼顾信息量和性能的均衡选择。
-        -->
         <root level="INFO">
-            <appender-ref ref="CONSOLE"/> <!-- 保留控制台输出，便于Docker等容器环境收集日志 -->
+            <appender-ref ref="CONSOLE"/>
             <appender-ref ref="ASYNC_FILE"/>
             <appender-ref ref="ERROR_FILE"/>
         </root>
-
-        <!-- 即使全局是 INFO，也可以为一些噪音较大的第三方库单独设置更高的日志级别（如 WARN）来保持日志清爽 -->
-        <!-- <logger name="org.apache.kafka" level="WARN" /> -->
-        <!-- <logger name="org.hibernate" level="WARN" /> -->
+        <!-- 可以定制特定包的日志级别 -->
+        <!-- <logger name="org.apache.kafka" level="WARN"/> -->
+        <!-- <logger name="org.hibernate" level="WARN"/> -->
     </springProfile>
 
-    <!-- 3.3 测试(test) 环境的专属配置 -->
     <springProfile name="test">
-        <!-- 在测试环境中，通常我们更关心控制台的即时反馈，可以简化配置 -->
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
         </root>
 
-        <!-- 测试 SQL 时，可以打开相关 logger -->
         <logger name="com.baomidou.mybatisplus.core.mapper" level="DEBUG"/>
     </springProfile>
 

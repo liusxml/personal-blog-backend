@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.autoconfigure.DdlApplicationRunner;
 import com.baomidou.mybatisplus.extension.ddl.DdlScriptErrorHandler;
 import com.baomidou.mybatisplus.extension.ddl.IDdl;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Configuration;
@@ -29,12 +28,15 @@ import java.util.List;
 public class DdlInitializer implements ApplicationRunner {
 
     // Spring 会自动注入所有 IDdl 接口的实现，也就是我们的 MybatisPlusMysqlDdlManager
-    @Autowired
-    private List<IDdl> ddlList;
+    private final List<IDdl> ddlList;
+
+    public DdlInitializer(List<IDdl> ddlList) {
+        this.ddlList = ddlList;
+    }
 
     /**
      * Spring Boot 启动时将调用此方法。
-     * @Transactional 注解保证了整个方法体在一个数据库事务中执行。
+     * {@code @Transactional} 注解保证了整个方法体在一个数据库事务中执行。 // <--- 问题二已修复
      */
     @Override
     @Transactional
@@ -49,6 +51,22 @@ public class DdlInitializer implements ApplicationRunner {
 
         // 关键：在方法内部创建 DdlApplicationRunner 实例。
         // 它是一个局部变量，而不是一个被 Spring 管理的 Bean，所以 Spring 不会再次自动运行它。
+        DdlApplicationRunner runner = getDdlApplicationRunner();
+
+        // 执行 DDL 逻辑
+        runner.run(args);
+
+        log.info("Transactional DDL execution finished. Spring will now commit the transaction.");
+        // 方法成功返回后，Spring 的事务管理器将自动提交事务。
+    }
+
+    /**
+     * 工厂方法：创建一个为事务执行量身定制的 DdlApplicationRunner。
+     * 封装了所有复杂的配置，使 run() 方法更清晰。
+     *
+     * @return 一个完全配置好的 DdlApplicationRunner 实例。
+     */
+    private DdlApplicationRunner getDdlApplicationRunner() {
         DdlApplicationRunner runner = new DdlApplicationRunner(ddlList);
 
         // 应用所有必要的配置
@@ -65,11 +83,6 @@ public class DdlInitializer implements ApplicationRunner {
             scriptRunner.setRemoveCRs(false);
             log.debug("ScriptRunner customization complete.");
         });
-
-        // 执行 DDL 逻辑
-        runner.run(args);
-
-        log.info("Transactional DDL execution finished. Spring will now commit the transaction.");
-        // 方法成功返回后，Spring 的事务管理器将自动提交事务。
+        return runner;
     }
 }

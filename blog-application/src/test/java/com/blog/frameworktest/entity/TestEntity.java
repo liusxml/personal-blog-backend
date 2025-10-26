@@ -1,4 +1,4 @@
-package com.blog.frameworktest;
+package com.blog.frameworktest.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;

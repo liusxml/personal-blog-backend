@@ -15,17 +15,22 @@ import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerIntercept
 import com.blog.BlogApplication;
 import com.blog.common.enums.SystemErrorCode;
 import com.blog.config.ddl.DdlInitializer;
+import com.blog.frameworktest.dto.TestDTO;
+import com.blog.frameworktest.dto.ValidationTestDTO;
+import com.blog.frameworktest.service.ITestService;
+import com.blog.frameworktest.vo.TestVO;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.Resource;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -41,6 +46,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -92,28 +98,28 @@ public class FrameworkIntegrationTest {
      * {@code @Autowired} 是Spring框架的核心注解，用于在此处自动完成依赖注入。
      * {@code MockMvc} 是我们测试Web层的“瑞士军刀”，可以模拟发送GET, POST等各类HTTP请求，并对响应进行详细的断言。
      */
-    @Autowired
+    @Resource
     private MockMvc mockMvc;
 
     /**
      * 业务逻辑服务层接口，从Spring容器中注入，用于后续的业务逻辑测试。
      * 它的成功注入，本身就是对Service层及其依赖能否被Spring正确管理的验证。
      */
-    @Autowired
+    @Resource
     private ITestService testService;
 
     /**
      * 用于JSON序列化和反序列化的工具，由Spring Boot的Jackson自动配置提供并注入。
      * 在测试中，它常用于将对象转换为JSON字符串以便打印日志，或是在构建请求体时使用。
      */
-    @Autowired
+    @Resource
     private ObjectMapper objectMapper;
 
     /**
      * 注入MyBatis-Plus的核心拦截器Bean ({@link MybatisPlusInterceptor})。
      * 我们注入它的目的是为了在测试中直接检查其内部配置，验证我们在 {@code MybatisPlusConfig} 中定义的插件是否都已正确加载。
      */
-    @Autowired
+    @Resource
     private MybatisPlusInterceptor mybatisPlusInterceptor;
 
     // =========== 测试方法（按 @Order 顺序执行） ===========
@@ -271,11 +277,6 @@ public class FrameworkIntegrationTest {
     void testGlobalExceptionHandler() throws Exception {
         log.info("▶️ 开始测试 (5/5): 全局异常处理器...");
         log.info("   - 模拟客户端请求一个会抛出业务异常的接口: GET /framework-test/error");
-
-        // mockMvc.perform(...): 构建并执行一个模拟的HTTP GET请求。
-        // .andExpect(...): 对HTTP响应的各个部分进行链式断言。
-        // .andDo(print()): 在控制台打印详细的请求和响应信息，这在调试时非常有用。
-        // jsonPath("$.code"): 使用JSONPath表达式来提取和断言响应体JSON中的字段值。
         mockMvc.perform(get("/framework-test/error"))
                 .andExpect(status().isOk()) // 即使业务失败，由于我们正确处理了异常，HTTP状态码也应是200 OK
                 .andExpect(jsonPath("$.code").value(SystemErrorCode.SYSTEM_ERROR.getCode())) // 验证业务错误码
@@ -284,6 +285,47 @@ public class FrameworkIntegrationTest {
                 .andDo(print());
 
         log.info("✅ 测试通过 (5/5): 全局异常处理器成功捕获异常并返回了预期的统一JSON格式。");
+    }
+
+    /**
+     * 【第6步】测试全局异常处理器在处理参数校验时的【健壮性】。
+     * <p>
+     * 这是对我们之前优化的直接验证。此测试模拟一个非常边缘但关键的场景：
+     * 当一个字段的校验错误信息{@code defaultMessage}为{@code null}时，系统是否会抛出{@code NullPointerException}。
+     * <p>
+     * 预期行为：得益于我们的健壮性优化 ({@code message == null ? "" : message})，
+     * 即使消息为{@code null}，{@code GlobalExceptionHandler}也应能优雅处理，
+     * 并在返回的JSON中将该字段的值映射为一个空字符串 {@code ""}。
+     *
+     * @throws Exception MockMvc 抛出的异常
+     */
+    @Test
+    @Order(6)
+    @DisplayName("6. 全局异常处理器 - 参数校验健壮性测试 (处理null消息)")
+    void testValidationExceptionHandler_RobustnessForNullMessage() throws Exception {
+        log.info("▶️ 开始测试 (6/6): 全局异常处理器 - 参数校验健壮性...");
+        // 1. 构造一个包含多种校验失败场景的DTO
+        ValidationTestDTO dto = new ValidationTestDTO();
+        dto.setNormalField(""); // 触发 @NotBlank，会产生一个标准的、非null的错误消息
+        dto.setFieldWithNullMessage("trigger-null-message"); // 触发自定义校验，会产生一个null的错误消息
+        // 2. 将DTO对象转换为JSON字符串
+        String requestBody = objectMapper.writeValueAsString(dto);
+        log.info("   - 模拟客户端POST请求 /framework-test/validation，Body: {}", requestBody);
+        log.info("   - 预期: 捕获 MethodArgumentNotValidException, 即使某字段的错误消息为null, 也应正确处理并返回结构化数据");
+        // 3. 执行MockMvc请求并进行断言
+        mockMvc.perform(post("/framework-test/validation")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isBadRequest()) // 参数校验失败，返回 400
+                .andExpect(jsonPath("$.code").value(SystemErrorCode.VALIDATION_ERROR.getCode())) // 业务码
+                .andExpect(jsonPath("$.message").value(SystemErrorCode.VALIDATION_ERROR.getMessage())) // 统一消息
+                .andExpect(jsonPath("$.data").isMap()) // data 字段是 Map
+                // 验证标准校验注解的字段，它的消息是非null的
+                .andExpect(jsonPath("$.data.normalField").exists())
+                // 核心验证：验证 getDefaultMessage() 返回 null 的字段被正确转换为空字符串 ""
+                .andExpect(jsonPath("$.data.fieldWithNullMessage").value(""))
+                .andDo(print());
+        log.info("✅ 测试通过 (6/6): 全局异常处理器成功处理了包含null错误消息的参数校验异常，程序健壮性得到验证。");
     }
 
     // =========== 辅助方法 ===========

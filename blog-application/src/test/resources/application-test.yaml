@@ -19,6 +19,4 @@ spring:
 mybatis-plus:
   global-config:
     db-config:
-      # 彻底关闭 MyBatis-Plus 的 DDL，因为它会和 Spring 的初始化冲突
-      ddl-type: NONE
       id-type: auto

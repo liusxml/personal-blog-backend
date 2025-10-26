@@ -22,7 +22,7 @@
         <java.version>21</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- 核心框架 -->
-        <spring-boot.version>4.0.0-M1</spring-boot.version>
+        <spring-boot.version>3.5.7</spring-boot.version>
         <!-- 持久化与数据库 -->
         <mybatis-plus.version>3.5.14</mybatis-plus.version>
         <mysql-connector.version>9.4.0</mysql-connector.version> <!-- 新增: 数据库驱动 -->
@@ -63,11 +63,6 @@
                 <version>${mybatis-plus.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>com.baomidou</groupId>
-                <artifactId>mybatis-plus-spring-boot4-starter</artifactId>
-                <version>${mybatis-plus.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.mysql</groupId>

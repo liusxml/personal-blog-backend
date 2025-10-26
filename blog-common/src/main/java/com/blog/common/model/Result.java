@@ -52,4 +52,18 @@ public record Result<T>(int code, String message, @Nullable T data) {
     public static <T> Result<T> error(int code, String message) {
         return new Result<>(code, message, null);
     }
+
+    /**
+     * 失败，使用预定义的错误码，并返回详细的错误数据
+     * <p>
+     * 这是为了支持参数校验等场景，其中 data 字段可以携带一个包含详细错误信息的 Map。
+     *
+     * @param errorCode 错误码枚举
+     * @param data      详细错误数据
+     * @param <E>       数据载aho的类型
+     * @return Result<E>
+     */
+    public static <E> Result<E> error(ErrorCode errorCode, E data) {
+        return new Result<>(errorCode.getCode(), errorCode.getMessage(), data);
+    }
 }

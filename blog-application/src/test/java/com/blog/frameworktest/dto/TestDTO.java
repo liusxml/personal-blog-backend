@@ -1,4 +1,4 @@
-package com.blog.frameworktest;
+package com.blog.frameworktest.dto;
 
 import lombok.Data;
 
