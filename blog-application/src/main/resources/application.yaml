@@ -1,81 +1,249 @@
+# ==============================================================
 # 服务器配置
+# ==============================================================
 server:
   port: 8080
-# Spring 应用配置
+  # 业务端口，默认 8080
+  # 建议：生产环境可通过 nginx 反向代理，隐藏真实端口
+
+# ==============================================================
+# Spring 应用核心配置
+# ==============================================================
 spring:
   profiles:
-    active: dev # 激活的开发环境配置
+     active: dev               # 取消注释可激活特定 profile（如 dev、prod）
   application:
-    name: personal-blog-service # 应用名称
+    name: personal-blog-service
+    # 应用名称，用于日志、监控、注册中心（如 Nacos、Eureka）等
+    # 强烈建议：生产环境保持唯一、稳定
+
+  boot:
+    admin:
+      client:
+        url: http://localhost:9000
+        instance:
+          name: ${spring.application.name}
+  # ------------------------------------------------------------
+  # 开发工具：热重启（DevTools）
+  # ------------------------------------------------------------
   devtools:
     restart:
-      # 排除 db 目录下的任何变动触发重启
       exclude: "db/**"
-  # 数据库数据源配置
+      # 排除 db 目录下的文件变更不触发重启
+      # 防止数据库脚本、SQL 文件变更导致频繁重启
+
+  # ------------------------------------------------------------
+  # 数据库数据源配置（HikariCP 连接池）
+  # ------------------------------------------------------------
   datasource:
-    # 你的数据库驱动和URL
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://127.0.0.1:3306/blog_db?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
-    username: root          # [请修改] 您的数据库用户名
-    password: s3cr3t_r00t_p@ssw0rd # [请修改] 您的数据库密码
-    # 指定连接池类型（虽然默认就是HikariCP，但显式指定更清晰）
+    # MySQL 8+ 驱动，推荐使用 cj 版本（支持时区、SSL 等）
+
+    url: >-
+      jdbc:mysql://127.0.0.1:3306/blog_db?
+      useUnicode=true&
+      characterEncoding=utf-8&
+      serverTimezone=Asia/Shanghai&
+      allowPublicKeyRetrieval=true&
+      useSSL=false
+    # 关键参数说明：
+    # - useUnicode + characterEncoding：防止中文乱码
+    # - serverTimezone：避免时区错误（MySQL 8+ 必须）
+    # - allowPublicKeyRetrieval：防止 RSA 公钥获取失败（常见于高版本 MySQL）
+    # - useSSL=false：本地开发关闭 SSL，生产建议开启
+
+    username: root
+    password: s3cr3t_r00t_p@ssw0rd
+    # 警告：生产环境严禁明文密码！建议使用：
+    #   - 环境变量：${DB_PASSWORD}
+    #   - Jasypt 加密
+    #   - Spring Cloud Config
+
     type: com.zaxxer.hikari.HikariDataSource
-    # HikariCP 的核心配置
+    # 显式指定连接池类型（Spring Boot 默认就是 HikariCP）
+
     hikari:
-      # 连接池中允许的最大连接数。默认为10。
-      # 这是最重要的参数，需要根据你的业务并发量和数据库承载能力来调整。
       maximum-pool-size: 20
-      # 连接池中维护的最小空闲连接数。默认为 maximum-pool-size 的值。
-      # 建议设置为与 maximum-pool-size 相同的值，以获得最佳性能和对峰值负载的响应能力。
+      # 最大连接数，核心性能参数
+      # 建议：根据 CPU 核数 × 2 ~ 4 + 磁盘 I/O 能力调整
+      # 经验公式：(核心数 × 2) + 有效磁盘数
+
       minimum-idle: 20
-      # 从连接池获取连接的超时时间。默认为30秒。
-      # 如果在30秒内无法获取到连接（比如连接池已满），则会抛出异常。
+      # 最小空闲连接数
+      # 最佳实践：与 maximum-pool-size 保持一致，避免连接频繁创建/销毁
+
       connection-timeout: 30000
-      # 一个连接在池中允许的最长空闲时间。默认为10分钟。
-      # 空闲时间超过该值的连接将被释放。
+      # 获取连接超时时间（毫秒），默认 30 秒
+      # 超时后抛出 SQLException，建议不超过 30s
+
       idle-timeout: 600000
-      # 一个连接在池中最长的生命周期。默认为30分钟。
-      # 建议设置一个比数据库连接超时参数（如MySQL的wait_timeout）短的值。
+      # 空闲连接存活时间（10 分钟）
+      # 超过此时间未被使用的连接将被回收
+
       max-lifetime: 1800000
-      # 用于测试连接是否有效的查询语句。
-      # 如果驱动支持JDBC4，建议不配置此项，HikariCP会自动处理。
+      # 连接最大存活时间（30 分钟）
+      # 必须 < MySQL wait_timeout（默认 8 小时），防止连接被数据库主动断开
+      # 推荐：1800000 ~ 1740000（29 分）
+
       # connection-test-query: SELECT 1
+      # JDBC4 驱动已自动支持，不建议配置，HikariCP 会自动探测
+
+# ==============================================================
+# 日志配置
+# ==============================================================
 logging:
   level:
-    root: INFO # 全局默认日志级别
-    com.blog: INFO # 仅 com.blog 包下的日志级别为 DEBUG
-    com.baomidou.mybatisplus.extension.ddl: INFO # Mybatis-Plus DDL 日志级别
-    org.springframework.web: INFO # Spring Web 模块的日志级别
+    root: INFO
+    # 全局默认日志级别
+
+    com.blog: INFO
+    # 项目业务包日志级别，开发时可改为 DEBUG
+
+    com.baomidou.mybatisplus.extension.ddl: INFO
+    # MyBatis-Plus DDL 自动建表日志，生产建议关闭或 WARN
+
+    org.springframework.web: INFO
+    # Spring Web 请求日志，DEBUG 会打印所有请求参数
+
+# ==============================================================
+# MyBatis-Plus 配置
+# ==============================================================
 mybatis-plus:
-  # Mapper.xml 文件的位置。
-  # classpath*: 会扫描所有 JAR 包和类路径。
-  # /mapper/**/*.xml: 匹配 mapper 目录及其所有子目录下的所有 .xml 文件。
+  # Mapper XML 文件扫描路径
   mapper-locations: classpath*:/mapper/**/*.xml
-  # 实体类（POJO）所在的包路径。
-  # 配置后，在 Mapper.xml 中使用 resultType 或 parameterType 时，可以直接写类名，而无需写完整的包名。
-  type-aliases-package: com.blog.**.entity # 请根据您的项目结构调整，** 表示匹配所有模块
-  # 全局配置
+  # 支持多模块、多 JAR 包扫描
+
+  # 实体类别名包路径
+  type-aliases-package: com.blog.**.entity
+  # 允许在 XML 中直接使用类名（如 User）而非全限定名
+
   global-config:
-    # 关闭启动时 MyBatis-Plus 的 Banner 日志，保持控制台清洁
     banner: false
-    # 数据库相关配置
+    # 关闭启动时 MyBatis-Plus 的 Banner 打印，保持控制台清洁
+
     db-config:
-      # 主键生成策略。AUTO 表示使用数据库的自增策略。
       id-type: auto
-      # 逻辑删除配置（极其重要，强烈推荐）
-      # 全局指定逻辑删除的实体字段名。
-      logic-delete-field: isDeleted # 假设你的 BaseEntity 中有 @TableLogic private Integer isDeleted; 字段
-      # 逻辑删除时，数据库中该字段的值。
+      # 主键策略：数据库自增（推荐）
+      # 其他选项：ASSIGN_ID（雪花算法）、ASSIGN_UUID
+
+      logic-delete-field: isDeleted
+      # 逻辑删除全局字段名（必须与实体 @TableLogic 一致）
+
       logic-delete-value: 1
-      # 未删除时，数据库中该字段的值。
       logic-not-delete-value: 0
-  # MyBatis 原生配置
+      # 逻辑删除值：1=已删除，0=未删除
+      # 配合 @TableLogic 实现软删除
+
   configuration:
-    # 开启数据库字段下划线到 Java 实体驼峰命名的自动映射。
-    # 例如：数据库字段 last_name 会自动映射到实体属性 lastName。
     map-underscore-to-camel-case: true
-    # 当查询结果为 null 时，MyBatis 是否调用 setter 或 map 的 put 方法。
-    # `NULL` 表示会调用，这可以确保所有字段都被初始化，避免了基本类型（如 int）的默认值问题。
+    # 自动将下划线字段映射为驼峰属性（如 create_time → createTime）
+
     call-setters-on-nulls: true
-    # 指定 MyBatis 使用的日志实现，与 Spring Boot 的日志框架集成。
+    # 查询结果为 null 时仍调用 setter
+    # 避免 int、boolean 等基本类型字段被默认值覆盖（如 int 默认 0）
+
     log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+    # 使用 SLF4J 打印 SQL，配合 logging.level.com.blog=DEBUG 可查看执行 SQL
+
+# ==============================================================
+# Spring Boot Actuator 监控配置
+# ==============================================================
+management:
+  # ------------------------------------------------------------
+  # 管理端口隔离（安全最佳实践）
+  # ------------------------------------------------------------
+  server:
+    port: 8081
+    # 业务端口 8080，管理端口 8081
+    # 建议：生产环境通过防火墙限制 8081 仅内部访问
+
+  # ------------------------------------------------------------
+  # 端点暴露白名单（安全控制）
+  # ------------------------------------------------------------
+  endpoints:
+    web:
+      base-path: /actuator
+      # 所有端点统一前缀：http://host:8081/actuator/*
+
+      exposure:
+        include:
+          - health
+          - info
+          - metrics
+          - env
+          - loggers
+          - beans
+          - mappings
+          - threaddump
+          - auditevents
+        # 白名单模式，显式声明暴露的端点
+        # 警告：生产环境禁止使用 '*'，会暴露敏感信息（如 env、beans）
+
+  # ------------------------------------------------------------
+  # 健康检查端点详细配置
+  # ------------------------------------------------------------
+  endpoint:
+    health:
+      show-details: always
+      # always：始终显示详细信息（数据库、磁盘等）
+      # when_authorized：仅授权用户可见（生产推荐）
+      # never：仅显示 UP/DOWN
+
+      probes:
+        enabled: true
+        # 启用 Kubernetes Liveness/Readiness 探针
+        # 自动生成：
+        #   /actuator/health/liveness
+        #   /actuator/health/readiness
+
+  # ------------------------------------------------------------
+  # /info 端点信息源控制（关键！）
+  # ------------------------------------------------------------
+  info:
+    env:
+      enabled: true
+      # 启用后，自动读取 application.yaml 中所有 info.* 配置
+      # 必须开启，否则 @project.name@ 等占位符不会显示
+
+    git:
+      enabled: true
+      mode: full
+      # 启用 Git 信息展示（需配合 git-commit-id-maven-plugin）
+      # mode: full 显示完整信息，simple 仅 commit.id 和 branch
+
+    build:
+      enabled: true
+      # 启用构建信息（需配合 spring-boot-maven-plugin 的 build-info goal）
+# ==============================================================
+# /info 端点展示的应用信息（Maven 资源占位符）
+# ==============================================================
+info:
+  app:
+    name: '@project.name@'
+    # Maven 打包时替换为 pom.xml 中的 <name>
+
+    description: '@project.description@'
+    # 替换为 <description>
+
+    version: '@project.version@'
+    # 替换为 <version>
+
+    encoding: '@project.build.sourceEncoding@'
+    # 替换为源文件编码（如 UTF-8）
+
+    java:
+      version: '@java.version@'
+      # 替换为编译时 JDK 版本（如 17）
+
+# --------------------------------------------------------------
+# 重要提醒：
+# 1. Maven 占位符生效条件：
+#    <resources><filtering>true</filtering></resources>
+# 2. git 和 build 信息需配置 Maven 插件：
+#    - spring-boot-maven-plugin → build-info
+#    - git-commit-id-maven-plugin → git.properties
+# 3. 生产环境建议：
+#    - 密码使用 ${ENV_VAR} 或 Jasypt
+#    - management.info.env.enabled=true 可关闭（避免泄露）
+#    - health.show-details=when_authorized
+# --------------------------------------------------------------

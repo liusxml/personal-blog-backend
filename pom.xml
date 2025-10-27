@@ -13,6 +13,7 @@
         <module>blog-common</module>
         <module>blog-modules</module>
         <module>blog-application</module>
+        <module>blog-admin-server</module>
     </modules>
     <!--
      优化点: 真正的“单一事实来源 (Single Source of Truth)”。
@@ -23,6 +24,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- 核心框架 -->
         <spring-boot.version>3.5.7</spring-boot.version>
+        <spring-boot-admin.version>3.5.5</spring-boot-admin.version>
         <!-- 持久化与数据库 -->
         <mybatis-plus.version>3.5.14</mybatis-plus.version>
         <mysql-connector.version>9.4.0</mysql-connector.version> <!-- 新增: 数据库驱动 -->
@@ -36,6 +38,7 @@
         <lombok.version>1.18.42</lombok.version>
         <mapstruct.version>1.6.3</mapstruct.version>
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version> <!-- 新增: 增强 Lombok 与 MapStruct 协作 -->
+        <git-commit-id-maven-plugin.version>9.0.2</git-commit-id-maven-plugin.version>
         <!-- 常用工具库 -->
         <commons-lang3.version>3.18.0</commons-lang3.version>
         <commons-collections4.version>4.5.0</commons-collections4.version>
@@ -53,6 +56,16 @@
                 <version>${spring-boot.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>de.codecentric</groupId>
+                <artifactId>spring-boot-admin-starter-server</artifactId>
+                <version>${spring-boot-admin.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>de.codecentric</groupId>
+                <artifactId>spring-boot-admin-starter-client</artifactId>
+                <version>${spring-boot-admin.version}</version>
             </dependency>
             <!-- =================================================== -->
             <!-- ============== 持久化与数据库 ============== -->
@@ -231,6 +244,31 @@
                                 <version>${lombok-mapstruct-binding.version}</version>
                             </path>
                         </annotationProcessorPaths>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>io.github.git-commit-id</groupId>
+                    <artifactId>git-commit-id-maven-plugin</artifactId>
+                    <version>${git-commit-id-maven-plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>revision</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                    <configuration>
+                        <!-- 生成的 git.properties 文件路径（必须是 classpath 根目录） -->
+                        <generateGitPropertiesFile>true</generateGitPropertiesFile>
+                        <generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>
+                        <includeOnlyProperties>
+                            <includeOnlyProperty>git.branch</includeOnlyProperty>
+                            <includeOnlyProperty>git.commit.id.abbrev</includeOnlyProperty>
+                            <includeOnlyProperty>git.commit.id</includeOnlyProperty>
+                            <includeOnlyProperty>git.commit.time</includeOnlyProperty>
+                            <includeOnlyProperty>git.commit.user.name</includeOnlyProperty>
+                        </includeOnlyProperties>
+                        <failOnNoGitDirectory>false</failOnNoGitDirectory>
                     </configuration>
                 </plugin>
             </plugins>
