@@ -24,3 +24,6 @@ jobs:
         with:
           linter: jetbrains/qodana-jvm-community
           pr-mode: false
+        env:
+          QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
+          QODANA_ENDPOINT: 'https://qodana.cloud'
