@@ -1,0 +1,59 @@
+# 这个工作流文件为您的 Java (Maven/Gradle) 项目进行了优化配置
+name: "CodeQL Security Scan for Java"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    - cron: '45 5 * * 1' # 每周一的 UTC 时间 5:45 运行一次
+
+jobs:
+  analyze:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write # 必须：允许将安全报告写入仓库
+      actions: read          # 必须：在私有仓库中读取 Action
+      contents: read         # 必须：读取您的代码
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 关键第一步：设置项目所需的 Java 版本
+      # CodeQL 需要使用与您项目相同的 JDK 版本来构建代码
+      # 请将 '17' 修改为您项目 pom.xml 或 build.gradle 中指定的 Java 版本
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21' # <-- 修改这里，例如 '11', '17', '21'
+          distribution: 'temurin'
+
+      # 第二步：初始化 CodeQL
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          # CodeQL 使用 'java-kotlin' 来统一代表 JVM 语言
+          languages: java-kotlin
+
+          # 推荐使用 'security-extended' 查询套件，以获得更广泛的安全问题覆盖
+          queries: security-extended
+
+      # 第三步：构建您的项目
+      # CodeQL 的 autobuild 会自动检测 pom.xml 或 build.gradle 并执行构建
+      # 它通常会运行 "mvn clean install -DskipTests" 或 "gradle build -x test"
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v4
+
+        # （备用方案）如果 Autobuild 失败，请使用手动构建
+        # 1. 注释掉上面的 "Autobuild" 步骤
+        # 2. 取消下面 "Manual build" 步骤的注释
+        # 3. 将 "mvn clean install" 替换为您项目实际的构建命令
+        # - name: Manual build
+        #   run: mvn clean install -DskipTests
+
+      # 第四步：执行分析并上传结果
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
