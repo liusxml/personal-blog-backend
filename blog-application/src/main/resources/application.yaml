@@ -122,7 +122,7 @@ mybatis-plus:
     # 关闭启动时 MyBatis-Plus 的 Banner 打印，保持控制台清洁
 
     db-config:
-      id-type: auto
+      id-type: assign_uuid
       # 主键策略：数据库自增（推荐）
       # 其他选项：ASSIGN_ID（雪花算法）、ASSIGN_UUID
 

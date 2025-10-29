@@ -36,6 +36,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -239,8 +240,9 @@ public class FrameworkIntegrationTest {
         dto.setName("test-name-from-integration-test");
 
         log.info("   - 步骤2: 调用 'saveByDto' 将 DTO 保存至数据库");
-        boolean success = testService.saveByDto(dto);
-        assertTrue(success, "通过 DTO 保存操作应该返回 true");
+        Serializable newId = testService.saveByDto(dto);
+        assertNotNull(newId, "通过 DTO 保存操作后，应返回一个非 null 的新实体 ID");
+        log.info("   - 验证成功: DTO 已保存，获得新实体 ID: {}", newId);
 
         log.info("   - 步骤3: 调用 'listVo' 从数据库中查询，验证数据已成功持久化");
         TestVO savedVo = testService.listVo(null).stream()
@@ -254,7 +256,6 @@ public class FrameworkIntegrationTest {
                 () -> assertNotNull(savedVo != null ? savedVo.getId() : null, "保存后 VO 应该包含 ID"),
                 () -> assertEquals("test-name-from-integration-test", savedVo != null ? savedVo.getName() : null, "保存的名称应该匹配")
         );
-        log.info("   - 验证成功: 数据已正确保存，新实体 ID: {}", savedVo.getId());
 
         log.info("   - 步骤4: 调用 'getVoById' 使用ID精确查找，并验证转换器");
         TestVO foundVo = testService.getVoById(savedVo.getId()).orElse(null);

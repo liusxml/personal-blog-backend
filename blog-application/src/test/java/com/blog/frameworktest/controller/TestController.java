@@ -24,8 +24,8 @@ public class TestController {
     private ITestService testService;
 
     @PostMapping
-    public Result<Boolean> create(@RequestBody TestDTO dto) {
-        return Result.success(testService.saveByDto(dto));
+    public Result<Long> create(@RequestBody TestDTO dto) {
+        return Result.success((Long) testService.saveByDto(dto));
     }
     @GetMapping("/{id}")
     public Result<TestVO> get(@PathVariable Long id) {

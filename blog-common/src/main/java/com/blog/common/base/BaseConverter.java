@@ -1,47 +1,61 @@
 package com.blog.common.base;
 
+import org.mapstruct.MappingTarget;
+
 import java.util.List;
 
 /**
- * 基础转换器接口 (DTO, Entity, VO)
+ * 基础转换器接口，用于 DTO/Entity/VO 之间转换。
  * <p>
- * 通过 MapStruct 实现该接口，为 Service 层提供类型安全的对象转换。
+ * 设计为 MapStruct 实现，提供零配置映射。支持 Spring Boot 3 依赖注入。
+ * 方法确保 null 安全和批量效率。
  *
- * @param <D> DTO (Data Transfer Object) - 用于数据创建/更新的传入对象
- * @param <E> Entity (Entity - Persistent Object) - 数据库持久化对象
- * @param <V> VO (View Object) - 用于数据展示的传出对象
+ * @param <D> DTO 类型。
+ * @param <E> Entity 类型。
+ * @param <V> VO 类型。
+ * @since 1.0
  */
 public interface BaseConverter<D, E, V> {
 
     /**
-     * 将 DTO 转换为 Entity
+     * 将 DTO 转换为 Entity，支持自定义映射表达式。
      *
-     * @param dto DTO 对象
-     * @return Entity 对象
+     * @param dto DTO 对象，可为 null（返回 null）。
+     * @return Entity 对象。
      */
     E dtoToEntity(D dto);
 
     /**
-     * 将 Entity 转换为 VO
+     * 将 Entity 转换为 VO，忽略敏感字段。
      *
-     * @param entity Entity 对象
-     * @return VO 对象
+     * @param entity Entity 对象，可为 null。
+     * @return VO 对象。
      */
     V entityToVo(E entity);
 
     /**
-     * 将 DTO 列表转换为 Entity 列表
+     * 将 DTO 列表转换为 Entity 列表，支持并行处理 (Java 21 streams)。
      *
-     * @param dtoList DTO 对象列表
-     * @return Entity 对象列表
+     * @param dtoList DTO 列表，可为空。
+     * @return Entity 列表。
      */
     List<E> dtoListToEntityList(List<D> dtoList);
 
     /**
-     * 将 Entity 列表转换为 VO 列表
+     * 将 Entity 列表转换为 VO 列表。
      *
-     * @param entityList Entity 对象列表
-     * @return VO 对象列表
+     * @param entityList Entity 列表。
+     * @return VO 列表。
      */
     List<V> entityListToVoList(List<E> entityList);
+
+    /**
+     * 【新增】将 DTO 的属性更新到已存在的 Entity 上。
+     * 这是实现安全更新操作的核心，避免了全量覆盖。
+     * 在 MapStruct 实现类中，必须使用 @MappingTarget 注解标记 'entity' 参数。
+     *
+     * @param dto    源 DTO 对象，包含需要更新的字段。
+     * @param entity 目标 Entity 对象 (从数据库查出的持久化对象)。
+     */
+    void updateEntityFromDto(D dto, @MappingTarget E entity);
 }

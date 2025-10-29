@@ -1,8 +1,10 @@
-package com.blog.config;
+package com.blog.handler;
 
 
 import com.blog.common.exception.BusinessException;
 import com.blog.common.enums.SystemErrorCode;
+import com.blog.common.exception.EntityNotFoundException;
+import com.blog.common.exception.OperationFailedException;
 import com.blog.common.model.Result;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +38,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 【优化后】处理 Spring Validation 校验失败的异常 (@RequestBody)
+     * 处理 Spring Validation 校验失败的异常 (@RequestBody)
      * <p>
      * 返回结构化的错误信息，方便前端直接使用。
      *
@@ -61,6 +63,40 @@ public class GlobalExceptionHandler {
         log.warn("参数校验失败 -> {}", errorMap);
 
         return Result.error(SystemErrorCode.VALIDATION_ERROR, errorMap);
+    }
+
+    /**
+     * 处理实体未找到异常，返回 404 Not Found
+     *
+     * @param ex EntityNotFoundException
+     * @return 统一响应
+     */
+    @ExceptionHandler(EntityNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public Result<?> handleEntityNotFoundException(EntityNotFoundException ex) {
+        log.warn("实体未找到异常 -> Code: {}, Message: {}", ex.getErrorCode().getCode(), ex.getMessage());
+        return Result.error(ex.getErrorCode());
+    }
+
+    /**
+     * 处理数据库操作失败异常
+     *
+     * @param ex OperationFailedException
+     * @return 统一响应
+     */
+    @ExceptionHandler(OperationFailedException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR) // 操作失败是服务端问题，返回 500
+    public Result<?> handleOperationFailedException(OperationFailedException ex) {
+        // 使用 error 级别记录，因为它通常表示一个需要关注的服务端问题
+        log.error("操作失败异常 -> Code: {}, Message: {}, Payload: {}",
+                ex.getErrorCode().getCode(),
+                ex.getMessage(),
+                // 记录下导致失败的数据，极大地帮助问题排查
+                ex.getPayload() != null ? ex.getPayload().toString() : "N/A",
+                ex // 打印堆栈信息
+        );
+        // 你可以选择只返回通用错误信息，或将异常 message 返回给前端
+        return Result.error(ex.getErrorCode(), ex.getMessage());
     }
 
     /**

@@ -8,7 +8,7 @@ import lombok.Data;
 @Data
 @TableName("test_entity") // MyBatis-Plus 注解
 public class TestEntity {
-    @TableId(type = IdType.AUTO)
+    @TableId()
     private Long id;
     private String name;
 }

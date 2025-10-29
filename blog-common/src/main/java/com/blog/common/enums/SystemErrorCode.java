@@ -10,11 +10,12 @@ public enum SystemErrorCode implements ErrorCode {
     INVALID_PARAMETER(1002, "参数错误"),
     VALIDATION_ERROR(1003, "参数校验失败"),
     RESOURCE_NOT_FOUND(1004, "资源未找到"),
-    
+    OPERATION_FAILED(1005, "操作失败"),
+
     // ========== 用户业务错误码 (2000-2999) ==========
     USER_NOT_FOUND(2001, "用户不存在"),
     USER_PASSWORD_ERROR(2002, "用户名或密码错误"),
-    
+
     // ========== 文章业务错误码 (3000-3999) ==========
     ARTICLE_NOT_FOUND(3001, "文章不存在");
 
