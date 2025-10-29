@@ -1,7 +1,6 @@
 {
-
-  "label": "教程-基础知识",
-  "position": 3,
+  "label": "模块-介绍",
+  "position": 2,
   "link": {
     "type": "generated-index",
     "description": "15 minutes to learn the most important Docusaurus concepts."
