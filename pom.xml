@@ -40,7 +40,7 @@
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version> <!-- 新增: 增强 Lombok 与 MapStruct 协作 -->
         <git-commit-id-maven-plugin.version>9.0.2</git-commit-id-maven-plugin.version>
         <!-- 常用工具库 -->
-        <commons-lang3.version>3.18.0</commons-lang3.version>
+        <commons-lang3.version>3.19.0</commons-lang3.version>
         <commons-collections4.version>4.5.0</commons-collections4.version>
         <commons-io.version>2.20.0</commons-io.version>
         <guava.version>33.5.0-jre</guava.version>
