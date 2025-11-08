@@ -4,7 +4,10 @@ spring:
     driver-class-name: org.h2.Driver
     username: sa
     password:
-
+  boot:
+    admin:
+      client:
+        enabled: false
   # 明确指示 Spring Boot 在测试启动时执行 schema.sql
   sql:
     init:
