@@ -26,11 +26,11 @@ import java.util.concurrent.TimeUnit;
  *     <li><b>标准日志:</b> 全面采用 SLF4J 的参数化日志格式 (e.g., `log.debug("模板: {}", arg)`)，以获得最佳性能和代码可读性。</li>
  *     <li><b>完全中文化:</b> 所有日志输出和校验异常信息均已更新为中文，提升团队协作效率。</li>
  *     <li><b>代码健壮性:</b> 通过提取私有校验方法减少了重复代码，并使用 {@link Optional} 增强了类型安全，有效防止空指针。</li>
- *     <li><b>功能完备:</b> 提供了对 String, Hash, Set, List 四种常用数据结构的完整操作，并支持原子性的增减和 SETNX 操作。</li>
+ *     <li><b>功能完备:</b> 提供了对 String, Hash, Set, List 四种常用数据结构的完整操作，并支持原子性的增减和 setNX 操作。</li>
  * </ol>
  *
  * @version 3.0
- * @author Your Name
+ * @author liusx
  */
 @Slf4j
 @Component
@@ -59,7 +59,7 @@ public final class RedisUtils {
      */
     public boolean hasKey(final String key) {
         checkKey(key);
-        return Boolean.TRUE.equals(redisTemplate.hasKey(key));
+        return redisTemplate.hasKey(key);
     }
 
     /**
@@ -75,7 +75,7 @@ public final class RedisUtils {
         Preconditions.checkNotNull(unit, "时间单位不能为空。");
         Preconditions.checkArgument(timeout > 0, "过期时间必须大于0。");
         log.debug("为键 '{}' 设置过期时间: {} {}", key, timeout, unit.toString().toLowerCase());
-        return Boolean.TRUE.equals(redisTemplate.expire(key, timeout, unit));
+        return redisTemplate.expire(key, timeout, unit);
     }
 
     /**
@@ -102,7 +102,7 @@ public final class RedisUtils {
     public boolean delete(final String key) {
         checkKey(key);
         log.debug("准备删除 Redis 键: '{}'", key);
-        return Boolean.TRUE.equals(redisTemplate.delete(key));
+        return redisTemplate.delete(key);
     }
 
     // ============================ String (字符串) =============================
@@ -121,7 +121,7 @@ public final class RedisUtils {
     }
 
     /**
-     * 缓存放入并设置过期时间 (SETEX)
+     * 缓存放入并设置过期时间 (setEX)
      *
      * @param key     键, 非空
      * @param value   值, 非空
@@ -134,11 +134,11 @@ public final class RedisUtils {
         Preconditions.checkNotNull(unit, "时间单位不能为空。");
         Preconditions.checkArgument(timeout > 0, "过期时间必须大于0。");
         redisTemplate.opsForValue().set(key, value, timeout, unit);
-        log.debug("Redis [SETEX] - 键: '{}', 值: '{}', 过期时间: {} {}", key, value, timeout, unit.toString().toLowerCase());
+        log.debug("Redis [setEX] - 键: '{}', 值: '{}', 过期时间: {} {}", key, value, timeout, unit.toString().toLowerCase());
     }
 
     /**
-     * 只有在 key 不存在时才设置 (SETNX)
+     * 只有在 key 不存在时才设置 (setNX)
      *
      * @param key     键, 非空
      * @param value   值, 非空
@@ -153,7 +153,7 @@ public final class RedisUtils {
         Preconditions.checkArgument(timeout > 0, "过期时间必须大于0。");
         boolean success = Boolean.TRUE.equals(redisTemplate.opsForValue().setIfAbsent(key, value, timeout, unit));
         if (success) {
-            log.debug("Redis [SETNX] 成功 - 键: '{}', 值: '{}', 过期时间: {} {}", key, value, timeout, unit.toString().toLowerCase());
+            log.debug("Redis [setNX] 成功 - 键: '{}', 值: '{}', 过期时间: {} {}", key, value, timeout, unit.toString().toLowerCase());
         }
         return success;
     }
