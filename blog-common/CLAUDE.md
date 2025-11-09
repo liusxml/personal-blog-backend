@@ -1,4 +1,4 @@
-[根目录](../CLAUDE.md) > **blog-common**
+[根目录](../../CLAUDE.md) > **blog-common**
 
 # blog-common 模块
 
@@ -18,9 +18,14 @@
 ## 关键依赖与配置
 
 ### 主要依赖
-- Lombok 1.18.32 - 减少样板代码
-- 可能包含验证注解依赖
-- 可能包含工具类依赖
+- Spring Context: 提供核心IoC功能和基础注解。
+- MyBatis-Plus: 核心类用于定义BaseService，提供IService, Wrapper, BaseMapper等。
+- Lombok: 编译期自动生成代码，减少样板代码。
+- Apache Commons Lang3/Collections4: 常用工具库，提供字符串、集合等操作。
+- Guava: Google核心库，提供集合、缓存、字符串处理等。
+- Spring Transaction: 提供事务管理能力。
+- MapStruct: 对象映射工具。
+- Spring Data Redis: 提供Redis数据访问支持。
 
 ## 数据模型
 - 通用数据转换对象（DTO）基类
@@ -41,12 +46,15 @@ A: 在适当的包结构下创建工具类，确保方法为静态且线程安�
 A: 创建全局异常处理器，定义业务异常枚举
 
 ## 相关文件清单
-- `pom.xml` - Maven配置
-- 工具类文件（待创建）
-- 异常处理文件（待创建）
-- 通用DTO/VO文件（待创建）
+- `/Users/liusx/CodeRepository/IdeaProjects/personal-blog-backend/blog-common/pom.xml` - Maven配置
+- `/Users/liusx/CodeRepository/IdeaProjects/personal-blog-backend/blog-common/src/main/java/com/blog/common/exception/BusinessException.java` - 业务异常定义
+- `/Users/liusx/CodeRepository/IdeaProjects/personal-blog-backend/blog-common/src/main/java/com/blog/common/exception/ErrorCode.java` - 错误码枚举
+- `/Users/liusx/CodeRepository/IdeaProjects/personal-blog-backend/blog-common/src/main/java/com/blog/common/model/Result.java` - 统一响应封装类
 
 ## 变更记录 (Changelog)
+
+### 2025-11-09
+- 架构师完成模块扫描，更新模块文档，补充关键依赖和相关文件清单。
 
 ### 2025-09-19
 - 创建模块文档
