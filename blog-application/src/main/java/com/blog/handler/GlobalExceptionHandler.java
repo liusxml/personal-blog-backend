@@ -16,6 +16,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -97,6 +98,25 @@ public class GlobalExceptionHandler {
         );
         // 你可以选择只返回通用错误信息，或将异常 message 返回给前端
         return Result.error(ex.getErrorCode(), ex.getMessage());
+    }
+
+    /**
+     * 【新增】处理 Spring MVC 抛出的资源未找到异常 (404 Not Found)
+     * <p>
+     * 这个处理器专门拦截 NoResourceFoundException，
+     * 防止它被最后的通用 ExceptionHandler (handleUnexpectedException) 捕获，
+     * 从而确保返回正确的 404 状态码，而不是 500。
+     *
+     * @param ex      NoResourceFoundException
+     * @param request HttpServletRequest
+     * @return 统一响应体，带有 404 语义
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND) // 明确指定HTTP状态码为 404
+    public Result<?> handleNoResourceFoundException(org.springframework.web.servlet.resource.NoResourceFoundException ex, HttpServletRequest request) {
+        log.warn("资源未找到 -> Request URI: {}, Method: {}", request.getRequestURI(), request.getMethod());
+        // 返回一个符合你项目规范的、带有404 语义的响应体
+        return Result.error(SystemErrorCode.NOT_FOUND);
     }
 
     /**

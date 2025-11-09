@@ -14,7 +14,7 @@ spring:
       name: admin # 设置登录页面的用户名
       # 【警告】生产环境严禁使用明文密码！
       # 请替换为一个强密码，并建议使用环境变量注入，例如：${ADMIN_SERVER_PASSWORD}
-      password: "s3cr3t_Adm1n_P@ssw0rd!"
+      password: "admin"
 
   # ===================================================================
   # Spring Boot Admin UI 自定义配置 (CUSTOMIZATION)
