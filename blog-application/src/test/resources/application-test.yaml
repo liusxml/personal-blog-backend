@@ -23,3 +23,14 @@ mybatis-plus:
   global-config:
     db-config:
       id-type: assign_id
+# security自定义安全配置
+app:
+  security:
+    # URL 白名单，这些路径将无需认证即可访问
+    permit-all-urls:
+      - "/v3/api-docs/**"
+      - "/swagger-ui/**"
+      - "/swagger-ui.html"
+      # 未来如果还有其他公共接口，比如登录、注册，可以直接在这里添加
+      # - "/api/auth/login"
+      # - "/api/auth/register"

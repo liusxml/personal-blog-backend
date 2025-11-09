@@ -11,6 +11,7 @@ public enum SystemErrorCode implements ErrorCode {
     VALIDATION_ERROR(1003, "参数校验失败"),
     RESOURCE_NOT_FOUND(1004, "资源未找到"),
     OPERATION_FAILED(1005, "操作失败"),
+    NOT_FOUND(404, "Not Found"),
 
     // ========== 用户业务错误码 (2000-2999) ==========
     USER_NOT_FOUND(2001, "用户不存在"),

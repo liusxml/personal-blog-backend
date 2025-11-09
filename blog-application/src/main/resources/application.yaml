@@ -4,8 +4,6 @@
 server:
   port: 8080
   # 业务端口，默认 8080
-  # 建议：生产环境可通过 nginx 反向代理，隐藏真实端口
-
 # ==============================================================
 # Spring 应用核心配置
 # ==============================================================
@@ -21,8 +19,14 @@ spring:
     admin:
       client:
         url: http://localhost:9000
+        username: admin
+        password: "admin"
         instance:
           name: ${spring.application.name}
+          service-url: http://localhost:${server.port}/
+          service-base-url:
+          management-base-url:
+          management-url: http://localhost:${management.server.port}${management.endpoints.web.base-path}
   # ------------------------------------------------------------
   # 开发工具：热重启（DevTools）
   # ------------------------------------------------------------
@@ -87,7 +91,15 @@ spring:
 
       # connection-test-query: SELECT 1
       # JDBC4 驱动已自动支持，不建议配置，HikariCP 会自动探测
-
+# security自定义安全配置
+app:
+  security:
+    # URL 白名单，这些路径将无需认证即可访问
+    permit-all-urls:
+      - "/v3/api-docs/**"
+      - "/swagger-ui/**"
+      - "/swagger-ui.html"
+      - "/actuator/**"
 # ==============================================================
 # 日志配置
 # ==============================================================
@@ -164,7 +176,6 @@ management:
     web:
       base-path: /actuator
       # 所有端点统一前缀：http://host:8081/actuator/*
-
       exposure:
         include:
           - health
@@ -195,7 +206,6 @@ management:
         # 自动生成：
         #   /actuator/health/liveness
         #   /actuator/health/readiness
-
   # ------------------------------------------------------------
   # /info 端点信息源控制（关键！）
   # ------------------------------------------------------------
