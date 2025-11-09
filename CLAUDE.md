@@ -13,6 +13,7 @@ graph TD
     A["(根) 个人博客后端"] --> B["blog-common"];
     A --> C["blog-modules"];
     A --> D["blog-application"];
+    A --> Q["blog-admin-server"];
 
     C --> E["blog-module-system"];
     C --> F["blog-module-article"];
@@ -30,6 +31,7 @@ graph TD
 
     click B "./blog-common/CLAUDE.md" "查看 blog-common 模块文档"
     click D "./blog-application/CLAUDE.md" "查看 blog-application 模块文档"
+    click Q "./blog-admin-server/CLAUDE.md" "查看 blog-admin-server 模块文档"
     click I "./blog-modules/blog-module-system/blog-system-api/CLAUDE.md" "查看 blog-system-api 模块文档"
     click J "./blog-modules/blog-module-system/blog-system-service/CLAUDE.md" "查看 blog-system-service 模块文档"
     click K "./blog-modules/blog-module-article/blog-article-api/CLAUDE.md" "查看 blog-article-api 模块文档"
@@ -46,6 +48,8 @@ graph TD
 |---------|---------|--------|
 | [blog-common](./blog-common/CLAUDE.md) | 公共基础模块，包含工具类、常量、异常处理等 | Java 21, Lombok |
 | [blog-application](./blog-application/CLAUDE.md) | 主应用启动模块，配置管理和依赖注入 | Spring Boot 3.5.5, Spring Web |
+| [blog-admin-server](./blog-admin-server/CLAUDE.md) | Spring Boot Admin 服务端，用于监控其他 Spring Boot 应用 | Spring Boot Admin |
+| [blog-modules/CLAUDE.md](./blog-modules/CLAUDE.md) | 所有业务领域模块的聚合器，本身不包含业务逻辑 | Maven |
 | [blog-system-api](./blog-modules/blog-module-system/blog-system-api/CLAUDE.md) | 系统模块API接口层，用户认证和权限管理 | Spring Web, Spring Security |
 | [blog-system-service](./blog-modules/blog-module-system/blog-system-service/CLAUDE.md) | 系统模块服务层，用户和权限业务逻辑 | Spring Data JPA, MyBatis-Plus |
 | [blog-article-api](./blog-modules/blog-module-article/blog-article-api/CLAUDE.md) | 文章模块API接口层，文章CRUD操作 | Spring Web, RESTful API |
@@ -123,6 +127,11 @@ mvn spring-boot:run -pl blog-application
 3. 敏感配置信息不应通过AI处理
 
 ## 变更记录 (Changelog)
+
+### 2025-11-09
+- 架构师完成项目扫描，更新根级架构文档与模块索引。
+- 发现并添加 `blog-admin-server` 模块到架构总览和模块索引。
+- 更新 `blog-modules` 聚合模块的描述和链接。
 
 ### 2025-09-19
 - 创建根级架构文档
