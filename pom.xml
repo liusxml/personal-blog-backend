@@ -37,6 +37,7 @@
         <!-- 开发工具 (注解处理器等) -->
         <lombok.version>1.18.42</lombok.version>
         <mapstruct.version>1.6.3</mapstruct.version>
+        <archunit.version>1.4.1</archunit.version>
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version> <!-- 新增: 增强 Lombok 与 MapStruct 协作 -->
         <git-commit-id-maven-plugin.version>9.0.2</git-commit-id-maven-plugin.version>
         <!-- 常用工具库 -->
@@ -46,6 +47,8 @@
         <guava.version>33.5.0-jre</guava.version>
         <!-- Maven 插件 -->
         <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
+        <!-- 监控与指标 -->
+        <micrometer.version>1.16.0</micrometer.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -151,6 +154,19 @@
                 <artifactId>mapstruct</artifactId>
                 <version>${mapstruct.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.tngtech.archunit</groupId>
+                <artifactId>archunit-junit5</artifactId>
+                <version>${archunit.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-bom</artifactId>
+                <version>${micrometer.version}</version>
+                <type>pom</type>
+            </dependency>
+
             <!-- =================================================== -->
             <!-- ============= 项目内部模块版本管理 ============= -->
             <!-- =================================================== -->

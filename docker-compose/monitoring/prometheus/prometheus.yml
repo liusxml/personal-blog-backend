@@ -1,0 +1,22 @@
+# --------------------------------------------------------------
+# Prometheus 全局配置
+# --------------------------------------------------------------
+global:
+  scrape_interval: 15s      # 全局抓取间隔（每 15 秒拉一次指标）
+  evaluation_interval: 15s  # 规则评估间隔（每 15 秒执行一次告警规则）
+
+# --------------------------------------------------------------
+# 抓取目标（scrape_configs）
+# --------------------------------------------------------------
+scrape_configs:
+  - job_name: 'blog-app'                     # 任务名称，Grafana 中会显示为 job=blog-app
+    metrics_path: '/actuator/prometheus'     # Spring Boot Actuator 的 Prometheus 端点路径
+    # ------------------------------------------------------------
+    # 静态目标配置（static_configs）
+    # ------------------------------------------------------------
+    static_configs:
+      # Docker Desktop（Mac/Windows）使用 host.docker.internal 访问宿主机
+      # Linux 环境请替换为宿主机真实 IP，例如 192.168.1.100:8081 host.docker.internal
+      - targets: ['host.docker.internal:8081']
+        labels:                               # 自定义标签，Grafana 可按标签过滤
+          application: 'personal-blog-service' # 与 Spring Boot application.name 保持一致

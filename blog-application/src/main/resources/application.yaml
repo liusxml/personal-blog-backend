@@ -4,12 +4,13 @@
 server:
   port: 8080
   # 业务端口，默认 8080
+
 # ==============================================================
 # Spring 应用核心配置
 # ==============================================================
 spring:
   profiles:
-     active: dev               # 取消注释可激活特定 profile（如 dev、prod）
+    active: dev               # 取消注释可激活特定 profile（如 dev、prod）
   application:
     name: personal-blog-service
     # 应用名称，用于日志、监控、注册中心（如 Nacos、Eureka）等
@@ -91,6 +92,7 @@ spring:
 
       # connection-test-query: SELECT 1
       # JDBC4 驱动已自动支持，不建议配置，HikariCP 会自动探测
+
 # security自定义安全配置
 app:
   security:
@@ -100,6 +102,7 @@ app:
       - "/swagger-ui/**"
       - "/swagger-ui.html"
       - "/actuator/**"
+
 # ==============================================================
 # 日志配置
 # ==============================================================
@@ -170,7 +173,7 @@ management:
     # 建议：生产环境通过防火墙限制 8081 仅内部访问
 
   # ------------------------------------------------------------
-  # 端点暴露白名单（安全控制）
+  # 端点暴露白名单（安全控制，已添加 prometheus）
   # ------------------------------------------------------------
   endpoints:
     web:
@@ -187,6 +190,7 @@ management:
           - mappings
           - threaddump
           - auditevents
+          - prometheus  # 暴露 Prometheus 专用端点，用于 Grafana 拉取指标
         # 白名单模式，显式声明暴露的端点
         # 警告：生产环境禁止使用 '*'，会暴露敏感信息（如 env、beans）
 
@@ -199,13 +203,9 @@ management:
       # always：始终显示详细信息（数据库、磁盘等）
       # when_authorized：仅授权用户可见（生产推荐）
       # never：仅显示 UP/DOWN
-
       probes:
         enabled: true
-        # 启用 Kubernetes Liveness/Readiness 探针
-        # 自动生成：
-        #   /actuator/health/liveness
-        #   /actuator/health/readiness
+
   # ------------------------------------------------------------
   # /info 端点信息源控制（关键！）
   # ------------------------------------------------------------
@@ -224,6 +224,26 @@ management:
     build:
       enabled: true
       # 启用构建信息（需配合 spring-boot-maven-plugin 的 build-info goal）
+
+  # ------------------------------------------------------------
+  # 指标配置（修正：Micrometer + Prometheus 导出）
+  # ------------------------------------------------------------
+  metrics:
+    enable:
+      jvm: true          # 启用 JVM 指标（内存、GC 等）
+      system: true       # 系统指标（CPU、磁盘）
+      http.server.requests: true  # HTTP 请求指标（延迟、错误率）
+      datasource: true   # 数据源指标（连接池使用率）
+    tags:
+      application: ${spring.application.name}  # 全局标签，便于多实例/微服务区分
+
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+        descriptions: true
+        step: 1m
+
 # ==============================================================
 # /info 端点展示的应用信息（Maven 资源占位符）
 # ==============================================================
@@ -243,7 +263,7 @@ info:
 
     java:
       version: '@java.version@'
-      # 替换为编译时 JDK 版本（如 17）
+      # 替换为编译时 JDK 版本（如 21）
 
 # --------------------------------------------------------------
 # 重要提醒：
@@ -256,4 +276,9 @@ info:
 #    - 密码使用 ${ENV_VAR} 或 Jasypt
 #    - management.info.env.enabled=true 可关闭（避免泄露）
 #    - health.show-details=when_authorized
+#    - 新增：为 /actuator/prometheus 添加 Security 认证（见下文代码）
+# 4. Prometheus 集成：
+#    - 访问 http://localhost:8081/actuator/prometheus 查看指标
+#    - Grafana 数据源 URL: http://localhost:8081/actuator/prometheus
+#    - 后期微服务：每个服务独立配置此部分，支持服务发现（如 Eureka）
 # --------------------------------------------------------------
