@@ -1,0 +1,34 @@
+# --------------------------------------------------------------
+# 服务定义
+# --------------------------------------------------------------
+services:
+  # ---------- Prometheus ----------
+  prometheus:
+    image: prom/prometheus:latest                 # 官方最新 Prometheus 镜像
+    container_name: prometheus                    # 容器名，便于 docker ps 查看
+    restart: unless-stopped                       # 容器异常退出自动重启
+    ports:
+      - "9090:9090"                               # 宿主机:容器 映射，访问 http://localhost:9090
+    volumes:
+      # 将本地的 prometheus.yaml 挂载为只读，防止容器内部误改
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'   # 显式指定配置文件路径
+      - '--storage.tsdb.path=/prometheus'                # 时序数据库存储目录
+      - '--web.enable-lifecycle'                         # 开启 HTTP API 热重载（curl -X POST http://localhost:9090/-/reload）
+
+  # ---------- Grafana ----------
+  grafana:
+    image: grafana/grafana:latest                 # 官方最新 Grafana 镜像
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"                               # 宿主机:容器 映射，访问 http://localhost:3000
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin              # 初始管理员用户名
+      - GF_SECURITY_ADMIN_PASSWORD=admin123       # 初始密码（生产务必改强密码或使用外部认证）
+    volumes:
+      # 数据持久化目录，容器重启后仪表盘、数据源、用户等保持不变
+      - ./grafana:/var/lib/grafana
+    depends_on:
+      - prometheus                                # 启动顺序：先启动 Prometheus 再启动 Grafana
