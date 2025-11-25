@@ -243,7 +243,14 @@ management:
         enabled: true
         descriptions: true
         step: 1m
-
+bitiful:
+  endpoint: s3.bitiful.net
+  access-key: 5oiuy2PyCxTcLhbiWiiI8B94  # 环境变量注入
+  secret-key: vQePmfZ622H7A7JUV9txW4txFe2QeXX
+  bucket: blog-module-file
+  region: cn-east-1
+oss:
+  type: BITIFUL
 # ==============================================================
 # /info 端点展示的应用信息（Maven 资源占位符）
 # ==============================================================

@@ -34,3 +34,20 @@ app:
       # 未来如果还有其他公共接口，比如登录、注册，可以直接在这里添加
       # - "/api/auth/login"
       # - "/api/auth/register"
+bitiful:
+  endpoint: https://s3.bitiful.net/
+  access-key: test-access-key
+  secret-key: test-secret-key
+  bucket: blog-files-test
+  region: cn-east-1
+  max-file-size: 10485760  # 10MB
+  allowed-extensions:
+    - jpg
+    - jpeg
+    - png
+    - gif
+    - webp
+    - pdf
+    - docx
+oss:
+  type: BITIFUL
