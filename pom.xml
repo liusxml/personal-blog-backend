@@ -24,7 +24,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- 核心框架 -->
         <spring-boot.version>3.5.7</spring-boot.version>
-        <spring-boot-admin.version>3.5.5</spring-boot-admin.version>
+        <spring-boot-admin.version>3.5.6</spring-boot-admin.version>
         <!-- 持久化与数据库 -->
         <mybatis-plus.version>3.5.14</mybatis-plus.version>
         <mysql-connector.version>9.4.0</mysql-connector.version> <!-- 新增: 数据库驱动 -->
