@@ -7,9 +7,14 @@ import com.baomidou.mybatisplus.core.metadata.TableInfo;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.blog.common.exception.BusinessException;
 import com.blog.common.exception.EntityNotFoundException;
 import com.blog.common.exception.OperationFailedException;
+import com.blog.common.enums.SystemErrorCode;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
 import org.apache.commons.collections4.CollectionUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
@@ -41,8 +46,30 @@ public abstract class BaseServiceImpl<M extends BaseMapper<E>, E, V, D extends I
 
     protected final C converter;
 
+    @Autowired(required = false)
+    private Validator validator;
+
     protected BaseServiceImpl(C converter) {
         this.converter = converter;
+    }
+
+    /**
+     * 校验 DTO 对象，如果校验失败则抛出 BusinessException。
+     * 如果未配置 Validator Bean（例如测试环境），则跳过校验。
+     *
+     * @param dto 待校验的 DTO 对象
+     */
+    protected void validate(D dto) {
+        if (validator == null) {
+            return;
+        }
+        var violations = validator.validate(dto);
+        if (!violations.isEmpty()) {
+            ConstraintViolation<D> firstViolation = violations.iterator().next();
+            throw new BusinessException(
+                    SystemErrorCode.PARAM_ERROR,
+                    firstViolation.getPropertyPath() + ": " + firstViolation.getMessage());
+        }
     }
 
     @Override
@@ -69,6 +96,7 @@ public abstract class BaseServiceImpl<M extends BaseMapper<E>, E, V, D extends I
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Serializable saveByDto(D dto) {
+        validate(dto);
         E entity = converter.dtoToEntity(dto);
         preSave(entity); // 执行预保存钩子
         if (!this.save(entity)) {
@@ -82,6 +110,7 @@ public abstract class BaseServiceImpl<M extends BaseMapper<E>, E, V, D extends I
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean updateByDto(D dto) {
+        validate(dto);
         // 1. 从 DTO 中自动获取主键 ID
         Serializable id = getEntityIdFromDto(dto);
         Assert.notNull(id, "更新失败：无法从 DTO 中获取主键 ID。");
@@ -105,11 +134,7 @@ public abstract class BaseServiceImpl<M extends BaseMapper<E>, E, V, D extends I
 
     @Override
     public boolean removeById(Serializable id) {
-        boolean removed = super.removeById(id);
-        if (!removed) {
-            throw new EntityNotFoundException(this.getEntityClass().getSimpleName(), id);
-        }
-        return true;
+        return super.removeById(id);
     }
 
     @Override
@@ -132,6 +157,12 @@ public abstract class BaseServiceImpl<M extends BaseMapper<E>, E, V, D extends I
         if (CollectionUtils.isEmpty(dtoList)) {
             return true;
         }
+        // ⚠️ 警告：
+        // 1. 批量更新直接将 DTO 转为 Entity，不执行 "查 -> 改" 的增量更新逻辑。
+        // 2. 如果 DTO 为部分字段，转换后的 Entity 中未赋值字段可能为 null。
+        // 3. preUpdate 钩子拿到的 Entity 可能是不完整的（取决于 DTO 内容）。
+        // 4. MyBatis-Plus 默认只更新非 null 字段，所以数据库数据是安全的，但内存逻辑需谨慎。
+
         // 1. 将 DTO 列表转换为 Entity 列表
         List<E> entities = converter.dtoListToEntityList(dtoList);
         // 2. 批量执行预更新钩子
@@ -168,18 +199,22 @@ public abstract class BaseServiceImpl<M extends BaseMapper<E>, E, V, D extends I
          * 子类中的实现示例：
          *
          * @Override
+         * 
          * @Transactional(readOnly = true)
-         * public void streamVo(Wrapper<User> queryWrapper, StreamProcessor<UserVO> processor) {
-         *     // 假设 userMapper 中有一个 streamList(Wrapper) 方法
-         *     try (Stream<User> entityStream = baseMapper.streamList(queryWrapper)) {
-         *         processor.process(entityStream.map(converter::entityToVo));
-         *     }
+         * public void streamVo(Wrapper<User> queryWrapper, StreamProcessor<UserVO>
+         * processor) {
+         * // 假设 userMapper 中有一个 streamList(Wrapper) 方法
+         * try (Stream<User> entityStream = baseMapper.streamList(queryWrapper)) {
+         * processor.process(entityStream.map(converter::entityToVo));
+         * }
          * }
          *
          * 对应的 UserMapper.java:
          *
          * @Select("SELECT * FROM user")
+         * 
          * @Options(resultSetType = ResultSetType.FORWARD_ONLY, fetchSize = 1000)
+         * 
          * @ResultType(User.class)
          * Stream<User> streamList(@Param(Constants.WRAPPER) Wrapper<User> wrapper);
          */
