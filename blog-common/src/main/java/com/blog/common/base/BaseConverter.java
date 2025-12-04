@@ -9,6 +9,12 @@ import java.util.List;
  * <p>
  * 设计为 MapStruct 实现，提供零配置映射。支持 Spring Boot 3 依赖注入。
  * 方法确保 null 安全和批量效率。
+ * <p>
+ * ⚠️ 最佳实践：
+ * 实现类应添加
+ * {@code @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)}
+ * 以确保 {@link #updateEntityFromDto(Object, Object)} 执行时，DTO 中的 null 值不会覆盖 Entity
+ * 中的现有值。
  *
  * @param <D> DTO 类型。
  * @param <E> Entity 类型。
