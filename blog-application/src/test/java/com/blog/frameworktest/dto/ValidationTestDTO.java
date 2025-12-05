@@ -1,20 +1,23 @@
 // file: src/test/java/com/blog/frameworktest/model/ValidationTestDTO.java
 package com.blog.frameworktest.dto;
 
-import com.blog.frameworktest.vo.NullMessage;
+import com.blog.common.base.Identifiable;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
+import java.io.Serializable;
+
 @Data
-public class ValidationTestDTO {
+public class ValidationTestDTO implements Identifiable<Long>, Serializable {
+    private Long id;
+
     /**
      * 一个标准的校验注解，它总会生成一个非null的错误消息
      */
     @NotBlank
     private String normalField;
     /**
-     * 我们自定义的校验注解，用于模拟生成一个null的错误消息
+     * 用于测试校验的字段
      */
-    @NullMessage
     private String fieldWithNullMessage;
 }
