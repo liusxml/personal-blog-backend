@@ -1,49 +1,51 @@
-# ==============================================================
-# 服务器配置
-# ==============================================================
+# ==============================================================================
+#  Personal Blog Backend - Application Configuration
+#  Author: liusxml
+# ==============================================================================
+
+# ==============================================================================
+#  1. 服务器配置 (Server)
+# ==============================================================================
 server:
-  port: 8080
-  # 业务端口，默认 8080
+  port: 8080                                    # 业务端口
 
-# ==============================================================
-# Spring 应用核心配置
-# ==============================================================
+# ==============================================================================
+#  2. Spring 核心与数据源配置
+# ==============================================================================
 spring:
-  profiles:
-    active: dev               # 取消注释可激活特定 profile（如 dev、prod）
   application:
-    name: personal-blog-service
-    # 应用名称，用于日志、监控、注册中心（如 Nacos、Eureka）等
-    # 强烈建议：生产环境保持唯一、稳定
+    name: personal-blog-service                 # 应用名称，用于注册中心和监控
 
+  profiles:
+    active: dev                                 # 当前激活的环境 (dev/prod)
+
+  # ------------------------------------------------------------
+  # 开发工具
+  # ------------------------------------------------------------
+  devtools:
+    restart:
+      exclude: "db/**"                          # 排除db目录文件的热加载
+
+  # ------------------------------------------------------------
+  # Spring Boot Admin 客户端配置
+  # ------------------------------------------------------------
   boot:
     admin:
       client:
-        url: http://localhost:9000
+        url: http://localhost:9000              # Admin Server 地址
         username: admin
         password: "admin"
         instance:
           name: ${spring.application.name}
           service-url: http://localhost:${server.port}/
-          service-base-url:
-          management-base-url:
           management-url: http://localhost:${management.server.port}${management.endpoints.web.base-path}
-  # ------------------------------------------------------------
-  # 开发工具：热重启（DevTools）
-  # ------------------------------------------------------------
-  devtools:
-    restart:
-      exclude: "db/**"
-      # 排除 db 目录下的文件变更不触发重启
-      # 防止数据库脚本、SQL 文件变更导致频繁重启
 
   # ------------------------------------------------------------
-  # 数据库数据源配置（HikariCP 连接池）
+  # 数据源配置 (HikariCP)
   # ------------------------------------------------------------
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    # MySQL 8+ 驱动，推荐使用 cj 版本（支持时区、SSL 等）
-
+    type: com.zaxxer.hikari.HikariDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver # MySQL 8+ 驱动
     url: >-
       jdbc:mysql://127.0.0.1:3306/blog_db?
       useUnicode=true&
@@ -51,136 +53,67 @@ spring:
       serverTimezone=Asia/Shanghai&
       allowPublicKeyRetrieval=true&
       useSSL=false
-    # 关键参数说明：
-    # - useUnicode + characterEncoding：防止中文乱码
-    # - serverTimezone：避免时区错误（MySQL 8+ 必须）
-    # - allowPublicKeyRetrieval：防止 RSA 公钥获取失败（常见于高版本 MySQL）
-    # - useSSL=false：本地开发关闭 SSL，生产建议开启
-
     username: root
-    password: s3cr3t_r00t_p@ssw0rd
-    # 警告：生产环境严禁明文密码！建议使用：
-    #   - 环境变量：${DB_PASSWORD}
-    #   - Jasypt 加密
-    #   - Spring Cloud Config
-
-    type: com.zaxxer.hikari.HikariDataSource
-    # 显式指定连接池类型（Spring Boot 默认就是 HikariCP）
-
+    password: s3cr3t_r00t_p@ssw0rd              # ⚠️ 生产环境请使用加密密码或环境变量
+    
+    # HikariCP 连接池优化配置
     hikari:
-      maximum-pool-size: 20
-      # 最大连接数，核心性能参数
-      # 建议：根据 CPU 核数 × 2 ~ 4 + 磁盘 I/O 能力调整
-      # 经验公式：(核心数 × 2) + 有效磁盘数
+      maximum-pool-size: 20                     # 最大连接数 (CPU核数*2 + 磁盘数)
+      minimum-idle: 20                          # 最小空闲连接数
+      connection-timeout: 30000                 # 连接超时时间(ms)
+      idle-timeout: 600000                      # 空闲存活时间(ms)
+      max-lifetime: 1800000                     # 连接最大生命周期(ms)
 
-      minimum-idle: 20
-      # 最小空闲连接数
-      # 最佳实践：与 maximum-pool-size 保持一致，避免连接频繁创建/销毁
+# ==============================================================================
+#  3. 持久层配置 (MyBatis-Plus)
+# ==============================================================================
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml # Mapper XML 扫描路径
+  type-aliases-package: com.blog.**.entity      # 实体别名包
+  
+  global-config:
+    banner: false                               # 关闭启动 Banner
+    db-config:
+      id-type: assign_uuid                      # 主键策略
+      logic-delete-field: isDeleted             # 逻辑删除字段
+      logic-delete-value: 1                     # 删除值
+      logic-not-delete-value: 0                 # 未删除值
+      
+  configuration:
+    map-underscore-to-camel-case: true          # 开启驼峰命名转换
+    call-setters-on-nulls: true                 # NULL值也调用Setter
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl # SQL日志实现
 
-      connection-timeout: 30000
-      # 获取连接超时时间（毫秒），默认 30 秒
-      # 超时后抛出 SQLException，建议不超过 30s
-
-      idle-timeout: 600000
-      # 空闲连接存活时间（10 分钟）
-      # 超过此时间未被使用的连接将被回收
-
-      max-lifetime: 1800000
-      # 连接最大存活时间（30 分钟）
-      # 必须 < MySQL wait_timeout（默认 8 小时），防止连接被数据库主动断开
-      # 推荐：1800000 ~ 1740000（29 分）
-
-      # connection-test-query: SELECT 1
-      # JDBC4 驱动已自动支持，不建议配置，HikariCP 会自动探测
-
-# security自定义安全配置
+# ==============================================================================
+#  4. 安全配置 (Custom Security)
+# ==============================================================================
 app:
   security:
-    # URL 白名单，这些路径将无需认证即可访问
+    # 鉴权白名单 (无需登录即可访问)
     permit-all-urls:
       - "/v3/api-docs/**"
       - "/swagger-ui/**"
       - "/swagger-ui.html"
       - "/actuator/**"
 
-# ==============================================================
-# 日志配置
-# ==============================================================
-logging:
-  level:
-    root: INFO
-    # 全局默认日志级别
+    # JWT 认证配置
+    jwt-secret: dev-blog-jwt-secret-key-minimum-256-bits-change-in-production-environment
+    # ⚠️ 生产环境建议通过环境变量注入: ${JWT_SECRET}
+    
+    jwt-expiration: 7200000                     # Token有效期 (ms), 2小时
 
-    com.blog: INFO
-    # 项目业务包日志级别，开发时可改为 DEBUG
-
-    com.baomidou.mybatisplus.extension.ddl: INFO
-    # MyBatis-Plus DDL 自动建表日志，生产建议关闭或 WARN
-
-    org.springframework.web: INFO
-    # Spring Web 请求日志，DEBUG 会打印所有请求参数
-
-# ==============================================================
-# MyBatis-Plus 配置
-# ==============================================================
-mybatis-plus:
-  # Mapper XML 文件扫描路径
-  mapper-locations: classpath*:/mapper/**/*.xml
-  # 支持多模块、多 JAR 包扫描
-
-  # 实体类别名包路径
-  type-aliases-package: com.blog.**.entity
-  # 允许在 XML 中直接使用类名（如 User）而非全限定名
-
-  global-config:
-    banner: false
-    # 关闭启动时 MyBatis-Plus 的 Banner 打印，保持控制台清洁
-
-    db-config:
-      id-type: assign_uuid
-      # 主键策略：数据库自增（推荐）
-      # 其他选项：ASSIGN_ID（雪花算法）、ASSIGN_UUID
-
-      logic-delete-field: isDeleted
-      # 逻辑删除全局字段名（必须与实体 @TableLogic 一致）
-
-      logic-delete-value: 1
-      logic-not-delete-value: 0
-      # 逻辑删除值：1=已删除，0=未删除
-      # 配合 @TableLogic 实现软删除
-
-  configuration:
-    map-underscore-to-camel-case: true
-    # 自动将下划线字段映射为驼峰属性（如 create_time → createTime）
-
-    call-setters-on-nulls: true
-    # 查询结果为 null 时仍调用 setter
-    # 避免 int、boolean 等基本类型字段被默认值覆盖（如 int 默认 0）
-
-    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
-    # 使用 SLF4J 打印 SQL，配合 logging.level.com.blog=DEBUG 可查看执行 SQL
-
-# ==============================================================
-# Spring Boot Actuator 监控配置
-# ==============================================================
+# ==============================================================================
+#  5. 监控与管理 (Actuator)
+# ==============================================================================
 management:
-  # ------------------------------------------------------------
-  # 管理端口隔离（安全最佳实践）
-  # ------------------------------------------------------------
   server:
-    port: 8081
-    # 业务端口 8080，管理端口 8081
-    # 建议：生产环境通过防火墙限制 8081 仅内部访问
-
-  # ------------------------------------------------------------
-  # 端点暴露白名单（安全控制，已添加 prometheus）
-  # ------------------------------------------------------------
+    port: 8081                                  # 独立的管理端口，增强安全性
+    
   endpoints:
     web:
       base-path: /actuator
-      # 所有端点统一前缀：http://host:8081/actuator/*
       exposure:
-        include:
+        include:                                # 暴露的端点
           - health
           - info
           - metrics
@@ -190,102 +123,69 @@ management:
           - mappings
           - threaddump
           - auditevents
-          - prometheus  # 暴露 Prometheus 专用端点，用于 Grafana 拉取指标
-        # 白名单模式，显式声明暴露的端点
-        # 警告：生产环境禁止使用 '*'，会暴露敏感信息（如 env、beans）
-
-  # ------------------------------------------------------------
-  # 健康检查端点详细配置
-  # ------------------------------------------------------------
+          - prometheus
+          
   endpoint:
     health:
-      show-details: always
-      # always：始终显示详细信息（数据库、磁盘等）
-      # when_authorized：仅授权用户可见（生产推荐）
-      # never：仅显示 UP/DOWN
+      show-details: always                      # 显示详细健康信息
       probes:
-        enabled: true
+        enabled: true                           # 启用 K8s 探针
 
-  # ------------------------------------------------------------
-  # /info 端点信息源控制（关键！）
-  # ------------------------------------------------------------
-  info:
-    env:
-      enabled: true
-      # 启用后，自动读取 application.yaml 中所有 info.* 配置
-      # 必须开启，否则 @project.name@ 等占位符不会显示
-
-    git:
-      enabled: true
-      mode: full
-      # 启用 Git 信息展示（需配合 git-commit-id-maven-plugin）
-      # mode: full 显示完整信息，simple 仅 commit.id 和 branch
-
-    build:
-      enabled: true
-      # 启用构建信息（需配合 spring-boot-maven-plugin 的 build-info goal）
-
-  # ------------------------------------------------------------
-  # 指标配置（修正：Micrometer + Prometheus 导出）
-  # ------------------------------------------------------------
   metrics:
     enable:
-      jvm: true          # 启用 JVM 指标（内存、GC 等）
-      system: true       # 系统指标（CPU、磁盘）
-      http.server.requests: true  # HTTP 请求指标（延迟、错误率）
-      datasource: true   # 数据源指标（连接池使用率）
+      jvm: true
+      system: true
+      http.server.requests: true
+      datasource: true
     tags:
-      application: ${spring.application.name}  # 全局标签，便于多实例/微服务区分
+      application: ${spring.application.name}   # 普罗米修斯标签
 
   prometheus:
     metrics:
       export:
         enabled: true
-        descriptions: true
         step: 1m
+        descriptions: true
+
+  info:
+    env:
+      enabled: true                             # 显示环境信息
+    git:
+      enabled: true                             # 显示 Git 构建信息 (需插件支持)
+    build:
+      enabled: true                             # 显示构建信息
+
+# ==============================================================================
+#  6. 日志配置 (Logging)
+# ==============================================================================
+logging:
+  level:
+    root: INFO                                  # 全局日志级别
+    com.blog: INFO                              # 业务包日志级别
+    com.baomidou.mybatisplus.extension.ddl: INFO # DDL日志
+    org.springframework.web: INFO               # Web 日志
+
+# ==============================================================================
+#  7. 第三方服务 (OSS / Bitiful)
+# ==============================================================================
 bitiful:
   endpoint: https://s3.bitiful.net
-  access-key: 5oiuy2PyCxTcLhbiWiiI8B94  # 环境变量注入
-  secret-key: vQePmfZ622H7A7JUV9txW4txFe2QeXX
+  access-key: 5oiuy2PyCxTcLhbiWiiI8B94          # ⚠️ 建议使用环境变量
+  secret-key: vQePmfZ622H7A7JUV9txW4txFe2QeXX   # ⚠️ 建议使用环境变量
   bucket: blog-module-file
   region: cn-east-1
+
 oss:
-  type: BITIFUL
-# ==============================================================
-# /info 端点展示的应用信息（Maven 资源占位符）
-# ==============================================================
+  type: BITIFUL                                 # OSS 类型标识
+
+# ==============================================================================
+#  8. 构建信息 (Maven Resource Filtering)
+# ==============================================================================
 info:
   app:
     name: '@project.name@'
-    # Maven 打包时替换为 pom.xml 中的 <name>
-
     description: '@project.description@'
-    # 替换为 <description>
-
     version: '@project.version@'
-    # 替换为 <version>
-
     encoding: '@project.build.sourceEncoding@'
-    # 替换为源文件编码（如 UTF-8）
-
     java:
       version: '@java.version@'
-      # 替换为编译时 JDK 版本（如 21）
-
-# --------------------------------------------------------------
-# 重要提醒：
-# 1. Maven 占位符生效条件：
-#    <resources><filtering>true</filtering></resources>
-# 2. git 和 build 信息需配置 Maven 插件：
-#    - spring-boot-maven-plugin → build-info
-#    - git-commit-id-maven-plugin → git.properties
-# 3. 生产环境建议：
-#    - 密码使用 ${ENV_VAR} 或 Jasypt
-#    - management.info.env.enabled=true 可关闭（避免泄露）
-#    - health.show-details=when_authorized
-#    - 新增：为 /actuator/prometheus 添加 Security 认证（见下文代码）
-# 4. Prometheus 集成：
-#    - 访问 http://localhost:8081/actuator/prometheus 查看指标
-#    - Grafana 数据源 URL: http://localhost:8081/actuator/prometheus
-#    - 后期微服务：每个服务独立配置此部分，支持服务发现（如 Eureka）
-# --------------------------------------------------------------

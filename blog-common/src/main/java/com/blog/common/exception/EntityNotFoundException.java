@@ -1,7 +1,5 @@
 package com.blog.common.exception;
 
-import com.blog.common.enums.SystemErrorCode;
-
 /**
  * 实体未找到异常类，用于处理资源查询失败的情况。
  * <p>
@@ -35,7 +33,7 @@ public class EntityNotFoundException extends BusinessException {
      * 带实体名称和 ID 的构造函数，生成格式化的错误消息，如 "User with ID 123 not found"。
      * 
      * @param entityName 实体名称（如 "User" 或 "Article"）
-     * @param id 实体 ID（支持任何 Serializable 类型）
+     * @param id         实体 ID（支持任何 Serializable 类型）
      */
     public EntityNotFoundException(String entityName, Object id) {
         super(SystemErrorCode.RESOURCE_NOT_FOUND, entityName + " with ID " + id + " not found");
@@ -44,8 +42,8 @@ public class EntityNotFoundException extends BusinessException {
     /**
      * 带实体名称、ID 和额外消息的构造函数，用于更复杂的场景。
      * 
-     * @param entityName 实体名称
-     * @param id 实体 ID
+     * @param entityName        实体名称
+     * @param id                实体 ID
      * @param additionalMessage 额外描述信息
      */
     public EntityNotFoundException(String entityName, Object id, String additionalMessage) {

@@ -17,17 +17,59 @@
     <description>系统模块的具体业务逻辑实现，包括用户认证、授权等。</description>
 
     <dependencies>
-        <!-- 1. 修正：为模块间依赖添加版本号 -->
+        <!-- =================================================== -->
+        <!-- ================ 项目内部模块依赖 ================ -->
+        <!-- =================================================== -->
+        
+        <!--
+         依赖本模块的 API 层，这是 Service 层的契约定义。
+         Service 模块必须依赖自己的 API 模块来实现接口。
+        -->
         <dependency>
             <groupId>com.blog</groupId>
             <artifactId>blog-system-api</artifactId>
             <version>${project.version}</version>
         </dependency>
+        
+        <!-- 依赖公共模块，获取基础服务类和工具 -->
         <dependency>
             <groupId>com.blog</groupId>
             <artifactId>blog-common</artifactId>
         </dependency>
 
+        <!-- =================================================== -->
+        <!-- ================= 安全框架依赖 ================= -->
+        <!-- =================================================== -->
+        
+        <!--
+         Spring Security：系统模块负责用户认证和授权功能。
+         需要 Spring Security 来实现密码加密、用户认证等安全功能。
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <!-- =================================================== -->
+        <!-- ================== 开发工具依赖 ================== -->
+        <!-- =================================================== -->
+        
+        <!-- Lombok：编译期代码生成工具，简化实体和服务类开发 -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        
+        <!--
+         Jakarta Servlet API：用于 Web 相关功能（如获取请求上下文）。
+         scope 为 provided，由容器提供。
+        -->
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
 </project>

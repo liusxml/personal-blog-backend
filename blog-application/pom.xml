@@ -20,134 +20,200 @@
 
     <dependencies>
         <!-- =================================================== -->
-        <!-- ============== Spring Boot 核心 Starters ============== -->
+        <!-- ========== Spring Boot 核心 Starters ========== -->
         <!-- =================================================== -->
-        <!-- Web 应用核心 -->
+        <!--
+         Spring Boot Starters 提供了快速集成各种功能的便捷方式。
+         每个 starter 都会自动引入一组相关的依赖和默认配置。
+        -->
+        
+        <!-- Web 应用核心：提供 Spring MVC、RESTful API、嵌入式 Tomcat 等 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+        
+        <!-- Bean 验证：提供 JSR-303/JSR-380 基于注解的参数校验 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
+        
+        <!-- Spring Security：应用安全、认证和授权支持 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
+        
+        <!-- Spring Security 测试支持：用于安全相关的集成测试 -->
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>de.codecentric</groupId>
-            <artifactId>spring-boot-admin-starter-client</artifactId>
-        </dependency>
+        
+        <!-- Redis 缓存：提供 Redis 客户端和 Spring 集成 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.mysql</groupId>
-            <artifactId>mysql-connector-j</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-jsqlparser</artifactId>
-        </dependency>
-        <!-- =================================================== -->
-        <!-- =================== 工具库 =================== -->
-        <!-- =================================================== -->
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-collections4</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.mapstruct</groupId>
-            <artifactId>mapstruct</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.tngtech.archunit</groupId>
-            <artifactId>archunit-junit5</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-registry-prometheus</artifactId>
-        </dependency>
-        <!-- =================================================== -->
-        <!-- ================ 项目内部业务模块 ================ -->
-        <!-- =================================================== -->
-        <!-- 依赖所有业务模块的 service 实现层 -->
-        <dependency>
-            <groupId>com.blog</groupId>
-            <artifactId>blog-system-service</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.blog</groupId>
-            <artifactId>blog-article-service</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.blog</groupId>
-            <artifactId>blog-comment-service</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.blog</groupId>
-            <artifactId>blog-file-service</artifactId>
-        </dependency>
-
-        <!-- =================================================== -->
-        <!-- ================== 开发与测试工具 ================== -->
-        <!-- =================================================== -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-devtools</artifactId>
-            <scope>runtime</scope>
-            <optional>true</optional>
-        </dependency>
-        <!--
-         优化点 4: 添加测试支持。
-         应用启动模块本身也应该有测试，例如验证整个 Spring Context 能否成功加载。
-        -->
+        
+        <!-- 测试支持：包含 JUnit 5、Mockito、Spring Test 等测试框架 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-        <!-- 添加 H2 内存数据库依赖，仅在测试范围有效 -->
+
+        <!-- =================================================== -->
+        <!-- =============== 数据访问相关依赖 =============== -->
+        <!-- =================================================== -->
+        
+        <!-- MyBatis-Plus Starter：提供 MyBatis-Plus 的 Spring Boot 自动配置 -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+        </dependency>
+        
+        <!-- MyBatis-Plus JSqlParser：SQL 解析器，用于动态 SQL 生成和分析 -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-jsqlparser</artifactId>
+        </dependency>
+        
+        <!-- MySQL 驱动：MySQL 官方 JDBC 驱动 -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+        </dependency>
+        
+        <!-- H2 内存数据库：仅用于测试环境，无需外部数据库 -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <!-- =================================================== -->
+        <!-- ============= 监控与管理相关依赖 ============= -->
+        <!-- =================================================== -->
+        
+        <!-- Actuator：提供应用监控、健康检查、指标采集等功能 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        
+        <!-- Spring Boot Admin 客户端：向监控服务端注册并上报状态 -->
+        <dependency>
+            <groupId>de.codecentric</groupId>
+            <artifactId>spring-boot-admin-starter-client</artifactId>
+        </dependency>
+        
+        <!-- Micrometer Prometheus：将指标以 Prometheus 格式暴露，供监控系统采集 -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+
+        <!-- =================================================== -->
+        <!-- ============== API 文档生成工具 ============== -->
+        <!-- =================================================== -->
+        
+        <!-- SpringDoc OpenAPI：自动生成 OpenAPI 3.0 文档和 Swagger UI -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        </dependency>
+
+        <!-- =================================================== -->
+        <!-- ============== 开发工具与工具类库 ============== -->
+        <!-- =================================================== -->
+        
+        <!-- Lombok：编译期代码生成工具 -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        
+        <!-- MapStruct：高性能 Bean 映射框架 -->
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+        </dependency>
+        
+        <!-- Apache Commons Lang3：字符串和常用工具 -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+        
+        <!-- Apache Commons Collections4：集合工具库 -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-collections4</artifactId>
+        </dependency>
+        
+        <!-- Apache Commons IO：文件和流操作工具 -->
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+        </dependency>
+        
+        <!-- Google Guava：Google 核心 Java 库 -->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </dependency>
+
+        <!-- =================================================== -->
+        <!-- ================== 架构测试 ================== -->
+        <!-- =================================================== -->
+        
+        <!-- ArchUnit：用于验证架构规则的测试框架 -->
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- =================================================== -->
+        <!-- ============== 项目内部业务模块 ============== -->
+        <!-- =================================================== -->
+        <!--
+         application 模块作为启动入口，需要聚合所有业务模块的 service 实现层。
+         这里依赖的是各个模块的 -service 包，它们会传递性地引入对应的 -api 包。
+        -->
+        
+        <!-- 基础模块：提供通用工具类和基础组件 -->
+        <dependency>
+            <groupId>com.blog</groupId>
+            <artifactId>blog-common</artifactId>
+        </dependency>
+        
+        <!-- System 模块：用户、角色、权限等系统管理功能 -->
+        <dependency>
+            <groupId>com.blog</groupId>
+            <artifactId>blog-system-service</artifactId>
+        </dependency>
+        
+        <!-- Article 模块：文章管理功能 -->
+        <dependency>
+            <groupId>com.blog</groupId>
+            <artifactId>blog-article-service</artifactId>
+        </dependency>
+        
+        <!-- Comment 模块：评论管理功能 -->
+        <dependency>
+            <groupId>com.blog</groupId>
+            <artifactId>blog-comment-service</artifactId>
+        </dependency>
+        
+        <!-- File 模块：文件上传和管理功能 -->
+        <dependency>
+            <groupId>com.blog</groupId>
+            <artifactId>blog-file-service</artifactId>
         </dependency>
     </dependencies>
     <build>

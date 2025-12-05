@@ -14,30 +14,51 @@
     <description>独立的 Spring Boot Admin 监控服务端，用于聚合展示所有微服务的健康状态和指标。</description>
 
     <dependencies>
-        <!-- Web 依赖，Admin Server 的基础 -->
+        <!-- =================================================== -->
+        <!-- ============== Spring Boot 核心依赖 ============== -->
+        <!-- =================================================== -->
+        
+        <!-- Web 依赖：Admin Server 的基础，提供 HTTP 服务和 UI 界面 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- Admin Server 核心依赖 -->
+        <!-- =================================================== -->
+        <!-- =============== Spring Boot Admin =============== -->
+        <!-- =================================================== -->
+        
+        <!--
+         Spring Boot Admin Server 核心依赖。
+         提供可视化的监控和管理界面，用于聚合展示所有微服务的健康状态和指标。
+        -->
         <dependency>
             <groupId>de.codecentric</groupId>
             <artifactId>spring-boot-admin-starter-server</artifactId>
         </dependency>
 
+        <!-- =================================================== -->
+        <!-- ================= 安全认证依赖 ================= -->
+        <!-- =================================================== -->
+        
         <!--
-          引入 Spring Security 依赖，为 Admin Server 提供安全保护
-          这是生产环境的必备项，可以防止监控端点被未授权访问，避免信息泄露。
+         Spring Security 依赖，为 Admin Server 提供安全保护。
+         这是生产环境的必备项，可以防止监控端点被未授权访问，避免信息泄露。
+         建议配置基本的 HTTP Basic 或表单登录认证。
         -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
+        <!-- =================================================== -->
+        <!-- ================= 应用监控依赖 ================= -->
+        <!-- =================================================== -->
+        
         <!--
-          引入 Actuator 依赖，实现自我监控
-          让 Admin Server 本身也暴露健康、指标等端点，确保监控中心自身的稳定性。
+         Actuator 依赖，实现 Admin Server 自我监控。
+         让 Admin Server 本身也暴露健康、指标等端点，确保监控中心自身的稳定性。
+         这样可以实现"谁来监控监控者"的需求。
         -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
