@@ -1,6 +1,5 @@
 package com.blog.common.exception;
 
-import com.blog.common.enums.SystemErrorCode;
 import lombok.Getter;
 
 /**
@@ -26,6 +25,7 @@ public class OperationFailedException extends BusinessException {
      * 默认构造函数，使用预定义的 OPERATION_FAILED 错误码和消息。
      * <p>
      * <b>注意:</b> 您需要在您的 SystemErrorCode 枚举中定义 OPERATION_FAILED，例如：
+     * 
      * <pre>{@code
      * OPERATION_FAILED(1005, "操作失败")
      * }</pre>

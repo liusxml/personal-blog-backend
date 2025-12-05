@@ -10,7 +10,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.blog.common.exception.BusinessException;
 import com.blog.common.exception.EntityNotFoundException;
 import com.blog.common.exception.OperationFailedException;
-import com.blog.common.enums.SystemErrorCode;
+import com.blog.common.exception.SystemErrorCode;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import org.apache.commons.collections4.CollectionUtils;

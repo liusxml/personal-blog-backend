@@ -17,21 +17,32 @@
     <description>评论模块的具体业务逻辑实现。</description>
 
     <dependencies>
-        <!-- 1. 核心依赖：必须依赖自己的 API 模块 -->
+        <!-- =================================================== -->
+        <!-- ================ 项目内部模块依赖 ================ -->
+        <!-- =================================================== -->
+        
+        <!--
+         依赖本模块的 API 层，这是实现契约的前提。
+         Service 层必须依赖并实现 API 中定义的接口。
+        -->
         <dependency>
             <groupId>com.blog</groupId>
             <artifactId>blog-comment-api</artifactId>
             <version>${project.version}</version>
         </dependency>
 
-        <!-- 2. 跨模块API依赖：评论服务需要校验文章是否存在，因此依赖 article-api -->
+        <!--
+         跨模块 API 依赖：评论服务需要校验文章是否存在。
+         这是合理的业务依赖，遵循"依赖于接口，而非实现"的原则。
+         注意：只依赖 article-api，不依赖 article-service，避免循环依赖。
+        -->
         <dependency>
             <groupId>com.blog</groupId>
             <artifactId>blog-article-api</artifactId>
             <version>${project.version}</version>
         </dependency>
 
-        <!-- 5. 依赖公共模块 -->
+        <!-- 依赖公共模块，获取基础服务类和工具 -->
         <dependency>
             <groupId>com.blog</groupId>
             <artifactId>blog-common</artifactId>

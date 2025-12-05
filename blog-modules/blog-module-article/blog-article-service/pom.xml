@@ -13,13 +13,20 @@
     <name>blog-article-service (Article Module Service)</name>
     <description>文章模块的具体业务逻辑实现。</description>
     <dependencies>
-        <!-- 1. 关键：必须依赖自己的 API 模块！这是实现契约的前提。 -->
+        <!-- =================================================== -->
+        <!-- ================ 项目内部模块依赖 ================ -->
+        <!-- =================================================== -->
+        
+        <!--
+         依赖本模块的 API 层，Service 实现必须依赖并实现 API 中定义的接口。
+         这是分层架构的关键：API 层定义契约，Service 层提供实现。
+        -->
         <dependency>
             <groupId>com.blog</groupId>
             <artifactId>blog-article-api</artifactId>
-            <version>${project.version}</version>
         </dependency>
-        <!-- 2. 同样可以依赖公共模块 -->
+        
+        <!-- 依赖公共模块，获取 BaseService、工具类等基础设施 -->
         <dependency>
             <groupId>com.blog</groupId>
             <artifactId>blog-common</artifactId>

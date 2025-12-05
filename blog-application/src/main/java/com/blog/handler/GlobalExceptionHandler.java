@@ -1,8 +1,7 @@
 package com.blog.handler;
 
-
 import com.blog.common.exception.BusinessException;
-import com.blog.common.enums.SystemErrorCode;
+import com.blog.common.exception.SystemErrorCode;
 import com.blog.common.exception.EntityNotFoundException;
 import com.blog.common.exception.OperationFailedException;
 import com.blog.common.model.Result;
@@ -53,8 +52,8 @@ public class GlobalExceptionHandler {
         // 核心改动：在 valueMapper 中增加对 null 的处理，防止 Collectors.toMap 抛出 NPE
         Map<String, String> errorMap = bindingResult.getFieldErrors().stream()
                 .collect(Collectors.toMap(
-                        FieldError::getField,      // key: 字段名 (方法引用)
-                        fieldError -> {            // value: 错误信息 (Lambda)
+                        FieldError::getField, // key: 字段名 (方法引用)
+                        fieldError -> { // value: 错误信息 (Lambda)
                             String message = fieldError.getDefaultMessage();
                             // 如果 message 为 null，则返回一个空字符串，保证健壮性
                             return message == null ? "" : message;
@@ -113,7 +112,8 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(NoResourceFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND) // 明确指定HTTP状态码为 404
-    public Result<?> handleNoResourceFoundException(org.springframework.web.servlet.resource.NoResourceFoundException ex, HttpServletRequest request) {
+    public Result<?> handleNoResourceFoundException(
+            org.springframework.web.servlet.resource.NoResourceFoundException ex, HttpServletRequest request) {
         log.warn("资源未找到 -> Request URI: {}, Method: {}", request.getRequestURI(), request.getMethod());
         // 返回一个符合你项目规范的、带有404 语义的响应体
         return Result.error(SystemErrorCode.NOT_FOUND);

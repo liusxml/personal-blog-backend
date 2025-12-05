@@ -1,4 +1,3 @@
-// file: blog-common/src/main/java/com/blog/common/model/Result.java
 package com.blog.common.model;
 
 import com.blog.common.exception.ErrorCode;

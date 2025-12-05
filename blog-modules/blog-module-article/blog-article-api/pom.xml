@@ -15,7 +15,14 @@
     <name>blog-article-api (Article Module API)</name>
     <description>定义文章模块的接口(API)和数据传输对象(DTO)。</description>
     <dependencies>
-        <!-- 如果有所有模块都必须使用的公共类（如BaseResponse），则引入 -->
+        <!-- =================================================== -->
+        <!-- ================ 项目内部模块依赖 ================ -->
+        <!-- =================================================== -->
+        
+        <!--
+         依赖公共模块，获取通用工具类、基础组件和 DTO 基类。
+         API 模块保持轻量，只包含接口定义和数据传输对象。
+        -->
         <dependency>
             <groupId>com.blog</groupId>
             <artifactId>blog-common</artifactId>
