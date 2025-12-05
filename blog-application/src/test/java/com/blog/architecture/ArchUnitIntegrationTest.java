@@ -1,6 +1,5 @@
 package com.blog.architecture; // 注意：这个测试类放在 architecture 包下，与其规则同源
 
-import com.blog.BlogApplication;
 import com.blog.architecture.rules.DesignPatternRule;
 import com.blog.architecture.rules.LayerRule;
 import com.blog.architecture.rules.ModuleRule;
@@ -15,8 +14,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 
 /**
  * ArchUnit 架构规则集成测试套件 v1.0
@@ -31,13 +28,11 @@ import org.springframework.test.context.ActiveProfiles;
  *
  * @author ArchUnit Team
  * @see ArchitectureTest 所有 ArchUnit 规则所需的 {@link JavaClasses} 都在此进行一次性加载和缓存。
- * 本测试类将直接引用 {@link ArchitectureTest#CLASSES} 以避免重复导入。
+ *      本测试类将直接引用 {@link ArchitectureTest#CLASSES} 以避免重复导入。
  * @see ArchRule ArchUnit 架构规则的基石，定义了代码应遵循的约束。
  * @see BeforeAll 确保在所有测试方法执行前，ArchUnit 所需的类已导入并准备就绪。
  * @since 1.0
  */
-@SpringBootTest(classes = BlogApplication.class)
-@ActiveProfiles("test")
 @DisplayName("✅ ArchUnit 架构规则集成测试套件")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class ArchUnitIntegrationTest {
@@ -129,5 +124,18 @@ public class ArchUnitIntegrationTest {
 
         DesignPatternRule.NO_MANUAL_MAPPING_IN_SERVICE.check(importedClasses);
         log.info("✅ 测试通过 (5/X): Service 层禁止手动映射规则遵守。");
+    }
+
+    /**
+     * 【第6步】测试 API 规范规则（API Standards Rules）。
+     * 验证 Controller 返回值类型、Entity 暴露等 API 设计规范。
+     */
+    @Test
+    @Order(6)
+    @DisplayName("6. 验证 API 规范规则")
+    void testApiRules() {
+        log.info("▶️ 开始测试 (6/X): API 规范规则...");
+        com.blog.architecture.rules.ApiRule.check();
+        log.info("✅ 测试通过 (6/X): API 规范规则全部遵守。");
     }
 }

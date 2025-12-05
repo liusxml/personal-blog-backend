@@ -13,7 +13,7 @@ import com.baomidou.mybatisplus.extension.plugins.inner.BlockAttackInnerIntercep
 import com.baomidou.mybatisplus.extension.plugins.inner.OptimisticLockerInnerInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
 import com.blog.BlogApplication;
-import com.blog.common.enums.SystemErrorCode;
+import com.blog.common.exception.SystemErrorCode;
 import com.blog.config.ddl.DdlInitializer;
 import com.blog.frameworktest.dto.TestDTO;
 import com.blog.frameworktest.dto.ValidationTestDTO;
@@ -60,12 +60,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * 数据库交互到Web层模拟请求的完整生命周期。通过此测试，可以极大地增强对底层框架稳定性和正确性的信心。
  *
  * @see SpringBootTest 启动一个完整的、真实的Spring Boot应用上下文，这是进行深度集成测试的基石。
- * @see ActiveProfiles 强制指定使用 "test" 配置文件 (application-test.yml)。这实现了开发、测试、生产环境的完全隔离，是专业测试实践的关键。
- * @see AutoConfigureMockMvc 自动配置 {@link MockMvc} 实例，它是模拟HTTP请求、测试Controller层的核心工具，无需手动搭建。
+ * @see ActiveProfiles 强制指定使用 "test" 配置文件
+ *      (application-test.yml)。这实现了开发、测试、生产环境的完全隔离，是专业测试实践的关键。
+ * @see AutoConfigureMockMvc 自动配置 {@link MockMvc}
+ *      实例，它是模拟HTTP请求、测试Controller层的核心工具，无需手动搭建。
  * @see Transactional 这是一个至关重要的注解。它能确保每个测试方法都在一个独立的数据库事务中运行。测试方法执行完毕后，该事务会自动回滚。
- *                  这样做的好处是，无论测试中对数据库做了任何增删改操作，都不会污染数据库，保证了每个测试用例的独立性和可重复性。
- * @see TestMethodOrder 通过 {@link MethodOrderer.OrderAnnotation} 控制测试方法的执行顺序。这使得测试流程从基础环境验证到上层业务逻辑验证，
- *                      层层递进，更具逻辑性、可读性和问题定位的便捷性。
+ *      这样做的好处是，无论测试中对数据库做了任何增删改操作，都不会污染数据库，保证了每个测试用例的独立性和可重复性。
+ * @see TestMethodOrder 通过 {@link MethodOrderer.OrderAnnotation}
+ *      控制测试方法的执行顺序。这使得测试流程从基础环境验证到上层业务逻辑验证，
+ *      层层递进，更具逻辑性、可读性和问题定位的便捷性。
  */
 @SpringBootTest(classes = BlogApplication.class)
 @ActiveProfiles("test")
@@ -87,7 +90,8 @@ public class FrameworkIntegrationTest {
     /**
      * 使用Mockito模拟 {@link DdlInitializer}。
      * <p>
-     * {@code @MockitoBean} 注解会在Spring容器中用一个“假的”、无任何操作的Bean来替换真实的 {@code DdlInitializer} Bean。
+     * {@code @MockitoBean} 注解会在Spring容器中用一个“假的”、无任何操作的Bean来替换真实的
+     * {@code DdlInitializer} Bean。
      * 这样做的【原因】是，我们不希望在运行单元测试或集成测试时，自动执行数据库的DDL（数据定义语言，如建表、删表）操作。
      * 这能使测试环境更加可控、稳定，并避免潜在的测试数据丢失风险。
      */
@@ -142,8 +146,7 @@ public class FrameworkIntegrationTest {
                 () -> assertNotNull(testService, "ITestService 应该被成功注入，不能为null"),
                 () -> assertNotNull(mockMvc, "MockMvc 应该被成功注入，不能为null"),
                 () -> assertNotNull(objectMapper, "ObjectMapper 应该被成功注入，不能为null"),
-                () -> assertNotNull(mybatisPlusInterceptor, "MybatisPlusInterceptor 应该被成功注入，不能为null")
-        );
+                () -> assertNotNull(mybatisPlusInterceptor, "MybatisPlusInterceptor 应该被成功注入，不能为null"));
         log.info("✅ 测试通过 (1/5): 应用上下文加载成功，所有核心Bean均已正确注入。");
     }
 
@@ -174,15 +177,15 @@ public class FrameworkIntegrationTest {
                 () -> assertEquals(3, appenderNames.size(), "Root Logger 应挂载 3 个 Appender"),
                 () -> assertTrue(appenderNames.contains("CONSOLE"), "应包含 CONSOLE Appender"),
                 () -> assertTrue(appenderNames.contains("ASYNC_FILE"), "应包含 ASYNC_FILE Appender"),
-                () -> assertTrue(appenderNames.contains("ERROR_FILE"), "应包含 ERROR_FILE Appender")
-        );
+                () -> assertTrue(appenderNames.contains("ERROR_FILE"), "应包含 ERROR_FILE Appender"));
 
         log.info("   - 步骤3: 深度验证 'ERROR_FILE' Appender 的过滤器行为，确保它只接受ERROR级别的日志。");
         Appender<ch.qos.logback.classic.spi.ILoggingEvent> errorAppender = rootLogger.getAppender("ERROR_FILE");
         assertNotNull(errorAppender, "ERROR_FILE appender 实例不应为 null");
 
         // 使用 getFirst() 替代 get(0)，代码更现代、更具表达力。
-        Filter<ch.qos.logback.classic.spi.ILoggingEvent> firstFilter = errorAppender.getCopyOfAttachedFiltersList().getFirst();
+        Filter<ch.qos.logback.classic.spi.ILoggingEvent> firstFilter = errorAppender.getCopyOfAttachedFiltersList()
+                .getFirst();
 
         // 使用 assertInstanceOf 替代 assertTrue，这是 JUnit 5 的推荐用法，断言更精确，失败信息更友好。
         // 同时，它会返回一个已转换类型的实例，方便后续直接调用其方法。
@@ -190,10 +193,12 @@ public class FrameworkIntegrationTest {
 
         // 通过测试过滤器的实际行为来验证其配置，而不是试图获取其内部状态。这是更健壮的测试方法。
         log.info("     - 模拟一个ERROR级别的日志事件，预期被过滤器接受(ACCEPT)。");
-        assertEquals(FilterReply.ACCEPT, levelFilter.decide(createLoggingEvent(Level.ERROR)), "LevelFilter 应接受 ERROR 级别的事件");
+        assertEquals(FilterReply.ACCEPT, levelFilter.decide(createLoggingEvent(Level.ERROR)),
+                "LevelFilter 应接受 ERROR 级别的事件");
 
         log.info("     - 模拟一个INFO级别的日志事件，预期被过滤器拒绝(DENY)。");
-        assertEquals(FilterReply.DENY, levelFilter.decide(createLoggingEvent(Level.INFO)), "LevelFilter 应拒绝 INFO 级别的事件");
+        assertEquals(FilterReply.DENY, levelFilter.decide(createLoggingEvent(Level.INFO)),
+                "LevelFilter 应拒绝 INFO 级别的事件");
 
         log.info("✅ 测试通过 (2/5): 日志系统配置正确加载，Root Logger 级别和 Appender 配置及行为均符合预期。");
     }
@@ -215,10 +220,12 @@ public class FrameworkIntegrationTest {
 
         assertAll("MyBatis-Plus插件类型验证",
                 // 使用 Stream API 的 anyMatch 方法来检查集合中是否存在指定类型的实例，代码简洁且意图明确。
-                () -> assertTrue(interceptors.stream().anyMatch(i -> i instanceof PaginationInnerInterceptor), "分页插件(PaginationInnerInterceptor)必须被加载"),
-                () -> assertTrue(interceptors.stream().anyMatch(i -> i instanceof OptimisticLockerInnerInterceptor), "乐观锁插件(OptimisticLockerInnerInterceptor)必须被加载"),
-                () -> assertTrue(interceptors.stream().anyMatch(i -> i instanceof BlockAttackInnerInterceptor), "防全表更新/删除插件(BlockAttackInnerInterceptor)必须被加载")
-        );
+                () -> assertTrue(interceptors.stream().anyMatch(i -> i instanceof PaginationInnerInterceptor),
+                        "分页插件(PaginationInnerInterceptor)必须被加载"),
+                () -> assertTrue(interceptors.stream().anyMatch(i -> i instanceof OptimisticLockerInnerInterceptor),
+                        "乐观锁插件(OptimisticLockerInnerInterceptor)必须被加载"),
+                () -> assertTrue(interceptors.stream().anyMatch(i -> i instanceof BlockAttackInnerInterceptor),
+                        "防全表更新/删除插件(BlockAttackInnerInterceptor)必须被加载"));
         log.info("✅ 测试通过 (3/5): MyBatis-Plus 核心插件已全部正确加载。");
     }
 
@@ -226,7 +233,8 @@ public class FrameworkIntegrationTest {
      * 【第4步】全流程测试基础服务和对象转换器。
      * <p>
      * 此测试模拟了一个最核心的“增查”业务场景，验证了从DTO到Entity的保存、再从数据库查询并转换为VO的完整链路：
-     * <strong>DTO -> Service -> Entity -> Mapper -> Database -> Mapper -> Entity -> Service -> VO</strong>。
+     * <strong>DTO -> Service -> Entity -> Mapper -> Database -> Mapper -> Entity ->
+     * Service -> VO</strong>。
      * 它的通过，证明了Service层、Mapper层、MyBatis-Plus以及对象转换逻辑是能够正确协同工作的。
      */
     @Test
@@ -254,8 +262,8 @@ public class FrameworkIntegrationTest {
         assertAll("验证保存后的VO对象",
                 () -> assertNotNull(savedVo, "保存后应该能查询到数据"),
                 () -> assertNotNull(savedVo != null ? savedVo.getId() : null, "保存后 VO 应该包含 ID"),
-                () -> assertEquals("test-name-from-integration-test", savedVo != null ? savedVo.getName() : null, "保存的名称应该匹配")
-        );
+                () -> assertEquals("test-name-from-integration-test", savedVo != null ? savedVo.getName() : null,
+                        "保存的名称应该匹配"));
 
         log.info("   - 步骤4: 调用 'getVoById' 使用ID精确查找，并验证转换器");
         TestVO foundVo = testService.getVoById(savedVo.getId()).orElse(null);
@@ -315,8 +323,8 @@ public class FrameworkIntegrationTest {
         log.info("   - 预期: 捕获 MethodArgumentNotValidException, 即使某字段的错误消息为null, 也应正确处理并返回结构化数据");
         // 3. 执行MockMvc请求并进行断言
         mockMvc.perform(post("/framework-test/validation")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
                 .andExpect(status().isBadRequest()) // 参数校验失败，返回 400
                 .andExpect(jsonPath("$.code").value(SystemErrorCode.VALIDATION_ERROR.getCode())) // 业务码
                 .andExpect(jsonPath("$.message").value(SystemErrorCode.VALIDATION_ERROR.getMessage())) // 统一消息
@@ -333,6 +341,7 @@ public class FrameworkIntegrationTest {
 
     /**
      * 辅助方法：获取一个Logger上所有挂载的Appender的名称列表。
+     * 
      * @param logger Logback Logger 实例
      * @return Appender 名称的列表
      */
@@ -345,6 +354,7 @@ public class FrameworkIntegrationTest {
 
     /**
      * 辅助方法：创建一个用于测试的简单日志事件（LoggingEvent）。
+     * 
      * @param level 日志事件的级别
      * @return 一个模拟的日志事件实例
      */
