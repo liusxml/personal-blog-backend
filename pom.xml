@@ -27,7 +27,7 @@
         <spring-boot-admin.version>3.5.5</spring-boot-admin.version>
         <!-- 持久化与数据库 -->
         <mybatis-plus.version>3.5.14</mybatis-plus.version>
-        <mysql-connector.version>9.4.0</mysql-connector.version> <!-- 新增: 数据库驱动 -->
+        <mysql-connector.version>9.5.0</mysql-connector.version> <!-- 新增: 数据库驱动 -->
         <!-- 安全框架 -->
         <jjwt.version>0.13.0</jjwt.version> <!-- 新增: JWT Token 处理库 -->
         <!-- API 文档 -->
