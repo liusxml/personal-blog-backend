@@ -354,13 +354,7 @@
                         <generateGitPropertiesFile>true</generateGitPropertiesFile>
                         <generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties
                         </generateGitPropertiesFilename>
-                        <includeOnlyProperties>
-                            <includeOnlyProperty>git.branch</includeOnlyProperty>
-                            <includeOnlyProperty>git.commit.id.abbrev</includeOnlyProperty>
-                            <includeOnlyProperty>git.commit.id</includeOnlyProperty>
-                            <includeOnlyProperty>git.commit.time</includeOnlyProperty>
-                            <includeOnlyProperty>git.commit.user.name</includeOnlyProperty>
-                        </includeOnlyProperties>
+
                         <failOnNoGitDirectory>false</failOnNoGitDirectory>
                     </configuration>
                 </plugin>

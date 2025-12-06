@@ -8,6 +8,12 @@
 # ==============================================================================
 server:
   port: 8080                                    # 业务端口
+  shutdown: graceful                            # 开启优雅停机
+  servlet:
+    session:
+      cookie:
+        name: BLOG_SESSION_ID                   # 避免与其他 localhost 应用 (如 SBA) 的 JSESSIONID 冲突
+
 
 # ==============================================================================
 #  2. Spring 核心与数据源配置
@@ -19,11 +25,16 @@ spring:
   profiles:
     active: dev                                 # 当前激活的环境 (dev/prod)
 
+  lifecycle:
+    timeout-per-shutdown-phase: 30s             # 优雅停机缓冲时间
+
+
   # ------------------------------------------------------------
   # 开发工具
   # ------------------------------------------------------------
   devtools:
     restart:
+      enabled: true
       exclude: "db/**"                          # 排除db目录文件的热加载
 
   # ------------------------------------------------------------
@@ -37,8 +48,9 @@ spring:
         password: "admin"
         instance:
           name: ${spring.application.name}
-          service-url: http://localhost:${server.port}/
-          management-url: http://localhost:${management.server.port}${management.endpoints.web.base-path}
+          service-url: http://localhost:${server.port}/swagger-ui.html
+          management-url: http://localhost:${server.port}${management.endpoints.web.base-path}
+          health-url: http://localhost:${server.port}${management.endpoints.web.base-path}/health  # 显式指定健康检查地址，修复因修改 service-url 导致的地址拼接错误
 
   # ------------------------------------------------------------
   # 数据源配置 (HikariCP)
@@ -106,8 +118,8 @@ app:
 #  5. 监控与管理 (Actuator)
 # ==============================================================================
 management:
-  server:
-    port: 8081                                  # 独立的管理端口，增强安全性
+  #server:
+    # port: 8081                                  # 独立的管理端口，增强安全性 (已禁用，以解决SBA权限问题)
     
   endpoints:
     web:
@@ -116,6 +128,7 @@ management:
         include:                                # 暴露的端点
           - health
           - info
+          - logfile
           - metrics
           - env
           - loggers
@@ -152,6 +165,7 @@ management:
       enabled: true                             # 显示环境信息
     git:
       enabled: true                             # 显示 Git 构建信息 (需插件支持)
+      mode: full                                # 显示详细 Git 信息 (包含提交信息等)
     build:
       enabled: true                             # 显示构建信息
 
@@ -159,6 +173,8 @@ management:
 #  6. 日志配置 (Logging)
 # ==============================================================================
 logging:
+  file:
+    name: logs/personal-blog-service.log             # 输出日志文件，供 Admin 查看
   level:
     root: INFO                                  # 全局日志级别
     com.blog: INFO                              # 业务包日志级别
@@ -189,3 +205,16 @@ info:
     encoding: '@project.build.sourceEncoding@'
     java:
       version: '@java.version@'
+
+# ==============================================================================
+#  9. SpringDoc OpenAPI 配置
+# ==============================================================================
+springdoc:
+  api-docs:
+    path: /v3/api-docs                  # OpenAPI 描述文件路径 (JSON格式)
+  swagger-ui:
+    path: /swagger-ui.html              # Swagger UI 访问路径
+    tags-sorter: alpha                  # 接口分组排序规则 (alpha=按字母顺序)
+    operations-sorter: alpha            # 接口方法排序规则 (alpha=按字母顺序)
+  packages-to-scan: com.blog            # 扫描包路径，避免扫描到框架自身的接口
+  show-actuator: true                   # 是否在 Swagger 中显示 Actuator 端点
