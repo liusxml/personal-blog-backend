@@ -116,6 +116,12 @@
             <artifactId>micrometer-registry-prometheus</artifactId>
         </dependency>
 
+        <!-- Spring Boot Devtools 热部署插件 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+        </dependency>
+
         <!-- =================================================== -->
         <!-- ============== API 文档生成工具 ============== -->
         <!-- =================================================== -->

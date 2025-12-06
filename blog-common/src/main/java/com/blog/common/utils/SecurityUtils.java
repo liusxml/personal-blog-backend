@@ -30,8 +30,7 @@ public class SecurityUtils {
      */
     public static String getCurrentUsername() {
         Authentication authentication = getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof UserDetails) {
-            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        if (authentication != null && authentication.getPrincipal() instanceof UserDetails userDetails) {
             return userDetails.getUsername();
         }
         return null;
@@ -44,8 +43,7 @@ public class SecurityUtils {
      */
     public static Long getCurrentUserId() {
         Authentication authentication = getAuthentication();
-        if (authentication != null && authentication.getDetails() instanceof JwtAuthenticationDetails) {
-            JwtAuthenticationDetails details = (JwtAuthenticationDetails) authentication.getDetails();
+        if (authentication != null && authentication.getDetails() instanceof JwtAuthenticationDetails details) {
             return details.getUserId();
         }
         return null;

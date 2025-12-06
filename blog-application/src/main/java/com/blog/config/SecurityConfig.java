@@ -178,8 +178,9 @@ public class SecurityConfig {
     @Order(3)
     public SecurityFilterChain defaultChain(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+                .formLogin(form -> form.defaultSuccessUrl("/swagger-ui.html", true)) // 启用默认表单登录并设置跳转
                 .httpBasic(Customizer.withDefaults());
         return http.build();
     }
