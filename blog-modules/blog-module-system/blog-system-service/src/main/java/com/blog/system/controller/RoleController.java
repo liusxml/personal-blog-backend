@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
@@ -45,7 +46,7 @@ public class RoleController {
      */
     @GetMapping("/{id}")
     @Operation(summary = "获取角色详情", description = "根据ID获取角色详细信息")
-    public Result<RoleVO> getRoleById(@PathVariable Long id) {
+    public Result<RoleVO> getRoleById(@PathVariable("id") Long id) {
         Optional<RoleVO> roleVO = roleService.getVoById(id);
         return roleVO.map(Result::success)
                 .orElseGet(() -> Result.error(404, "角色不存在"));
@@ -56,7 +57,7 @@ public class RoleController {
      */
     @PutMapping("/{id}")
     @Operation(summary = "更新角色", description = "更新角色信息")
-    public Result<Void> updateRole(@PathVariable Long id, @Valid @RequestBody RoleDTO roleDTO) {
+    public Result<Boolean> updateRole(@PathVariable("id") Long id, @Validated @RequestBody RoleDTO roleDTO) {
         roleDTO.setId(id);
         roleService.updateByDto(roleDTO);
         return Result.success();
@@ -67,7 +68,7 @@ public class RoleController {
      */
     @DeleteMapping("/{id}")
     @Operation(summary = "删除角色", description = "删除指定角色")
-    public Result<Void> deleteRole(@PathVariable Long id) {
+    public Result<Boolean> deleteRole(@PathVariable("id") Long id) {
         roleService.removeById(id);
         return Result.success();
     }
@@ -77,9 +78,7 @@ public class RoleController {
      */
     @PostMapping("/{roleId}/users/{userId}")
     @Operation(summary = "分配角色", description = "为指定用户分配角色")
-    public Result<Void> assignRoleToUser(
-            @PathVariable Long roleId,
-            @PathVariable Long userId) {
+    public Result<Boolean> assignRoleToUser(@PathVariable("roleId") Long roleId, @PathVariable("userId") Long userId) {
         boolean success = roleService.assignRoleToUser(userId, roleId);
         return success ? Result.success() : Result.error(500, "分配角色失败");
     }
@@ -89,9 +88,8 @@ public class RoleController {
      */
     @DeleteMapping("/{roleId}/users/{userId}")
     @Operation(summary = "移除角色", description = "移除用户的指定角色")
-    public Result<Void> removeRoleFromUser(
-            @PathVariable Long roleId,
-            @PathVariable Long userId) {
+    public Result<Boolean> removeRoleFromUser(@PathVariable("roleId") Long roleId,
+            @PathVariable("userId") Long userId) {
         boolean success = roleService.removeRoleFromUser(userId, roleId);
         return success ? Result.success() : Result.error(500, "移除角色失败");
     }

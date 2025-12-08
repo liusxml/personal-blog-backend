@@ -1,6 +1,7 @@
 package com.blog.system.api.dto;
 
 import com.blog.common.base.Identifiable;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -48,6 +49,7 @@ public class UserDTO implements Identifiable<Long>, Serializable {
     private List<String> roles;
 
     @Schema(description = "创建时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createTime;
 
     @Schema(description = "备注")

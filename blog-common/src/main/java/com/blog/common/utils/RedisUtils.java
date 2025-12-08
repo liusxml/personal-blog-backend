@@ -15,22 +15,36 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Redis 通用工具类 (生产最终版)
+ * Redis 通用工具类
  * <p>
- * 基于 Spring {@link RedisTemplate} 封装，提供对多种数据结构的便捷操作。
- * 结合 Guava Preconditions 和 Apache Commons Lang3 保证输入的有效性。
+ * 基于 Spring {@link Redis Template} 封装，提供对 String、Hash、Set、List 等数据结构的便捷操作。
  * <p>
- * <strong>V3.0 最终版特性:</strong>
- * <ol>
- *     <li><b>生产就绪:</b> 移除了所有 Java 21 的预览功能 (StringTemplate)，确保项目在任何环境下的稳定性和兼容性。</li>
- *     <li><b>标准日志:</b> 全面采用 SLF4J 的参数化日志格式 (e.g., `log.debug("模板: {}", arg)`)，以获得最佳性能和代码可读性。</li>
- *     <li><b>完全中文化:</b> 所有日志输出和校验异常信息均已更新为中文，提升团队协作效率。</li>
- *     <li><b>代码健壮性:</b> 通过提取私有校验方法减少了重复代码，并使用 {@link Optional} 增强了类型安全，有效防止空指针。</li>
- *     <li><b>功能完备:</b> 提供了对 String, Hash, Set, List 四种常用数据结构的完整操作，并支持原子性的增减和 setNX 操作。</li>
- * </ol>
+ * <b>核心特性：</b>
+ * <ul>
+ * <li><b>参数校验</b>：使用 Guava Preconditions 和 Commons Lang3 保证输入合法性</li>
+ * <li><b>日志记录</b>：SLF4J 参数化日志，便于问题排查</li>
+ * <li><b>类型安全</b>：{@link Optional} 包装返回值，避免空指针异常</li>
+ * <li><b>批量操作</b>：支持 MGET/MSET 批量操作，提升性能</li>
+ * <li><b>防雪崩</b>：setWithRandomTTL 方法支持随机 TTL，避免缓存雪崩</li>
+ * </ul>
+ * <p>
+ * <b>使用示例：</b>
+ * 
+ * <pre>{@code
+ * // String 操作
+ * redisUtils.set("key", "value", 30, TimeUnit.MINUTES);
+ * Optional<Object> value = redisUtils.get("key");
+ * 
+ * // 批量操作
+ * List<Object> values = redisUtils.mGet(Arrays.asList("key1", "key2"));
+ * 
+ * // 防雪崩
+ * red isUtils.setWithRandomTTL("key", value, 30, TimeUnit.MINUTES, 10);
+ * }</pre>
  *
- * @version 3.0
- * @author liusx
+ * @author liusxml
+ * @version 4.0
+ * @since 1.0.0
  */
 @Slf4j
 @Component
@@ -43,6 +57,7 @@ public final class RedisUtils {
 
     /**
      * 内部方法，校验 key 是否为空白。
+     * 
      * @param key 待校验的 key
      */
     private void checkKey(final String key) {
@@ -153,7 +168,8 @@ public final class RedisUtils {
         Preconditions.checkArgument(timeout > 0, "过期时间必须大于0。");
         boolean success = Boolean.TRUE.equals(redisTemplate.opsForValue().setIfAbsent(key, value, timeout, unit));
         if (success) {
-            log.debug("Redis [setNX] 成功 - 键: '{}', 值: '{}', 过期时间: {} {}", key, value, timeout, unit.toString().toLowerCase());
+            log.debug("Redis [setNX] 成功 - 键: '{}', 值: '{}', 过期时间: {} {}", key, value, timeout,
+                    unit.toString().toLowerCase());
         }
         return success;
     }
@@ -353,5 +369,90 @@ public final class RedisUtils {
     public List<Object> lRange(final String key, final long start, final long end) {
         checkKey(key);
         return redisTemplate.opsForList().range(key, start, end);
+    }
+
+    /**
+     * 获取列表长度 (LLEN)
+     *
+     * @param key 键, 非空
+     * @return 列表长度
+     */
+    public Long lSize(final String key) {
+        checkKey(key);
+        return redisTemplate.opsForList().size(key);
+    }
+
+    // ============================= Batch
+    // Operations（批量操作）=============================
+
+    /**
+     * 批量获取（MGET）
+     * <p>
+     * 性能优化：将 N 次网络请求合并为 1 次
+     *
+     * @param keys 键集合，非空
+     * @return 值列表，顺序与 keys 一致，不存在的键对应 null
+     */
+    public List<Object> mGet(final Collection<String> keys) {
+        Preconditions.checkNotNull(keys, "要获取的 key 集合不能为空。");
+        if (keys.isEmpty()) {
+            return List.of();
+        }
+        // 限制批量大小，防止慢查询
+        Preconditions.checkArgument(keys.size() <= 100, "批量获取的 key 数量不能超过 100。");
+
+        log.debug("Redis [MGET] - 批量获取 {} 个键", keys.size());
+        return redisTemplate.opsForValue().multiGet(keys);
+    }
+
+    /**
+     * 批量设置（MSET）
+     * <p>
+     * 性能优化：将 N 次网络请求合并为 1 次
+     *
+     * @param map 键值对 Map，非空
+     */
+    public void mSet(final Map<String, Object> map) {
+        Preconditions.checkNotNull(map, "要设置的键值对 Map 不能为空。");
+        if (map.isEmpty()) {
+            return;
+        }
+        // 限制批量大小
+        Preconditions.checkArgument(map.size() <= 100, "批量设置的键值对数量不能超过 100。");
+
+        log.debug("Redis [MSET] - 批量设置 {} 个键值对", map.size());
+        redisTemplate.opsForValue().multiSet(map);
+    }
+
+    /**
+     * 设置值并添加随机 TTL（防止缓存雪崩）
+     * <p>
+     * 在基础过期时间上添加随机偏移，避免大量缓存同时过期
+     *
+     * @param key           键，非空
+     * @param value         值，非空
+     * @param baseTimeout   基础过期时间
+     * @param unit          时间单位
+     * @param randomPercent 随机百分比（0-100），例如 10 表示 ±10%
+     */
+    public void setWithRandomTTL(final String key, final Object value,
+            final long baseTimeout, final TimeUnit unit,
+            final int randomPercent) {
+        checkKey(key);
+        Preconditions.checkNotNull(value, "缓存的值不能为空。");
+        Preconditions.checkNotNull(unit, "时间单位不能为空。");
+        Preconditions.checkArgument(baseTimeout > 0, "过期时间必须大于0。");
+        Preconditions.checkArgument(randomPercent >= 0 && randomPercent <= 100,
+                "随机百分比必须在 0-100 之间。");
+
+        // 计算随机偏移
+        long baseSeconds = unit.toSeconds(baseTimeout);
+        long randomOffset = (long) (baseSeconds * randomPercent / 100.0 *
+                (Math.random() * 2 - 1)); // -randomPercent% ~ +randomPercent%
+        long finalTimeout = baseSeconds + randomOffset;
+
+        redisTemplate.opsForValue().set(key, value, finalTimeout, TimeUnit.SECONDS);
+        log.debug("Redis [setWithRandomTTL] - 键: '{}', 基础TTL: {}s, 随机偏移: {}s, 最终TTL: {}s",
+                key, baseSeconds, randomOffset, finalTimeout);
     }
 }

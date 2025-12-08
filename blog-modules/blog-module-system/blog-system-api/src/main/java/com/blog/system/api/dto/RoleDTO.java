@@ -1,6 +1,7 @@
 package com.blog.system.api.dto;
 
 import com.blog.common.base.Identifiable;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -38,5 +39,6 @@ public class RoleDTO implements Identifiable<Long>, Serializable {
     private String remark;
 
     @Schema(description = "创建时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createTime;
 }

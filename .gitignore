@@ -58,5 +58,4 @@ hs_err_pid*
 Thumbs.db
 .spec-workflow/
 .claude/
-/.agent/
 /.vscode/settings.json

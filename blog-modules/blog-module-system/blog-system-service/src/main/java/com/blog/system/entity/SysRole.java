@@ -7,6 +7,19 @@ import java.time.LocalDateTime;
 
 /**
  * 角色实体
+ * <p>
+ * 建议数据库索引：
+ * <ul>
+ * <li><b>idx_role_key</b> (role_key) - 角色权限查询、唯一性约束</li>
+ * <li><b>idx_status</b> (status) - 角色状态筛选</li>
+ * <li><b>idx_create_time</b> (create_time) - 按创建时间排序</li>
+ * </ul>
+ * <p>
+ * 性能优化建议：
+ * <ul>
+ * <li>role_key 应设置为 UNIQUE 索引，避免角色键重复</li>
+ * <li>如果经常按状态查询激活角色，可考虑 (status, role_key) 联合索引</li>
+ * </ul>
  *
  * @author liusxml
  * @since 1.0.0
@@ -30,6 +43,11 @@ public class SysRole {
      * 角色权限字符串
      */
     private String roleKey;
+
+    /**
+     * 角色排序 (数字越小越靠前)
+     */
+    private Integer roleSort;
 
     /**
      * 角色状态 (1-正常, 0-停用)

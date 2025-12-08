@@ -16,8 +16,11 @@ import com.blog.system.entity.SysUser;
 import com.blog.system.mapper.RoleMapper;
 import com.blog.system.mapper.UserMapper;
 import com.blog.system.service.IUserService;
+import com.blog.system.constant.RoleConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
@@ -92,7 +95,7 @@ public class UserServiceImpl extends BaseServiceImpl<UserMapper, SysUser, UserVO
         // 分配默认角色 (USER)
         SysRole userRole = roleMapper.selectOne(
                 new LambdaQueryWrapper<SysRole>()
-                        .eq(SysRole::getRoleKey, "USER"));
+                        .eq(SysRole::getRoleKey, RoleConstants.DEFAULT_USER_ROLE));
         if (userRole != null) {
             roleMapper.assignRoleToUser(user.getId(), userRole.getId());
         }
@@ -131,11 +134,8 @@ public class UserServiceImpl extends BaseServiceImpl<UserMapper, SysUser, UserVO
             throw new BusinessException(SystemErrorCode.USER_DISABLED);
         }
 
-        // 查询用户角色
-        List<SysRole> roles = userMapper.selectRolesByUserId(user.getId());
-        List<String> roleKeys = roles.stream()
-                .map(role -> "ROLE_" + role.getRoleKey())
-                .collect(Collectors.toList());
+        // 查询用户角色（带缓存）
+        List<String> roleKeys = getUserRoleKeys(user.getId());
 
         // 构造 UserDetails 用于生成 Token
         List<GrantedAuthority> authorities = roleKeys.stream()
@@ -166,10 +166,62 @@ public class UserServiceImpl extends BaseServiceImpl<UserMapper, SysUser, UserVO
         return loginVO;
     }
 
+    /**
+     * 更新用户信息
+     * <p>
+     * 更新后自动清除用户角色缓存，确保数据一致性
+     *
+     * @param dto 用户更新 DTO
+     * @return 更新结果
+     */
+    @Override
+    @CacheEvict(value = "user:roles", key = "#dto.id", condition = "#dto != null && #dto.id != null")
+    public boolean updateByDto(UserDTO dto) {
+        boolean updated = super.updateByDto(dto);
+        if (updated) {
+            log.info("用户信息已更新，缓存已失效: userId={}", dto.getId());
+        }
+        return updated;
+    }
+
     @Override
     public SysUser getUserByUsername(String username) {
         return userMapper.selectOne(
                 new LambdaQueryWrapper<SysUser>()
                         .eq(SysUser::getUsername, username));
+    }
+
+    /**
+     * 获取用户角色键列表（带缓存）
+     * <p>
+     * 缓存策略：
+     * <ul>
+     * <li>缓存键：user:roles:{userId}</li>
+     * <li>过期时间：30 分钟（由 CacheManager 配置）</li>
+     * <li>失效时机：角色分配/移除时</li>
+     * </ul>
+     *
+     * @param userId 用户ID
+     * @return 角色键列表（带 ROLE_ 前缀）
+     */
+    @Cacheable(value = "user:roles", key = "#userId")
+    public List<String> getUserRoleKeys(Long userId) {
+        log.debug("从数据库查询用户角色: userId={}", userId);
+        List<SysRole> roles = userMapper.selectRolesByUserId(userId);
+        return roles.stream()
+                .map(role -> "ROLE_" + role.getRoleKey())
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 失效用户角色缓存
+     * <p>
+     * 在角色分配、移除或用户删除时调用此方法失效缓存
+     *
+     * @param userId 用户ID
+     */
+    @CacheEvict(value = "user:roles", key = "#userId")
+    public void evictUserRolesCache(Long userId) {
+        log.info("失效用户角色缓存: userId={}", userId);
     }
 }

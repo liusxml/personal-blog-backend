@@ -60,7 +60,7 @@ public class UserController {
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "获取用户信息", description = "根据ID获取用户详细信息（需要管理员权限）")
-    public Result<UserVO> getUserById(@PathVariable Long id) {
+    public Result<UserVO> getUserById(@PathVariable("id") Long id) {
         Optional<UserVO> userVO = userService.getVoById(id);
         return userVO.map(Result::success)
                 .orElseGet(() -> Result.error(404, "用户不存在"));
@@ -72,7 +72,7 @@ public class UserController {
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "更新用户信息", description = "更新指定用户的信息（需要管理员权限）")
-    public Result<Void> updateUser(@PathVariable Long id, @Valid @RequestBody UserDTO userDTO) {
+    public Result<Boolean> updateUser(@PathVariable("id") Long id, @RequestBody UserDTO userDTO) {
         userDTO.setId(id);
         userService.updateByDto(userDTO);
         return Result.success();
@@ -84,7 +84,7 @@ public class UserController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "删除用户", description = "删除指定用户（需要管理员权限）")
-    public Result<Void> deleteUser(@PathVariable Long id) {
+    public Result<Boolean> deleteUser(@PathVariable("id") Long id) {
         userService.removeById(id);
         return Result.success();
     }

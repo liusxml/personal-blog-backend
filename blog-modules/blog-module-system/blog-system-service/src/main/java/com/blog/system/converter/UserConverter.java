@@ -15,6 +15,12 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
  */
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface UserConverter extends BaseConverter<UserDTO, SysUser, UserVO> {
-    // 继承 BaseConverter 的所有方法
-    // toDto, toEntity, toVo, toDto集合, toEntity集合, toVo集合
+
+    /**
+     * 将 Entity 转换为 DTO（用于跨模块调用）
+     *
+     * @param entity Entity 对象
+     * @return DTO 对象
+     */
+    UserDTO entityToDto(SysUser entity);
 }
