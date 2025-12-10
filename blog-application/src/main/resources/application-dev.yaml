@@ -1,0 +1,11 @@
+# 开发环境配置
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+# MyBatis-Plus Auto DDL 配置
+mybatis-plus:
+  auto-ddl:
+    enabled: true  # 开发环境启用自动DDL
+    script-dir: db/  # DDL脚本目录

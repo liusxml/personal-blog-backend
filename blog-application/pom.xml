@@ -116,6 +116,18 @@
             <artifactId>micrometer-registry-prometheus</artifactId>
         </dependency>
 
+        <!-- Micrometer Tracing：分布式链路追踪支持 -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing-bridge-brave</artifactId>
+        </dependency>
+
+        <!-- Logstash Logback Encoder：JSON格式日志编码器，便于日志收集 -->
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+        </dependency>
+
         <!-- Spring Boot Devtools 热部署插件 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

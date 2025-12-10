@@ -49,6 +49,7 @@
         <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
         <!-- 监控与指标 -->
         <micrometer.version>1.16.0</micrometer.version>
+        <logstash.logback.encoder.version>9.0</logstash.logback.encoder.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -62,7 +63,7 @@
              2. 简化维护：只需在一处升级版本，所有相关依赖自动更新
              3. 避免冲突：减少因版本不一致导致的兼容性问题
             -->
-            
+
             <!-- Spring Boot BOM：Spring Boot 框架的核心依赖管理 -->
             <dependency>
                 <groupId>org.springframework.boot</groupId>
@@ -71,7 +72,7 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            
+
             <!-- MyBatis-Plus BOM：持久层框架的依赖管理 -->
             <dependency>
                 <groupId>com.baomidou</groupId>
@@ -80,7 +81,7 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            
+
             <!-- SpringDoc OpenAPI BOM：API 文档生成工具的依赖管理 -->
             <dependency>
                 <groupId>org.springdoc</groupId>
@@ -89,7 +90,7 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            
+
             <!-- AWS SDK BOM：用于云服务集成（如 S3 文件存储）-->
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
@@ -98,7 +99,7 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            
+
             <!-- Micrometer BOM：监控指标采集框架 -->
             <dependency>
                 <groupId>io.micrometer</groupId>
@@ -180,34 +181,41 @@
                 <version>${caffeine.version}</version>
             </dependency>
 
+            <!-- Logstash Logback Encoder：JSON格式日志编码器，便于日志收集 -->
+            <dependency>
+                <groupId>net.logstash.logback</groupId>
+                <artifactId>logstash-logback-encoder</artifactId>
+                <version>${logstash.logback.encoder.version}</version>
+            </dependency>
+
             <!-- =================================================== -->
             <!-- ================ 通用工具类库 ================ -->
             <!-- =================================================== -->
             <!--
              常用的 Java 工具库，提供各种实用功能。
             -->
-            
+
             <!-- Apache Commons Lang3：字符串、数字、日期等常用工具 -->
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>${commons-lang3.version}</version>
             </dependency>
-            
+
             <!-- Apache Commons Collections4：集合工具库 -->
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-collections4</artifactId>
                 <version>${commons-collections4.version}</version>
             </dependency>
-            
+
             <!-- Apache Commons IO：文件和流操作工具 -->
             <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
                 <version>${commons-io.version}</version>
             </dependency>
-            
+
             <!-- Google Guava：Google 提供的核心 Java 库，包含集合、缓存、并发等工具 -->
             <dependency>
                 <groupId>com.google.guava</groupId>

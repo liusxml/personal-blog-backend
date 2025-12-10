@@ -20,7 +20,7 @@ server:
 # ==============================================================================
 spring:
   application:
-    name: personal-blog-service                 # 应用名称，用于注册中心和监控
+    name: personal-blog-backend                 # 应用名称，用于注册中心和监控
 
   profiles:
     active: dev                                 # 当前激活的环境 (dev/prod)
