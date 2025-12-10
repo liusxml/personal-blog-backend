@@ -27,6 +27,7 @@
         <spring-boot-admin.version>3.5.5</spring-boot-admin.version>
         <!-- 持久化与数据库 -->
         <mybatis-plus.version>3.5.14</mybatis-plus.version>
+        <p6spy.version>3.9.1</p6spy.version>
         <mysql-connector.version>9.4.0</mysql-connector.version> <!-- 新增: 数据库驱动 -->
         <!-- 安全框架 -->
         <jjwt.version>0.13.0</jjwt.version> <!-- 新增: JWT Token 处理库 -->
@@ -80,6 +81,15 @@
                 <version>${mybatis-plus.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+
+            <!-- p6spy：SQL性能监控工具（官方推荐，仅开发环境使用） -->
+            <!-- 功能：显示完整SQL、执行时间、慢SQL检测 -->
+            <!-- 注意：生产环境必须禁用，通过Profile控制 -->
+            <dependency>
+                <groupId>p6spy</groupId>
+                <artifactId>p6spy</artifactId>
+                <version>${p6spy.version}</version>
             </dependency>
 
             <!-- SpringDoc OpenAPI BOM：API 文档生成工具的依赖管理 -->

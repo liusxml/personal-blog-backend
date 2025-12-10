@@ -61,23 +61,27 @@ public class SysRole {
     private Integer version;
 
     /**
-     * 创建者ID
+     * 创建者ID（自动填充）
      */
+    @TableField(fill = FieldFill.INSERT)
     private Long createBy;
 
     /**
-     * 创建时间
+     * 创建时间（自动填充）
      */
+    @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 
     /**
-     * 更新者ID
+     * 更新者ID（自动填充）
      */
+    @TableField(fill = FieldFill.INSERT_UPDATE)
     private Long updateBy;
 
     /**
-     * 更新时间
+     * 更新时间（自动填充）
      */
+    @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
 
     /**

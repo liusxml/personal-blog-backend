@@ -106,7 +106,7 @@ mybatis-plus:
   global-config:
     banner: false                               # 关闭启动 Banner
     db-config:
-      id-type: assign_uuid                      # 主键策略
+      id-type: assign_id                        # 主键策略：雪花算法（分布式唯一ID）
       logic-delete-field: isDeleted             # 逻辑删除字段
       logic-delete-value: 1                     # 删除值
       logic-not-delete-value: 0                 # 未删除值
