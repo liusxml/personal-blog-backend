@@ -30,6 +30,18 @@ public class DdlScriptManager implements IDdl {
     private final ApplicationContext applicationContext;
     private final DdlProperties ddlProperties;
 
+    // ========================================================================
+    // 缓存字段 - 避免重复扫描文件系统
+    // ========================================================================
+
+    /**
+     * 缓存的DDL脚本路径列表
+     * <p>
+     * MyBatis-Plus框架会多次调用{@link #getSqlFiles()}方法，
+     * 使用缓存避免重复扫描文件系统，提升性能并减少日志噪音。
+     */
+    private List<String> cachedScriptPaths = null;
+
     public DdlScriptManager(
             DataSource dataSource,
             ApplicationContext applicationContext,
@@ -46,6 +58,13 @@ public class DdlScriptManager implements IDdl {
 
     @Override
     public List<String> getSqlFiles() {
+        // 如果已缓存，直接返回（避免重复扫描）
+        if (cachedScriptPaths != null) {
+            if (log.isDebugEnabled()) {
+                log.debug("📋 Using cached DDL script list ({} scripts)", cachedScriptPaths.size());
+            }
+            return cachedScriptPaths;
+        }
 
         try {
             String pattern = ddlProperties.getScriptPattern();
@@ -59,7 +78,8 @@ public class DdlScriptManager implements IDdl {
                 log.warn("⚠️  No DDL scripts found in directory '{}'. Database schema may be incomplete!",
                         ddlProperties.getScriptDir());
                 log.warn("⚠️  Please ensure SQL scripts are placed in the correct directory.");
-                return Collections.emptyList();
+                cachedScriptPaths = Collections.emptyList();
+                return cachedScriptPaths;
             }
 
             List<String> scriptPaths = Arrays.stream(resources)
@@ -85,6 +105,8 @@ public class DdlScriptManager implements IDdl {
 
             validateScriptNaming(scriptPaths);
 
+            // 缓存扫描结果
+            cachedScriptPaths = scriptPaths;
             return scriptPaths;
 
         } catch (IOException e) {
@@ -95,7 +117,8 @@ public class DdlScriptManager implements IDdl {
             }
 
             log.warn("⚠️  Continuing startup without DDL execution (non-production environment)");
-            return Collections.emptyList();
+            cachedScriptPaths = Collections.emptyList();
+            return cachedScriptPaths;
         }
     }
 

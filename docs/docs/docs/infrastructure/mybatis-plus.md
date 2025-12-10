@@ -44,7 +44,7 @@ mybatis-plus:
   global-config:
     banner: false                               # 关闭启动 Banner
     db-config:
-      id-type: assign_uuid                      # 主键策略（雪花算法）
+      id-type: assign_id                        # 主键策略（雪花算法生成Long类型ID）
       logic-delete-field: isDeleted             # 逻辑删除字段
       logic-delete-value: 1                     # 删除值
       logic-not-delete-value: 0                 # 未删除值
@@ -60,21 +60,39 @@ mybatis-plus:
 项目配置了多个 MyBatis-Plus 插件以增强功能和安全性：
 
 ```java title="blog-application/src/main/java/com/blog/config/MybatisPlusConfig.java"
+@Slf4j
 @Configuration
 public class MybatisPlusConfig {
+    
+    @Value("${spring.profiles.active:dev}")
+    private String activeProfile;
     
     @Bean
     public MybatisPlusInterceptor mybatisPlusInterceptor() {
         MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
         
-        // 1. 防止全表更新与删除插件
+        // 1. 防全表更新删除插件
         interceptor.addInnerInterceptor(new BlockAttackInnerInterceptor());
         
-        // 2. 分页插件（指定MySQL数据库类型）
-        interceptor.addInnerInterceptor(new PaginationInnerInterceptor(DbType.MYSQL));
+        // 2. 分页插件（完整配置）
+        PaginationInnerInterceptor paginationInterceptor = new PaginationInnerInterceptor(DbType.MYSQL);
+        paginationInterceptor.setMaxLimit(500L);      // 单页最大数量，防止恶意查询
+        paginationInterceptor.setOverflow(false);     // 溢出总页数后是否处理(false=返回空)
+        paginationInterceptor.setOptimizeJoin(true);  // 优化JOIN的COUNT SQL
+        interceptor.addInnerInterceptor(paginationInterceptor);
         
         // 3. 乐观锁插件
         interceptor.addInnerInterceptor(new OptimisticLockerInnerInterceptor());
+        
+        // 开发/测试环境输出插件配置信息
+        if ("dev".equals(activeProfile) || "test".equals(activeProfile)) {
+            log.info("════════════════════════════════════════════════════════");
+            log.info("MyBatis-Plus插件配置（环境: {}）", activeProfile);
+            log.info("  ✓ 防全表更新删除插件 - 已启用");
+            log.info("  ✓ 分页插件 - 已启用（最大单页:500条，优化JOIN:true）");
+            log.info("  ✓ 乐观锁插件 - 已启用");
+            log.info("════════════════════════════════════════════════════════");
+        }
         
         return interceptor;
     }
@@ -84,38 +102,92 @@ public class MybatisPlusConfig {
 **插件说明**:
 - **BlockAttackInnerInterceptor**: 防止全表更新和删除操作，避免误操作
 - **PaginationInnerInterceptor**: 物理分页插件，自动处理分页逻辑
+  - `maxLimit`: 限制单页最大数量为500条，防止恶意查询
+  - `overflow`: 页码溢出时返回空结果
+  - `optimizeJoin`: 优化JOIN查询的COUNT SQL性能
 - **OptimisticLockerInnerInterceptor**: 乐观锁插件，支持 `@Version` 注解
 
 ### 4. 自动填充配置
 
-项目配置了字段自动填充处理器，自动填充创建时间和更新时间：
+项目配置了字段自动填充处理器，自动填充审计字段（创建时间、更新时间、创建人、更新人）：
 
 ```java title="blog-application/src/main/java/com/blog/handler/MyMetaObjectHandler.java"
 @Slf4j
 public class MyMetaObjectHandler implements MetaObjectHandler {
     
+    // 字段名常量 - 避免硬编码，便于维护
+    private static final String FIELD_CREATE_TIME = "createTime";
+    private static final String FIELD_UPDATE_TIME = "updateTime";
+    private static final String FIELD_CREATE_BY = "createBy";
+    private static final String FIELD_UPDATE_BY = "updateBy";
+    
     @Override
     public void insertFill(MetaObject metaObject) {
-        log.info("start insert fill ....");
-        this.strictInsertFill(metaObject, "createTime", LocalDateTime::now, LocalDateTime.class);
-        this.strictInsertFill(metaObject, "updateTime", LocalDateTime::now, LocalDateTime.class);
+        if (log.isDebugEnabled()) {
+            log.debug("自动填充[INSERT] - 实体: {}", 
+                metaObject.getOriginalObject().getClass().getSimpleName());
+        }
+        
+        // 填充时间字段（必填）
+        this.strictInsertFill(metaObject, FIELD_CREATE_TIME, LocalDateTime::now, LocalDateTime.class);
+        this.strictInsertFill(metaObject, FIELD_UPDATE_TIME, LocalDateTime::now, LocalDateTime.class);
+        
+        // 填充操作人ID（可选，需登录态）
+        Long currentUserId = getCurrentUserId();
+        if (currentUserId != null) {
+            this.strictInsertFill(metaObject, FIELD_CREATE_BY, () -> currentUserId, Long.class);
+            this.strictInsertFill(metaObject, FIELD_UPDATE_BY, () -> currentUserId, Long.class);
+        }
     }
     
     @Override
     public void updateFill(MetaObject metaObject) {
-        log.info("start update fill ....");
-        this.strictUpdateFill(metaObject, "updateTime", LocalDateTime::now, LocalDateTime.class);
+        if (log.isDebugEnabled()) {
+            log.debug("自动填充[UPDATE] - 实体: {}", 
+                metaObject.getOriginalObject().getClass().getSimpleName());
+        }
+        
+        // 填充更新时间（必填）
+        this.strictUpdateFill(metaObject, FIELD_UPDATE_TIME, LocalDateTime::now, LocalDateTime.class);
+        
+        // 填充更新人ID（可选，需登录态）
+        Long currentUserId = getCurrentUserId();
+        if (currentUserId != null) {
+            this.strictUpdateFill(metaObject, FIELD_UPDATE_BY, () -> currentUserId, Long.class);
+        }
+    }
+    
+    /**
+     * 获取当前登录用户ID
+     * 从Spring Security上下文中获取，失败时返回null
+     */
+    private Long getCurrentUserId() {
+        try {
+            return SecurityUtils.getCurrentUserId();
+        } catch (Exception e) {
+            log.debug("无法获取当前用户ID: {} - 原因: {}", 
+                e.getClass().getSimpleName(), e.getMessage());
+            return null;
+        }
     }
 }
 ```
 
+**优化要点**:
+- ✅ 使用字段名常量，避免字符串硬编码
+- ✅ 支持`createBy`/`updateBy`自动填充（从Security上下文获取当前用户）
+- ✅ DEBUG级别日志，避免生产环境日志泛滥
+- ✅ 异常处理，非Web环境安全
+
 **注册配置**:
 ```java title="blog-application/src/main/java/com/blog/config/MybatisPlusHandlerConfig.java"
+@Slf4j
 @Configuration
 public class MybatisPlusHandlerConfig {
     
     @Bean
     public MetaObjectHandler metaObjectHandler() {
+        log.info("MyBatis-Plus配置: MetaObjectHandler已注册（审计字段自动填充）");
         return new MyMetaObjectHandler();
     }
     
@@ -124,6 +196,7 @@ public class MybatisPlusHandlerConfig {
         return properties -> {
             // 关闭 Banner
             properties.getGlobalConfig().setBanner(false);
+            log.info("MyBatis-Plus配置: 启动Banner已关闭");
             
             // 配置默认枚举处理器
             MybatisPlusProperties.CoreConfiguration configuration = properties.getConfiguration();
@@ -132,6 +205,7 @@ public class MybatisPlusHandlerConfig {
                 properties.setConfiguration(configuration);
             }
             configuration.setDefaultEnumTypeHandler(EnumTypeHandler.class);
+            log.info("MyBatis-Plus配置: 默认枚举处理器 = EnumTypeHandler（存储name()值）");
         };
     }
 }

@@ -109,8 +109,9 @@ public class AutoDdlInitializer implements ApplicationRunner
 - 扫描DDL脚本目录下的所有SQL文件
 - 按版本号自然排序
 - 提供脚本列表给MyBatis-Plus执行
+- **性能优化**: 使用缓存避免重复扫描文件系统
 
-**依赖注入**:
+**依赖注入与缓存**:
 
 ```java
 @Component
@@ -120,6 +121,15 @@ public class DdlScriptManager implements IDdl {
     private final ApplicationContext applicationContext;
     private final DdlProperties ddlProperties;  // 注入配置类
     
+    // 缓存字段 - 避免重复扫描文件系统
+    /**
+     * 缓存的DDL脚本路径列表
+     * <p>
+     * MyBatis-Plus框架会多次调用getSqlFiles()方法，
+     * 使用缓存避免重复扫描文件系统，提升性能并减少日志噪音。
+     */
+    private List<String> cachedScriptPaths = null;
+    
     public DdlScriptManager(DataSource dataSource,
                            ApplicationContext applicationContext,
                            DdlProperties ddlProperties) {
@@ -127,6 +137,12 @@ public class DdlScriptManager implements IDdl {
     }
 }
 ```
+
+**缓存机制说明**:
+
+> 💡 **性能优化**: 在优化前，MyBatis-Plus框架会调用 `getSqlFiles()` 方法**6次**，导致重复扫描文件系统。
+> 通过添加缓存机制，现在只在首次调用时扫描，后续调用直接返回缓存结果，
+> 大幅减少启动时间并降低日志噪音。
 
 **扫描模式**:
 

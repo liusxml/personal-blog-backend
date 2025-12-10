@@ -87,6 +87,12 @@
             <artifactId>mysql-connector-j</artifactId>
         </dependency>
         
+        <!-- p6spy：SQL性能监控（仅开发环境使用） -->
+        <dependency>
+            <groupId>p6spy</groupId>
+            <artifactId>p6spy</artifactId>
+        </dependency>
+        
         <!-- H2 内存数据库：仅用于测试环境，无需外部数据库 -->
         <dependency>
             <groupId>com.h2database</groupId>

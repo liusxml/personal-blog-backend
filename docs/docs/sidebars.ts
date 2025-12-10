@@ -133,6 +133,7 @@ const sidebars: SidebarsConfig = {
         },
         'infrastructure/auto-ddl',        // MyBatis-Plus Auto DDL
         'infrastructure/mybatis-plus',    // MyBatis-Plus 使用指南
+        'infrastructure/p6spy',           // p6spy SQL监控
         'infrastructure/logging',         // 日志系统
         'infrastructure/api-docs',        // SpringDoc API 文档
         'infrastructure/resilience4j',    // Resilience4j 容错指南
