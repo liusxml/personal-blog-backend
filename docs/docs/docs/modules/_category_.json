@@ -1,8 +1,5 @@
 {
-  "label": "模块-介绍",
-  "position": 2,
-  "link": {
-    "type": "generated-index",
-    "description": "15 minutes to learn the most important Docusaurus concepts."
-  }
+  "label": "📦 业务模块",
+  "position": 3,
+  "description": "系统、文章、评论、文件四大业务模块详解"
 }

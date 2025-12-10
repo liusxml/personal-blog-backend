@@ -1,5 +1,5 @@
-import {themes as prismThemes} from 'prism-react-renderer';
-import type {Config} from '@docusaurus/types';
+import { themes as prismThemes } from 'prism-react-renderer';
+import type { Config } from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
@@ -15,7 +15,11 @@ const config: Config = {
     projectName: 'personal-blog-backend', // 你的 GitHub 仓库名
 
     onBrokenLinks: 'throw',
-    onBrokenMarkdownLinks: 'warn',
+    markdown: {
+        hooks: {
+            onBrokenMarkdownLinks: 'warn',
+        },
+    },
 
     // --- 3. 国际化配置 ---
     i18n: {
@@ -93,7 +97,7 @@ const config: Config = {
                     label: 'API 参考',
                     position: 'left',
                 },
-                {to: '/blog', label: '项目博客', position: 'left'}, // 用于发布更新日志、技术分享等
+                { to: '/blog', label: '项目博客', position: 'left' }, // 用于发布更新日志、技术分享等
                 {
                     href: 'https://github.com/liusxml/personal-blog-backend',
                     label: 'GitHub',
@@ -111,7 +115,7 @@ const config: Config = {
                     items: [
                         {
                             label: '快速上手',
-                            to: '/docs/intro',
+                            to: '/docs/getting-started/intro',  // 修复：更新为新路径
                         },
                         {
                             label: 'API 参考',

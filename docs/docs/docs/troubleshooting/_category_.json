@@ -1,8 +1,5 @@
 {
-  "label": "故障排查",
-  "position": 5,
-  "link": {
-    "type": "generated-index",
-    "description": "15 minutes to learn the most important Docusaurus concepts."
-  }
+  "label": "🔍 故障排查",
+  "position": 7,
+  "description": "常见问题和错误处理方案"
 }
