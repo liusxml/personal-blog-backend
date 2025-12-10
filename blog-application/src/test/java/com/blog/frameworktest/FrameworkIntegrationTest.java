@@ -14,7 +14,7 @@ import com.baomidou.mybatisplus.extension.plugins.inner.OptimisticLockerInnerInt
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
 import com.blog.BlogApplication;
 import com.blog.common.exception.SystemErrorCode;
-import com.blog.config.ddl.DdlInitializer;
+import com.blog.config.ddl.AutoDdlInitializer;
 import com.blog.frameworktest.dto.TestDTO;
 import com.blog.frameworktest.dto.ValidationTestDTO;
 import com.blog.frameworktest.service.ITestService;
@@ -88,7 +88,7 @@ public class FrameworkIntegrationTest {
     // =========== 成员变量：注入测试所需的工具和依赖 ===========
 
     /**
-     * 使用Mockito模拟 {@link DdlInitializer}。
+     * 使用Mockito模拟 {@link AutoDdlInitializer}。
      * <p>
      * {@code @MockitoBean} 注解会在Spring容器中用一个“假的”、无任何操作的Bean来替换真实的
      * {@code DdlInitializer} Bean。
@@ -96,7 +96,7 @@ public class FrameworkIntegrationTest {
      * 这能使测试环境更加可控、稳定，并避免潜在的测试数据丢失风险。
      */
     @MockitoBean
-    private DdlInitializer ddlInitializer;
+    private AutoDdlInitializer autoDdlInitializer;
 
     /**
      * 自动注入由 {@code @AutoConfigureMockMvc} 配置好的 {@link MockMvc} 实例。

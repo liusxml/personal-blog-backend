@@ -69,7 +69,7 @@ public class CacheWarmup {
 
             // 存入 Redis，过期时间 1 小时
             for (SysRole role : roles) {
-                String key = com.blog.common.constants.CacheKeys.roleDetailKey(role.getId());
+                String key = "role:detail:" + role.getId();
                 redisTemplate.opsForValue().set(key, role, 1, TimeUnit.HOURS);
             }
 
