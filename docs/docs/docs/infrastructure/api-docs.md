@@ -41,28 +41,47 @@ springdoc:
 ### 2.3 全局配置 (Java Bean)
 在 `blog-application` 的 `com.blog.config.OpenApiConfig` 中配置了全局信息和安全认证：
 
-```java
+```java title="blog-application/src/main/java/com/blog/config/OpenApiConfig.java"
 @Configuration
 public class OpenApiConfig {
+    
+    private static final String SECURITY_SCHEME_NAME = "BearerAuth";
+    
     @Bean
-    public OpenAPI springOpenAPI() {
+    public OpenAPI customOpenAPI() {
         return new OpenAPI()
+            // 1. 配置基本信息
             .info(new Info()
                 .title("个人博客后台系统 API")
-                .description("...")
-                .version("1.0.0"))
-            // 配置 JWT 认证 (Authorize 按钮)
-            .addSecurityItem(new SecurityRequirement().addList("BearerAuth"))
+                .description("Personal Blog Backend API Documentation")
+                .version("1.0.0")
+                // 作者信息
+                .contact(new Contact()
+                        .name("liusxml")
+                        .email("liusxml@example.com")
+                        .url("https://github.com/liusxml"))
+                // 许可证信息
+                .license(new License()
+                        .name("Apache 2.0")
+                        .url("https://www.apache.org/licenses/LICENSE-2.0.html")))
+            // 2. 配置全局的安全方案 (JWT)
+            .addSecurityItem(new SecurityRequirement().addList(SECURITY_SCHEME_NAME))
             .components(new Components()
-                .addSecuritySchemes("BearerAuth",
+                .addSecuritySchemes(SECURITY_SCHEME_NAME,
                     new SecurityScheme()
-                        .name("BearerAuth")
+                        .name(SECURITY_SCHEME_NAME)
                         .type(SecurityScheme.Type.HTTP)
                         .scheme("bearer")
                         .bearerFormat("JWT")));
     }
 }
 ```
+
+:::tip 配置说明
+- **Info**: 配置API标题、描述、版本、作者联系方式和许可证
+- **SecurityScheme**: 配置JWT认证方案，使Swagger UI显示"Authorize"按钮
+- **BearerAuth**: 使用常量管理安全方案名称，便于维护
+:::
 
 ## 3. 开发注解指南
 

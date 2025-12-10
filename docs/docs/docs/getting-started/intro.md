@@ -4,44 +4,189 @@ sidebar_position: 1
 
 # 项目介绍
 
-使用 **5分钟学习最重要的Docusaurus概念。**.
+Personal Blog Backend 是一个基于**模块化单体架构**的个人博客后端系统，使用 Spring Boot 3 + Java 21 构建。
 
-## Getting Started
+##⚡ 快速了解
 
-Get started by **creating a new site**.
+**只需 5 分钟**，你就能了解本项目的核心特性并成功启动！
 
-Or **try Docusaurus immediately** with **[docusaurus.new](https://docusaurus.new)**.
+### 🎯 项目定位
 
-### What you'll need
+这是一个**生产级**的博客后端系统，专注于：
+- 🏗️ **架构设计** - 模块化单体，为微服务演进预留空间
+- 🛡️ **代码质量** - ArchUnit 守护架构规则，完整的测试体系
+- 📚 **开发文档** - 从快速上手到深入指南一应俱全
 
-- [Node.js](https://nodejs.org/en/download/) version 18.0 or above:
-  - When installing Node.js, you are recommended to check all checkboxes related to dependencies.
+### 💎 核心特性
 
-## Generate a new site
+| 特性 | 说明 |
+|------|------|
+| **🔧 开箱即用** | BaseServiceImpl 提供安全的增量更新、自动 DTO 验证 |
+| **🔐 JWT 认证** | Security 三链架构，支持角色权限控制 (RBAC) |
+| **💾 二级缓存** | Redis + Caffeine，灵活的缓存策略 |
+| **📊 API 文档** | SpringDoc 自动生成 Swagger UI |
+| **🧪 架构测试** | ArchUnit 自动守护依赖规则 |
+| **🚀 性能优化** | Resilience4j 限流熔断，MapStruct 高效转换 |
 
-Generate a new Docusaurus site using the **classic template**.
+---
 
-The classic template will automatically be added to your project after you run the command:
+## 🛠️ 技术栈
 
-```bash
-npm init docusaurus@latest my-website classic
+### 核心框架  
+- **Spring Boot** 3.5.7
+- **Java** 21 (LTS)
+- **MyBatis-Plus** 3.5.14
+
+### 数据存储
+- **MySQL** 9.4.0 - 主数据库
+- **Redis** - 缓存和会话
+- **MyBatis-Plus Auto DDL** - 自动维护数据库表结构
+
+### 开发工具
+- **Lombok** 1.18.42 - 减少样板代码
+- **MapStruct** 1.6.3 - Bean 映射
+- **ArchUnit** 1.4.1 - 架构测试
+
+### 其他
+- **SpringDoc** 2.8.14 - API 文档
+- **JWT** (JJWT 0.13.0) - Token 认证
+- **Resilience4j** - 容错组件
+
+---
+
+## 🏗️ 架构设计
+
+### 模块化单体
+
+```
+blog-application (启动类)
+    ↓ 依赖
+blog-modules (业务模块)
+    ├── blog-system (用户、角色、权限)
+    ├── blog-article (文章管理)
+    ├── blog-comment (评论系统)
+    └── blog-file (S3 文件存储)
+    ↓ 依赖
+blog-common (公共组件)
+    └── BaseServiceImpl (核心框架)
 ```
 
-You can type this command into Command Prompt, Powershell, Terminal, or any other integrated terminal of your code editor.
+### 关键设计原则
 
-The command also installs all necessary dependencies you need to run Docusaurus.
+✅ **API-Service 双层分离**  
+每个模块包含 `api` (DTO/VO/Interface) 和 `service` (实现) 两层。
 
-## Start your site
+✅ **严格的依赖规则**  
+- Service → API ✅
+- Service ↔ Service ❌ (禁止跨模块直接调用)
 
-Run the development server:
+✅ **微服务就绪**  
+- 无跨模块 SQL Join
+- 通过接口调用解耦
+
+---
+
+## 📊 项目评分
+
+根据[项目评价报告](../architecture/analysis)，本项目综合评分：
+
+> **9.2 / 10** ⭐⭐⭐⭐⭐
+
+**优势**：
+- ✅ 架构设计清晰
+- ✅ 代码质量高
+- ✅ 测试覆盖完善
+- ✅ 文档体系完整
+
+---
+
+## 🚀 快速开始
+
+### 环境要求
+
+- ☕ JDK 21+
+- 📦 Maven 3.6+
+- 🗄️ MySQL 8.0+
+- 🔴 Redis 6.0+
+
+### 3 分钟启动
 
 ```bash
-cd my-website
-npm run start
+# 1. 克隆项目
+git clone https://github.com/liusxml/personal-blog-backend.git
+cd personal-blog-backend
+
+# 2. 配置数据库（见快速启动指南）
+vim blog-application/src/main/resources/application.yml
+
+# 3. 启动应用
+mvn spring-boot:run -pl blog-application
+
+# 4. 访问 Swagger UI
+open http://localhost:8080/swagger-ui.html
 ```
 
-The `cd` command changes the directory you're working with. In order to work with your newly created Docusaurus site, you'll need to navigate the terminal there.
+详细步骤请查看 [快速启动指南](./quick-start)。
 
-The `npm run start` command builds your website locally and serves it through a development server, ready for you to view at http://localhost:3000/.
+---
 
-Open `docs/intro.md` (this page) and edit some lines: the site **reloads automatically** and displays your changes.
+## 📚 学习路径
+
+### 新手路径
+
+1. [快速启动](./quick-start) - 5 分钟启动项目
+2. [架构总览](../architecture/overview) - 理解系统设计
+3. [开发规范](../development/standards) - 编码标准
+4. [API 参考](../api/overview) - REST API 文档
+
+### 进阶路径
+
+1. [Base Framework](../development/base-framework) - 核心框架深度解析
+2. [Security 三链](../infrastructure/security/overview) - 认证授权机制
+3. [ArchUnit 测试](../testing/archunit) - 架构测试实战
+4. [缓存策略](../infrastructure/redis/cache-strategy) - 性能优化
+
+---
+
+## 🎯 适用场景
+
+### ✅ 适合
+
+- 个人博客后端系统
+- Spring Boot 3 学习项目
+- 模块化架构实践
+- 微服务演进参考
+
+### ⚠️ 不适合
+
+- 超大规模分布式系统（可演进为微服务）
+- 实时通讯应用（需额外 WebSocket 支持）
+
+---
+
+## 🤝 贡献
+
+欢迎提交 Issue 和 Pull Request！
+
+**贡献前请阅读**：
+- [开发规范](../development/standards)
+- [Git 提交规范](../development/git-commit)
+- [测试指南](../testing/overview)
+
+---
+
+## 📄 许可证
+
+MIT License
+
+---
+
+## 🔗 快速链接
+
+- 🌐 [GitHub 仓库](https://github.com/liusxml/personal-blog-backend)
+- 📖 [在线文档](https://liusxml.github.io/personal-blog-backend/)
+- 🐛 [问题反馈](https://github.com/liusxml/personal-blog-backend/issues)
+
+---
+
+**准备好了吗？** 👉 [开始快速启动](./quick-start)

@@ -6,7 +6,7 @@ sidebar_position: 2
 
 ## 📌 问题：为什么 CacheWarmup 不使用 RedisUtils？
 
-你的项目中**同时使用了三种缓存方式**，每种都有其特定的使用场景。让我详细解释：
+项目中**同时使用了三种缓存方式**，每种都有其特定的使用场景。让我详细解释：
 
 ---
 
@@ -307,7 +307,7 @@ private void warmupRoles() {
 
 **非常好！** ✅
 
-你的项目已经很好地实践了"**合适的工具用在合适的场景**"的原则：
+项目已经很好地实践了"**合适的工具用在合适的场景**"的原则：
 
 1. **Spring Cache** - 用于 `UserServiceImpl.getUserRoleKeys()`
 2. **RedisUtils** - 用于 `RemoteUserServiceImpl.getUsersByIds()` 批量操作
@@ -317,4 +317,4 @@ private void warmupRoles() {
 
 ---
 
-**建议**: 如果你想更统一，可以将 `CacheWarmup` 改为使用 `RedisUtils`，但保持现状也完全没问题。
+**建议**: 如果想更统一，可以将 `CacheWarmup` 改为使用 `RedisUtils`，但保持现状也完全没问题。

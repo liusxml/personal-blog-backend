@@ -131,6 +131,9 @@ const sidebars: SidebarsConfig = {
           label: 'Security 安全',
           items: ['infrastructure/security/overview'],
         },
+        'infrastructure/auto-ddl',        // MyBatis-Plus Auto DDL
+        'infrastructure/mybatis-plus',    // MyBatis-Plus 使用指南
+        'infrastructure/logging',         // 日志系统
         'infrastructure/api-docs',        // SpringDoc API 文档
         'infrastructure/resilience4j',    // Resilience4j 容错指南
       ],
@@ -161,6 +164,9 @@ const sidebars: SidebarsConfig = {
       },
       items: [
         'api/overview',  // API 概览
+        'api/auth',      // 认证 API
+        'api/users',     // 用户管理 API
+        'api/roles',     // 角色管理 API
       ],
     },
 

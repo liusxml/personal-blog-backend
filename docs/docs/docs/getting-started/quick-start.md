@@ -45,15 +45,30 @@ spring:
     password: your_password
     driver-class-name: com.mysql.cj.jdbc.Driver
 
-  # Flyway 会自动创建数据库表
-  flyway:
-    enabled: true
-    baseline-on-migrate: true
+  # Redis 配置（可选，用于缓存）
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password:  # 如果 Redis 没有密码，留空
+
+# MyBatis-Plus 配置
+mybatis-plus:
+  global-config:
+    # 自动维护 DDL（开发/测试环境）
+    db-config:
+      # 字段策略：非空判断
+      insert-strategy: not_null
+      update-strategy: not_null
+    # Auto DDL 自动建表
+    enable-auto-ddl: true
 ```
 
 :::warning 重要提示
 - 请将 `your_username` 和 `your_password` 替换为你的 MySQL 用户名和密码
-- 数据库 `blog_db` 会在首次启动时由 Flyway 自动创建（如果不存在）
+- 数据库 `blog_db` 需要手动创建，或在 URL 中添加 `createDatabaseIfNotExist=true`
+- **MyBatis-Plus Auto DDL** 会根据实体类自动创建/更新表结构（仅开发环境使用）
+- **Redis 是可选的**，如果没有安装 Redis，可以跳过 Redis 配置，应用会自动禁用缓存
 :::
 
 ### 3️⃣ 构建项目
@@ -134,15 +149,16 @@ Started BlogApplication in X.XXX seconds (process running for X.XXX)
 ### 使用 Swagger UI（推荐新手）
 
 1. 打开 http://localhost:8080/swagger-ui.html
-2. 找到 `user-controller` 分组
-3. 展开 `POST /api/users/register` 接口
+2. 找到 `认证管理` 分组
+3. 展开 `POST /auth/register` 接口
 4. 点击 **Try it out**
 5. 输入以下 JSON：
 ```json
 {
   "username": "testuser",
-  "password": "password123",
-  "email": "test@example.com"
+  "password": "Password123!",
+  "email": "test@example.com",
+  "nickname": "Test User"
 }
 ```
 6. 点击 **Execute**
@@ -150,12 +166,13 @@ Started BlogApplication in X.XXX seconds (process running for X.XXX)
 ### 使用 curl
 
 ```bash
-curl -X POST http://localhost:8080/api/users/register \
+curl -X POST http://localhost:8080/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "username": "testuser",
-    "password": "password123",
-    "email": "test@example.com"
+    "password": "Password123!",
+    "email": "test@example.com",
+    "nickname": "Test User"
   }'
 ```
 
@@ -163,14 +180,44 @@ curl -X POST http://localhost:8080/api/users/register \
 
 ```json
 {
-  "code": 200,
-  "message": "success",
+  "code": 0,
+  "message": "Success",
   "data": {
     "id": 1,
     "username": "testuser",
-    "email": "test@example.com"
+    "email": "test@example.com",
+    "nickname": "Test User",
+    "status": 1
   }
 }
+```
+
+### 🔐 测试登录和认证
+
+注册成功后，你可以测试登录：
+
+```bash
+# 登录获取 Token
+curl -X POST http://localhost:8080/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "testuser",
+    "password": "Password123!"
+  }'
+
+# 返回结果包含 Token
+{
+  "code": 0,
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiJ9...",
+    "tokenType": "Bearer",
+    "expiresIn": 86400
+  }
+}
+
+# 使用 Token 访问受保护的 API
+curl -X GET http://localhost:8080/api/users/me \
+  -H "Authorization: Bearer {your_token}"
 ```
 
 ## 🔍 常见问题
@@ -213,9 +260,10 @@ server:
 
 恭喜！你已经成功启动了应用。接下来可以：
 
-- 📖 **[了解架构设计](/docs/architecture/overview)** - 深入理解系统架构
-- 🛠️ **[学习开发规范](/docs/development/standards)** - 如何贡献代码
-- 🧪 **[编写测试](/docs/testing/overview)** - 保证代码质量
+- 📖 [了解架构设计](../architecture/overview) - 深入理解系统架构
+- 📚 [API 参考文档](../api/overview) - 查看完整的 REST API
+- 🛠️ [学习开发规范](../development/standards) - 如何贡献代码
+- 🧪 [编写测试](../testing/overview) - 保证代码质量
 
 ---
 

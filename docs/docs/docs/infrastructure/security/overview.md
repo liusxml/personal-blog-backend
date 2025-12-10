@@ -12,172 +12,348 @@ Personal Blog Backend 使用 **Spring Security + JWT** 实现无状态的认证�
 sequenceDiagram
     participant Client as 客户端
     participant Filter as JWT过滤器
-    participant Auth as 认证服务
-    participant DB as 数据库
     
     Client->>Filter: 1. 发送请求(带Token)
     Filter->>Filter: 2. 提取JWT Token
     Filter->>Filter: 3. 验证Token签名
-    Filter->>Filter: 4. 解析用户信息
-    Filter->>Auth: 5. 加载用户权限
-    Auth->>DB: 6. 查询角色权限
-    DB-->>Auth: 7. 返回权限列表
-    Auth-->>Filter: 8. 构建认证对象
-    Filter->>Filter: 9. 设置Security Context
-    Filter-->>Client: 10. 继续请求处理
+    Filter->>Filter: 4. 从Token解析用户信息<br/>(username, userId, roles)
+    Filter->>Filter: 5. 构建权限列表
+    Filter->>Filter: 6. 创建认证对象
+    Filter->>Filter: 7. 设置Security Context
+    Filter-->>Client: 8. 继续请求处理
 ```
+
+:::tip JWT 无状态认证
+所有用户信息（用户名、ID、角色）都存储在 JWT Token 中，**无需查询数据库**，实现真正的无状态认证，性能优秀。
+:::
 
 ## 🔒 核心组件
 
-### 1. Security 配置类
+### 1. Security 配置类（三链架构）⭐
 
-```java title="blog-system-service/src/main/java/com/blog/system/config/SecurityConfig.java"
+项目采用**多过滤链设计模式**，使用 `@Order` 实现优先级控制，支持单体到微服务的平滑演进。
+
+```java title="blog-application/src/main/java/com/blog/config/SecurityConfig.java"
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity  // 启用方法级安全
-@RequiredArgsConstructor
+@EnableMethodSecurity  // 启用方法级安全注解（@PreAuthorize等）
 public class SecurityConfig {
     
-    private final JwtTokenProvider jwtTokenProvider;
-    private final UserDetailsService userDetailsService;
+    private final SecurityProperties securityProperties;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    
+    public SecurityConfig(SecurityProperties securityProperties,
+                          JwtAuthenticationFilter jwtAuthenticationFilter) {
+        this.securityProperties = securityProperties;
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    }
+    
+    // ============================================
+    // 过滤链 1：白名单链 (@Order(1)) - 最高优先级
+    // ============================================
     
     /**
-     * 密码编码器
+     * 白名单路径安全过滤链
+     * 
+     * 职责：对配置的 permitAllUrls 路径执行 permitAll()
+     * 包括：/actuator/health, /actuator/info, /v3/api-docs/** 等
      */
+    @Bean
+    @Order(1)
+    public SecurityFilterChain permitAllChain(HttpSecurity http) throws Exception {
+        List<String> urls = getSafePermitAllUrls();
+        if (CollectionUtils.isEmpty(urls)) {
+            http.securityMatcher(r -> false);  // 空白名单时不匹配任何请求
+            return http.build();
+        }
+        
+        http.securityMatcher(urls.toArray(new String[0]))
+            .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+            .csrf(AbstractHttpConfigurer::disable)
+            .sessionManagement(s -> 
+                s.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+        
+        return http.build();
+    }
+    
+    // ============================================
+    // 过滤链 2：JWT 认证链 (@Order(2)) - API 访问控制
+    // ============================================
+    
+    /**
+     * JWT 认证过滤链
+     * 
+     * 匹配：/auth/** 和 /api/** 的请求
+     * 认证方式：JWT Bearer Token
+     */
+    @Bean
+    @Order(2)
+    public SecurityFilterChain jwtChain(HttpSecurity http) throws Exception {
+        http.securityMatcher("/auth/**", "/api/**")
+            .csrf(AbstractHttpConfigurer::disable)
+            .sessionManagement(s -> 
+                s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth -> auth
+                // 注册和登录公开
+                .requestMatchers("/auth/register", "/auth/login").permitAll()
+                // 其他 /api/** 需要认证
+                .anyRequest().authenticated()
+            )
+            // 添加 JWT 过滤器
+            .addFilterBefore(jwtAuthenticationFilter, 
+                           UsernamePasswordAuthenticationFilter.class);
+        
+        return http.build();
+    }
+    
+    // ============================================
+    // 过滤链 3：默认认证链 (@Order(3)) - 兜底策略
+    // ============================================
+    
+    /**
+     * 默认认证过滤链
+     * 
+     * 匹配：所有未被白名单和JWT链处理的请求
+     * 认证方式：HTTP Basic + Form Login
+     */
+    @Bean
+    @Order(3)
+    public SecurityFilterChain defaultChain(HttpSecurity http) throws Exception {
+        http.csrf(AbstractHttpConfigurer::disable)
+            .sessionManagement(s -> 
+                s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+            .authorizeHttpRequests(auth -> 
+                auth.anyRequest().authenticated())
+            .formLogin(form -> 
+                form.defaultSuccessUrl("/swagger-ui.html", true))
+            .httpBasic(Customizer.withDefaults());
+        
+        return http.build();
+    }
+    
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
     
-    /**
-     * 认证管理器
-     */
-    @Bean
-    public AuthenticationManager authenticationManager(
-            AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
+    // 私有工具方法
+    private List<String> getSafePermitAllUrls() {
+        List<String> rawUrls = securityProperties.getPermitAllUrls();
+        if (CollectionUtils.isEmpty(rawUrls)) {
+            return ImmutableList.of();
+        }
+        return rawUrls.stream()
+            .filter(Objects::nonNull)
+            .filter(StringUtils::isNotBlank)
+            .map(StringUtils::trim)
+            .map(this::ensureLeadingSlash)
+            .collect(ImmutableList.toImmutableList());
     }
     
-    /**
-     * 安全过滤链
-     */
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-            // 禁用 CSRF（使用JWT无需CSRF保护）
-            .csrf(csrf -> csrf.disable())
-            
-            // 禁用 Session（无状态认证）
-            .sessionManagement(session -> 
-                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            
-            // 配置授权规则
-            .authorizeHttpRequests(auth -> auth
-                // 公开端点
-                .requestMatchers("/auth/**", "/api/public/**").permitAll()
-                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                .requestMatchers("/actuator/health", "/actuator/info").permitAll()
-                
-                // 其他端点需要认证
-                .anyRequest().authenticated()
-            )
-            
-            // 添加 JWT 过滤器
-            .addFilterBefore(jwtAuthenticationFilter(), 
-                UsernamePasswordAuthenticationFilter.class)
-            
-            // 异常处理
-            .exceptionHandling(exception -> exception
-                .authenticationEntryPoint(unauthorizedHandler())
-                .accessDeniedHandler(accessDeniedHandler())
-            );
-        
-        return http.build();
+    private String ensureLeadingSlash(String path) {
+        return path.startsWith("/") ? path : "/" + path;
     }
 }
 ```
 
-### 2. JWT Token 提供者
+:::tip 三链架构优势
+- ✅ **关注点分离** - 每条链职责单一，易于理解和维护
+- ✅ **优先级清晰** - `@Order` 控制执行顺序，避免配置冲突
+- ✅ **易于扩展** - 添加新认证方式无需修改现有链
+- ✅ **微服务就绪** - 拆分时每个服务可独立配置过滤链
+:::
 
-```java title="blog-system-service/src/main/java/com/blog/system/security/JwtTokenProvider.java"
-@Component
-@RequiredArgsConstructor
-@Slf4j
-public class JwtTokenProvider {
-    
-    @Value("${jwt.secret}")
-    private String jwtSecret;
-    
-    @Value("${jwt.expiration:7200000}")  // 默认2小时
-    private long jwtExpiration;
-    
-    private final UserDetailsService userDetailsService;
+### 2. SecurityProperties 配置类
+
+使用 `@ConfigurationProperties` 模式管理安全配置，提供类型安全和IDE支持。
+
+```java title="blog-common/src/main/java/com/blog/common/config/SecurityProperties.java"
+@Data
+@Configuration
+@ConfigurationProperties(prefix = "app.security")
+public class SecurityProperties {
     
     /**
-     * 生成 JWT Token
+     * URL 白名单配置
      */
-    public String generateToken(String username, List<String> roles) {
-        Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtExpiration);
+    private List<String> permitAllUrls = new ArrayList<>();
+    
+    /**
+     * JWT 签名密钥（至少256位）
+     */
+    private String jwtSecret = "default-secret-key-change-in-production-at-least-256-bits-long";
+    
+    /**
+     * Token 过期时间，默认 2 小时（毫秒）
+     */
+    private Long jwtExpiration = 7200000L;
+}
+```
+
+**配置文件示例**：
+
+```yaml title="application.yaml"
+app:
+  security:
+    permit-all-urls:
+      - /actuator/health
+      - /actuator/info
+      - /v3/api-docs/**
+      - /swagger-ui/**
+    jwt-secret: ${JWT_SECRET:default-secret-key-change-in-production}
+    jwt-expiration: 7200000  # 2小时
+```
+
+### 3. JWT Token 提供者
+
+```java title="blog-common/src/main/java/com/blog/common/security/JwtTokenProvider.java"
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class JwtTokenProvider {
+    
+    private final SecurityProperties securityProperties;
+    
+    /**
+     * 生成 JWT Token（带用户ID）
+     */
+    public String generateToken(UserDetails userDetails, Long userId) {
+        Map<String, Object> claims = new HashMap<>();
         
+        // 提取角色信息
+        List<String> roles = userDetails.getAuthorities().stream()
+            .map(GrantedAuthority::getAuthority)
+            .collect(Collectors.toList());
+        claims.put("roles", roles);
+        claims.put("userId", userId);  // ✅ 存储用户ID便于后续获取
+        
+        return createToken(claims, userDetails.getUsername());
+    }
+    
+    /**
+     * 创建 Token
+     */
+    private String createToken(Map<String, Object> claims, String subject) {
         return Jwts.builder()
-            .setSubject(username)
-            .claim("roles", roles)
-            .setIssuedAt(now)
-            .setExpiration(expiryDate)
-            .signWith(SignatureAlgorithm.HS256, jwtSecret)
+            .claims(claims)
+            .subject(subject)
+            .issuedAt(new Date(System.currentTimeMillis()))
+            .expiration(new Date(System.currentTimeMillis() + 
+                       securityProperties.getJwtExpiration()))
+            .signWith(getSigningKey())  // ✅ 使用 SecretKey
             .compact();
     }
     
     /**
-     * 从 Token 中获取用户名
+     * 验证 Token 有效性
      */
-    public String getUsernameFromToken(String token) {
-        Claims claims = Jwts.parser()
-            .setSigningKey(jwtSecret)
-            .parseClaimsJws(token)
-            .getBody();
-        
-        return claims.getSubject();
+    public boolean validateToken(String token) {
+        try {
+            Jwts.parser()
+                .verifyWith(getSigningKey())  // ✅ 现代API
+                .build()
+                .parseSignedClaims(token);
+            return true;
+        } catch (Exception e) {
+            log.error("JWT Token 验证失败: {}", e.getMessage());
+            return false;
+        }
     }
     
     /**
-     * 从 Token 中获取角色列表
+     * 从 Token 中提取用户名
+     */
+    public String getUsernameFromToken(String token) {
+        return getClaimsFromToken(token).getSubject();
+    }
+    
+    /**
+     * 从 Token 中提取用户ID
+     */
+    public Long getUserIdFromToken(String token) {
+        Claims claims = getClaimsFromToken(token);
+        Object userId = claims.get("userId");
+        if (userId instanceof Integer) {
+            return ((Integer) userId).longValue();
+        }
+        return (Long) userId;
+    }
+    
+    /**
+     * 从 Token 中提取角色列表
      */
     @SuppressWarnings("unchecked")
     public List<String> getRolesFromToken(String token) {
-        Claims claims = Jwts.parser()
-            .setSigningKey(jwtSecret)
-            .parseClaimsJws(token)
-            .getBody();
-        
+        Claims claims = getClaimsFromToken(token);
         return (List<String>) claims.get("roles");
     }
     
     /**
-     * 验证 Token 是否有效
+     * 从 Token 中解析所有 Claims
      */
-    public boolean validateToken(String token) {
-        try {
-            Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(token);
-            return true;
-        } catch (SignatureException e) {
-            log.error("无效的JWT签名: {}", e.getMessage());
-        } catch (MalformedJwtException e) {
-            log.error("无效的JWT Token: {}", e.getMessage());
-        } catch (ExpiredJwtException e) {
-            log.error("JWT Token已过期: {}", e.getMessage());
-        } catch (UnsupportedJwtException e) {
-            log.error("不支持的JWT Token: {}", e.getMessage());
-        } catch (IllegalArgumentException e) {
-            log.error("JWT claims字符串为空: {}", e.getMessage());
-        }
-        return false;
+    private Claims getClaimsFromToken(String token) {
+        return Jwts.parser()
+            .verifyWith(getSigningKey())
+            .build()
+            .parseSignedClaims(token)
+            .getPayload();
+    }
+    
+    /**
+     * 获取签名密钥
+     */
+    private SecretKey getSigningKey() {
+        byte[] keyBytes = securityProperties.getJwtSecret()
+                                           .getBytes(StandardCharsets.UTF_8);
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 }
 ```
 
-### 3. JWT 认证过滤器
+:::warning JJWT API 版本
+项目使用 **JJWT 0.12.x** 现代API：
+- ✅ `Keys.hmacShaKeyFor()` - 生成 `SecretKey`
+- ✅ `.verifyWith()` - 验证签名
+- ✅ `.parseSignedClaims()` - 解析Token
+
+❌ 避免使用已废弃的API：
+- ~~`.setSigningKey(String)`~~ - 已废弃
+- ~~`SignatureAlgorithm.HS256`~~ - 已废弃
+:::
+
+### 4. JwtAuthenticationDetails 类
+
+用于在认证详情中存储额外的用户信息（如userId）。
+
+```java title="blog-common/src/main/java/com/blog/common/security/JwtAuthenticationDetails.java"
+@Getter
+public class JwtAuthenticationDetails extends WebAuthenticationDetails {
+    
+    private final Long userId;
+    
+    public JwtAuthenticationDetails(HttpServletRequest request, Long userId) {
+        super(request);
+        this.userId = userId;
+    }
+}
+```
+
+**使用场景**：在JWT过滤器中设置
+
+```java
+// 从JWT Token提取userId
+Long userId = tokenProvider.getUserIdFromToken(jwt);
+
+// 创建认证详情
+JwtAuthenticationDetails details = new JwtAuthenticationDetails(request, userId);
+
+// 设置到Authentication
+UsernamePasswordAuthenticationToken authentication = 
+    new UsernamePasswordAuthenticationToken(username, null, authorities);
+authentication.setDetails(details);
+```
+
+### 5. JWT 认证过滤器
 
 ```java
 @Component
@@ -388,9 +564,12 @@ public class UserController {
 
 ### 4. 获取当前用户信息
 
-```java
-@Component
+```java title="blog-common/src/main/java/com/blog/common/utils/SecurityUtils.java"
 public class SecurityUtils {
+    
+    private SecurityUtils() {
+        throw new UnsupportedOperationException("Utility class");
+    }
     
     /**
      * 获取当前登录用户名
@@ -400,37 +579,60 @@ public class SecurityUtils {
             .getContext()
             .getAuthentication();
         
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        if (authentication != null && 
+            authentication.getPrincipal() instanceof UserDetails userDetails) {
+            return userDetails.getUsername();
         }
         
-        return authentication.getName();
+        return null;
     }
     
     /**
      * 获取当前登录用户ID
+     * 
+     * 从 JwtAuthenticationDetails 直接获取，无需查询数据库
      */
     public static Long getCurrentUserId() {
-        String username = getCurrentUsername();
+        Authentication authentication = SecurityContextHolder
+            .getContext()
+            .getAuthentication();
         
-        // 从数据库查询用户ID（可以加缓存）
-        // 或者从 JWT Token 的 claims 中获取
-        return userService.getIdByUsername(username);
+        if (authentication != null && 
+            authentication.getDetails() instanceof JwtAuthenticationDetails details) {
+            return details.getUserId();
+        }
+        
+        return null;
+    }
+    
+    /**
+     * 获取当前用户角色列表
+     */
+    public static List<String> getCurrentUserRoles() {
+        Authentication authentication = SecurityContextHolder
+            .getContext()
+            .getAuthentication();
+        
+        if (authentication != null) {
+            return authentication.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .collect(Collectors.toList());
+        }
+        return List.of();
     }
     
     /**
      * 检查当前用户是否有指定角色
      */
     public static boolean hasRole(String role) {
-        Authentication authentication = SecurityContextHolder
-            .getContext()
-            .getAuthentication();
-        
-        return authentication.getAuthorities().stream()
-            .anyMatch(auth -> auth.getAuthority().equals("ROLE_" + role));
+        return getCurrentUserRoles().contains(role);
     }
 }
 ```
+
+:::tip 性能优化
+`getCurrentUserId()` 从 `JwtAuthenticationDetails` 直接获取用户ID，**无需查询数据库**，性能优秀且线程安全。
+:::
 
 ## ⚠️ 安全最佳实践
 
@@ -451,19 +653,30 @@ String md5Hash = DigestUtils.md5Hex(plainPassword);
 
 ```yaml
 # ❌ 错误：硬编码在配置文件
-jwt:
-  secret: mysecretkey123
+app:
+  security:
+    jwt-secret: mysecretkey123  # 太短且硬编码
 
 # ✅ 正确：使用环境变量
-jwt:
-  secret: ${JWT_SECRET}
-  expiration: ${JWT_EXPIRATION:7200000}
+app:
+  security:
+    permit-all-urls:
+      - /actuator/health
+      - /actuator/info
+    jwt-secret: ${JWT_SECRET}  # 从环境变量读取
+    jwt-expiration: 7200000
 ```
 
 **生成安全的 Secret**：
 ```bash
-# 生成256位随机字符串
+# 生成256位随机字符串（至少32字节）
 openssl rand -base64 32
+
+# 设置环境变量（Linux/Mac）
+export JWT_SECRET="生成的随机字符串"
+
+# 设置环境变量（Windows）
+set JWT_SECRET=生成的随机字符串
 ```
 
 ### 3. Token 传递
