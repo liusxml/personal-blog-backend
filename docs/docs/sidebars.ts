@@ -102,7 +102,6 @@ const sidebars: SidebarsConfig = {
       },
       items: [
         'testing/overview',           // 测试总览
-        'testing/archunit',           // ArchUnit 架构测试
         'testing/mockbean-migration', // MockBean 迁移指南
       ],
     },
@@ -131,8 +130,19 @@ const sidebars: SidebarsConfig = {
           label: 'Security 安全',
           items: ['infrastructure/security/overview'],
         },
+        {
+          type: 'category',
+          label: '📊 应用监控',
+          items: [
+            'infrastructure/monitoring/actuator',          // Actuator 端点
+            'infrastructure/monitoring/micrometer',        // Micrometer 指标
+            'infrastructure/monitoring/spring-boot-admin', // Admin 界面
+          ],
+        },
+        'infrastructure/archunit',        // ArchUnit 架构测试
         'infrastructure/auto-ddl',        // MyBatis-Plus Auto DDL
         'infrastructure/mybatis-plus',    // MyBatis-Plus 使用指南
+        'infrastructure/mapstruct',       // MapStruct 对象映射
         'infrastructure/p6spy',           // p6spy SQL监控
         'infrastructure/logging',         // 日志系统
         'infrastructure/api-docs',        // SpringDoc API 文档
@@ -164,10 +174,11 @@ const sidebars: SidebarsConfig = {
         description: '完整的 REST API 接口文档和使用示例。',
       },
       items: [
-        'api/overview',  // API 概览
-        'api/auth',      // 认证 API
-        'api/users',     // 用户管理 API
-        'api/roles',     // 角色管理 API
+        'api/overview',           // API 概览
+        'api/auth',               // 认证 API
+        'api/users',              // 用户管理 API
+        'api/roles',              // 角色管理 API
+        'api/actuator-endpoints', // Actuator 端点 API
       ],
     },
 
