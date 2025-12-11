@@ -48,10 +48,21 @@ public class ArchUnitIntegrationTest {
      */
     @BeforeAll
     static void setup() {
-        log.info("▶️ ArchUnit 测试初始化: 正在加载待检查的 Java 类...");
-        // 直接引用 ArchitectureTest 中已导入的 JavaClasses
+        log.info("=".repeat(80));
+        log.info("🚀 ArchUnit 架构测试套件 - 初始化开始");
+        log.info("=".repeat(80));
+        log.info("📦 正在加载待检查的 Java 类（来源：ArchitectureTest.CLASSES 缓存）...");
+
+        // 直接引用 ArchitectureTest 中已导入的 Ja vaClasses
+        long startTime = System.currentTimeMillis();
         importedClasses = ArchitectureTest.CLASSES;
-        log.info("✅ ArchUnit 测试初始化完成: 共加载 {} 个类进行架构检查。", importedClasses.size());
+        long loadTime = System.currentTimeMillis() - startTime;
+
+        log.info("✅ 类加载完成");
+        log.info("   ├─ 类总数: {} 个", importedClasses.size());
+        log.info("   ├─ 加载耗时: {} ms（得益于缓存机制）", loadTime);
+        log.info("   └─ 业务模块: {}", ArchitectureTest.BUSINESS_MODULES);
+        log.info("=".repeat(80));
     }
 
     /**
@@ -62,12 +73,21 @@ public class ArchUnitIntegrationTest {
     @Order(1)
     @DisplayName("1. 验证分层架构规则")
     void testLayerRules() {
-        log.info("▶️ 开始测试 (1/4): 分层架构规则...");
+        log.info("");
+        log.info("🔍 [测试 1/7] 分层架构规则 (Layered Architecture)");
+        log.info("-".repeat(80));
+        log.info("📋 验证项:");
+        log.info("   ├─ Controller → Service → Repository → Entity 依赖方向");
+        log.info("   ├─ Controller 必须在 *.controller 包下");
+        log.info("   ├─ Service 实现必须在 *.impl 子包");
+        log.info("   └─ Repository/Mapper 必须在正确的包下");
+
         LayerRule.LAYERED_ARCHITECTURE.check(importedClasses);
         LayerRule.CONTROLLERS_IN_CORRECT_PACKAGE.check(importedClasses);
         LayerRule.SERVICES_IN_IMPL_PACKAGE.check(importedClasses);
         LayerRule.REPOSITORIES_IN_CORRECT_PACKAGE.check(importedClasses);
-        log.info("✅ 测试通过 (1/4): 分层架构规则全部遵守。");
+
+        log.info("✅ 测试通过: 所有分层架构规则遵守");
     }
 
     /**
@@ -78,12 +98,20 @@ public class ArchUnitIntegrationTest {
     @Order(2)
     @DisplayName("2. 验证模块间依赖规则")
     void testModuleRules() {
-        log.info("▶️ 开始测试 (2/4): 模块间依赖规则...");
-        // 移除 assertDoesNotThrow
+        log.info("");
+        log.info("🔍 [测试 2/7] 模块间依赖规则 (Module Dependencies)");
+        log.info("-".repeat(80));
+        log.info("📋 验证项:");
+        log.info("   ├─ 禁止跨模块实现层依赖（Service 不能直接依赖其他 Service）");
+        log.info("   ├─ 禁止模块间循环依赖");
+        log.info("   ├─ Common 模块无业务逻辑");
+        log.info("   └─ API 模块纯度检查");
+
         ModuleRule.checkNoCrossModuleImplDependency();
         ModuleRule.NO_CYCLE_BETWEEN_MODULES.check(importedClasses);
         ModuleRule.COMMON_NO_BUSINESS_LOGIC.check(importedClasses);
-        log.info("✅ 测试通过 (2/4): 模块间依赖规则全部遵守。");
+
+        log.info("✅ 测试通过: 所有模块间依赖规则遵守");
     }
 
     /**
@@ -94,10 +122,18 @@ public class ArchUnitIntegrationTest {
     @Order(3)
     @DisplayName("3. 验证命名规范规则")
     void testNamingRules() {
-        log.info("▶️ 开始测试 (3/4): 命名规范规则...");
-        // NamingRule 的 check 方法会执行所有命名规则
+        log.info("");
+        log.info("🔍 [测试 3/7] 命名规范规则 (Naming Conventions)");
+        log.info("-".repeat(80));
+        log.info("📋 验证项:");
+        log.info("   ├─ Service 接口和实现类命名");
+        log.info("   ├─ DTO 和 Entity 命名及注解");
+        log.info("   ├─ Mapper/Converter 命名");
+        log.info("   └─ 禁止类名包含下划线");
+
         NamingRule.check();
-        log.info("✅ 测试通过 (3/4): 命名规范规则全部遵守。");
+
+        log.info("✅ 测试通过: 所有命名规范规则遵守");
     }
 
     /**
@@ -108,10 +144,19 @@ public class ArchUnitIntegrationTest {
     @Order(4)
     @DisplayName("4. 验证设计模式与通用编码规则")
     void testDesignPatternAndGeneralCodingRules() {
-        log.info("▶️ 开始测试 (4/4): 设计模式与通用编码规则...");
-        // DesignPatternRule 的 check 方法会执行所有设计模式和通用编码规则
+        log.info("");
+        log.info("🔍 [测试 4/7] 设计模式与通用编码规则 (Design Patterns & General Coding)");
+        log.info("-".repeat(80));
+        log.info("📋 验证项:");
+        log.info("   ├─ Service 层禁止手动映射（强制使用 MapStruct）");
+        log.info("   ├─ 禁止字段注入（强制构造器注入）");
+        log.info("   ├─ 禁止泛型异常（Exception.class/RuntimeException.class）");
+        log.info("   ├─ Service 实现类应继承 BaseServiceImpl");
+        log.info("   └─ 通用编码规范（禁用 JodaTime、java.util.logging 等）");
+
         DesignPatternRule.check();
-        log.info("✅ 测试通过 (4/4): 设计模式与通用编码规则全部遵守。");
+
+        log.info("✅ 测试通过: 所有设计模式与通用编码规则遵守");
     }
 
     // 您也可以为单个特别复杂的 ArchRule 定义一个独立的测试方法，
@@ -120,10 +165,14 @@ public class ArchUnitIntegrationTest {
     @Order(5)
     @DisplayName("5. 独立验证 Service 层禁止手动映射")
     void testNoManualMappingInServiceIsolated() {
-        log.info("▶️ 开始测试 (5/X): 独立验证 Service 层禁止手动映射...");
+        log.info("");
+        log.info("🔍 [测试 5/7] 独立检查: Service 层禁止手动映射");
+        log.info("-".repeat(80));
+        log.info("📋 重点验证: Service 层必须使用 MapStruct，禁止 new DTO()、BeanUtils.copyProperties() 等手动映射");
 
         DesignPatternRule.NO_MANUAL_MAPPING_IN_SERVICE.check(importedClasses);
-        log.info("✅ 测试通过 (5/X): Service 层禁止手动映射规则遵守。");
+
+        log.info("✅ 测试通过: Service 层无手动映射代码");
     }
 
     /**
@@ -134,8 +183,38 @@ public class ArchUnitIntegrationTest {
     @Order(6)
     @DisplayName("6. 验证 API 规范规则")
     void testApiRules() {
-        log.info("▶️ 开始测试 (6/X): API 规范规则...");
+        log.info("");
+        log.info("🔍 [测试 6/7] API 规范规则 (API Standards)");
+        log.info("-".repeat(80));
+        log.info("📋 验证项:");
+        log.info("   ├─ Controller 方法必须返回 Result<T>（允许特殊类型白名单）");
+        log.info("   └─ Controller 禁止直接返回 Entity（防止数据泄露）");
+
         com.blog.architecture.rules.ApiRule.check();
-        log.info("✅ 测试通过 (6/X): API 规范规则全部遵守。");
+
+        log.info("✅ 测试通过: 所有 API 规范规则遵守");
+    }
+
+    /**
+     * 【第7步】测试 PlantUML 架构图规则（PlantUML Architecture Diagram Rules）。
+     * 验证实际代码架构是否符合 architecture-diagram.puml 中定义的模块依赖关系。
+     */
+    @Test
+    @Order(7)
+    @DisplayName("7. 验证 PlantUML 架构图规则")
+    void testPlantUMLArchitecture() {
+        log.info("");
+        log.info("🔍 [测试 7/7] PlantUML 架构图规则 (Architecture Diagram)");
+        log.info("-".repeat(80));
+        log.info("📋 验证项: 代码依赖关系是否符合 architecture-diagram.puml 中定义的架构约束");
+        log.info("📊 架构图位置: {}", com.blog.architecture.rules.PlantUMLRule.getPlantUmlDiagramPath());
+
+        com.blog.architecture.rules.PlantUMLRule.check();
+
+        log.info("✅ 测试通过: PlantUML 架构图规则遵守");
+        log.info("");
+        log.info("=".repeat(80));
+        log.info("🎉 ArchUnit 架构测试套件全部通过！架构规则完全遵守。");
+        log.info("=".repeat(80));
     }
 }

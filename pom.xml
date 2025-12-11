@@ -39,6 +39,7 @@
         <lombok.version>1.18.42</lombok.version>
         <mapstruct.version>1.6.3</mapstruct.version>
         <archunit.version>1.4.1</archunit.version>
+        <plantuml.version>8059</plantuml.version> <!-- PlantUML for architecture diagram visualization -->
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version> <!-- 新增: 增强 Lombok 与 MapStruct 协作 -->
         <git-commit-id-maven-plugin.version>9.0.2</git-commit-id-maven-plugin.version>
         <!-- 常用工具库 -->
@@ -257,6 +258,17 @@
                 <groupId>com.tngtech.archunit</groupId>
                 <artifactId>archunit-junit5</artifactId>
                 <version>${archunit.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!--
+             PlantUML：用于架构图可视化和图表规则验证。
+             将架构图转换为可执行的 ArchUnit 测试规则。
+            -->
+            <dependency>
+                <groupId>net.sourceforge.plantuml</groupId>
+                <artifactId>plantuml</artifactId>
+                <version>${plantuml.version}</version>
                 <scope>test</scope>
             </dependency>
 

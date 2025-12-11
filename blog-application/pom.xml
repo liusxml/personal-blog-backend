@@ -202,6 +202,13 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- PlantUML：用于架构图可视化测试 -->
+        <dependency>
+            <groupId>net.sourceforge.plantuml</groupId>
+            <artifactId>plantuml</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- =================================================== -->
         <!-- ============== 项目内部业务模块 ============== -->
         <!-- =================================================== -->
