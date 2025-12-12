@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.blog</groupId>
+        <artifactId>blog-module-comment</artifactId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>blog-comment-service</artifactId>
+    <packaging>jar</packaging>
+
+    <name>blog-comment-service (Comment Module Service)</name>
+    <description>评论模块的具体业务逻辑实现。</description>
+
+    <dependencies>
+        <!-- =================================================== -->
+        <!-- ================ 项目内部模块依赖 ================ -->
+        <!-- =================================================== -->
+        
+        <!--
+         依赖本模块的 API 层，这是实现契约的前提。
+         Service 层必须依赖并实现 API 中定义的接口。
+        -->
+        <dependency>
+            <groupId>com.blog</groupId>
+            <artifactId>blog-comment-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!--
+         跨模块 API 依赖：评论服务需要校验文章是否存在。
+         这是合理的业务依赖，遵循"依赖于接口，而非实现"的原则。
+         注意：只依赖 article-api，不依赖 article-service，避免循环依赖。
+        -->
+        <dependency>
+            <groupId>com.blog</groupId>
+            <artifactId>blog-article-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- 依赖公共模块，获取基础服务类和工具 -->
+        <dependency>
+            <groupId>com.blog</groupId>
+            <artifactId>blog-common</artifactId>
+        </dependency>
+    </dependencies>
+
+</project>
