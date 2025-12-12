@@ -23,7 +23,7 @@ import java.util.Optional;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/roles")
+@RequestMapping("/api/v1/roles")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')") // 所有接口都需要管理员权限
 @Tag(name = "角色管理", description = "角色CRUD和用户角色关联管理接口")
