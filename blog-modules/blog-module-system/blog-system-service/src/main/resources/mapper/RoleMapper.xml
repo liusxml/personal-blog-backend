@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.blog.system.mapper.RoleMapper">
+
+    <!-- ============================================ -->
+    <!-- Result Maps                                  -->
+    <!-- ============================================ -->
+
+    <!-- SysRole 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.blog.system.entity.SysRole">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="role_name" property="roleName" jdbcType="VARCHAR"/>
+        <result column="role_key" property="roleKey" jdbcType="VARCHAR"/>
+        <result column="role_sort" property="roleSort" jdbcType="INTEGER"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="create_by" property="createBy" jdbcType="BIGINT"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_by" property="updateBy" jdbcType="BIGINT"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+        <result column="is_deleted" property="isDeleted" jdbcType="INTEGER"/>
+        <result column="version" property="version" jdbcType="INTEGER"/>
+        <result column="remark" property="remark" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!-- ============================================ -->
+    <!-- SQL Fragments                                -->
+    <!-- ============================================ -->
+
+    <!-- 角色基础列 -->
+    <sql id="Base_Column_List">
+        id, role_name, role_key, role_sort, status,
+        create_by, create_time, update_by, update_time,
+        is_deleted, version, remark
+    </sql>
+
+    <!-- ============================================ -->
+    <!-- Custom Queries                               -->
+    <!-- ============================================ -->
+
+    <!--
+    为用户分配角色
+    优化点：
+    1. 使用 XML 格式，便于修改
+    2. 添加 ON DUPLICATE KEY UPDATE 防止重复插入
+    3. 添加审计字段
+    -->
+    <insert id="assignRoleToUser">
+        INSERT INTO sys_user_role (user_id, role_id)
+        VALUES (#{userId}, #{roleId})
+        ON DUPLICATE KEY UPDATE
+        user_id = VALUES(user_id)
+    </insert>
+
+    <!--
+    移除用户角色
+    优化点：返回影响行数，便于判断操作是否成功
+    -->
+    <delete id="removeRoleFromUser">
+        DELETE FROM sys_user_role
+        WHERE user_id = #{userId}
+          AND role_id = #{roleId}
+    </delete>
+
+    <!--
+    根据角色KEY查询角色（用于注册时分配默认角色）
+    优化点：利用 idx_role_key 唯一索引
+    -->
+    <select id="selectByRoleKey" resultMap="BaseResultMap">
+        SELECT
+            <include refid="Base_Column_List"/>
+        FROM sys_role
+        WHERE role_key = #{roleKey}
+          AND is_deleted = 0
+        LIMIT 1
+    </select>
+
+    <!--
+    查询所有启用的角色（用于角色列表）
+    优化点：只查询启用的角色，按排序字段排序
+    -->
+    <select id="selectAllActive" resultMap="BaseResultMap">
+        SELECT
+            <include refid="Base_Column_List"/>
+        FROM sys_role
+        WHERE status = 1
+          AND is_deleted = 0
+        ORDER BY role_sort ASC, create_time DESC
+    </select>
+
+    <!--
+    检查角色KEY是否存在（用于创建角色验证）
+    -->
+    <select id="existsByRoleKey" resultType="java.lang.Boolean">
+        SELECT COUNT(1) > 0
+        FROM sys_role
+        WHERE role_key = #{roleKey}
+          AND is_deleted = 0
+        LIMIT 1
+    </select>
+
+    <!--
+    统计用户拥有该角色的数量（用于删除角色前的检查）
+    -->
+    <select id="countUsersByRoleId" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM sys_user_role
+        WHERE role_id = #{roleId}
+    </select>
+
+    <!--
+    删除角色的所有用户关联关系（用于删除角色前的清理）
+    -->
+    <delete id="deleteAllRoleUserRelations">
+        DELETE FROM sys_user_role
+        WHERE role_id = #{roleId}
+    </delete>
+
+    <!--
+    批量查询角色（用于批量操作）
+    -->
+    <select id="selectByIds" resultMap="BaseResultMap">
+        SELECT
+            <include refid="Base_Column_List"/>
+        FROM sys_role
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND is_deleted = 0
+    </select>
+
+</mapper>
