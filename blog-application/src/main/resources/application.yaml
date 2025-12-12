@@ -1,0 +1,240 @@
+# ==============================================================================
+#  Personal Blog Backend - Application Configuration
+#  Author: liusxml
+# ==============================================================================
+
+# ==============================================================================
+#  1. 服务器配置 (Server)
+# ==============================================================================
+server:
+  port: 8080                                    # 业务端口
+  shutdown: graceful                            # 开启优雅停机
+  servlet:
+    session:
+      cookie:
+        name: BLOG_SESSION_ID                   # 避免与其他 localhost 应用 (如 SBA) 的 JSESSIONID 冲突
+
+
+# ==============================================================================
+#  2. Spring 核心与数据源配置
+# ==============================================================================
+spring:
+  application:
+    name: personal-blog-backend                 # 应用名称，用于注册中心和监控
+
+  profiles:
+    active: dev                                 # 当前激活的环境 (dev/prod)
+
+  lifecycle:
+    timeout-per-shutdown-phase: 30s             # 优雅停机缓冲时间
+
+
+  # ------------------------------------------------------------
+  # 开发工具
+  # ------------------------------------------------------------
+  devtools:
+    restart:
+      enabled: true
+      exclude: "db/**"                          # 排除db目录文件的热加载
+
+  # ------------------------------------------------------------
+  # Spring Boot Admin 客户端配置
+  # ------------------------------------------------------------
+  boot:
+    admin:
+      client:
+        url: http://localhost:9000              # Admin Server 地址
+        username: admin
+        password: "admin"
+        instance:
+          name: ${spring.application.name}
+          service-url: http://localhost:${server.port}/swagger-ui.html
+          management-url: http://localhost:${server.port}${management.endpoints.web.base-path}
+          health-url: http://localhost:${server.port}${management.endpoints.web.base-path}/health  # 显式指定健康检查地址，修复因修改 service-url 导致的地址拼接错误
+
+  # ------------------------------------------------------------
+  # 数据源配置 (HikariCP)
+  # ------------------------------------------------------------
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver # MySQL 8+ 驱动
+    url: >-
+      jdbc:mysql://127.0.0.1:3306/blog_db?
+      useUnicode=true&
+      characterEncoding=utf-8&
+      serverTimezone=Asia/Shanghai&
+      allowPublicKeyRetrieval=true&
+      useSSL=false
+    username: root
+    password: s3cr3t_r00t_p@ssw0rd              # ⚠️ 生产环境请使用加密密码或环境变量
+    
+    # HikariCP 连接池优化配置
+    hikari:
+      maximum-pool-size: 20                     # 最大连接数 (CPU核数*2 + 磁盘数)
+      minimum-idle: 20                          # 最小空闲连接数
+      connection-timeout: 30000                 # 连接超时时间(ms)
+      idle-timeout: 600000                      # 空闲存活时间(ms)
+      max-lifetime: 1800000                     # 连接最大生命周期(ms)
+
+  # ------------------------------------------------------------
+  # Redis 配置
+  # ------------------------------------------------------------
+  data:
+    redis:
+      host: 127.0.0.1                           # Redis 服务器地址
+      port: 6379                                # Redis 端口
+      database: 0                               # 使用的数据库索引 (0-15)
+      password:                                 # Redis 密码（如无密码则留空）
+      timeout: 3000ms                           # 连接超时时间
+      
+      # Lettuce 连接池配置（Spring Boot 2.0+ 默认使用 Lettuce）
+      lettuce:
+        pool:
+          max-active: 20                        # 最大活跃连接数
+          max-idle: 10                          # 最大空闲连接数
+          min-idle: 5                           # 最小空闲连接数（保持连接池预热）
+          max-wait: 3000ms                      # 连接池阻塞最大等待时间
+        shutdown-timeout: 100ms                 # 关闭超时
+
+# ==============================================================================
+#  3. 持久层配置 (MyBatis-Plus)
+# ==============================================================================
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml # Mapper XML 扫描路径
+  type-aliases-package: com.blog.**.entity      # 实体别名包
+  
+  global-config:
+    banner: false                               # 关闭启动 Banner
+    db-config:
+      id-type: assign_id                        # 主键策略：雪花算法（分布式唯一ID）
+      logic-delete-field: isDeleted             # 逻辑删除字段
+      logic-delete-value: 1                     # 删除值
+      logic-not-delete-value: 0                 # 未删除值
+      
+  configuration:
+    map-underscore-to-camel-case: true          # 开启驼峰命名转换
+    call-setters-on-nulls: true                 # NULL值也调用Setter
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl # SQL日志实现
+
+# ==============================================================================
+#  4. 安全配置 (Custom Security)
+# ==============================================================================
+app:
+  security:
+    # 鉴权白名单 (无需登录即可访问)
+    permit-all-urls:
+      - "/v3/api-docs/**"
+      - "/swagger-ui/**"
+      - "/swagger-ui.html"
+      - "/actuator/**"
+
+    # JWT 认证配置
+    jwt-secret: dev-blog-jwt-secret-key-minimum-256-bits-change-in-production-environment
+    # ⚠️ 生产环境建议通过环境变量注入: ${JWT_SECRET}
+    
+    jwt-expiration: 7200000                     # Token有效期 (ms), 2小时
+
+# ==============================================================================
+#  5. 监控与管理 (Actuator)
+# ==============================================================================
+management:
+  #server:
+    # port: 8081                                  # 独立的管理端口，增强安全性 (已禁用，以解决SBA权限问题)
+    
+  endpoints:
+    web:
+      base-path: /actuator
+      exposure:
+        include:                                # 暴露的端点
+          - health
+          - info
+          - logfile
+          - metrics
+          - env
+          - loggers
+          - beans
+          - mappings
+          - threaddump
+          - auditevents
+          - prometheus
+          
+  endpoint:
+    health:
+      show-details: always                      # 显示详细健康信息
+      probes:
+        enabled: true                           # 启用 K8s 探针
+
+  metrics:
+    enable:
+      jvm: true
+      system: true
+      http.server.requests: true
+      datasource: true
+    tags:
+      application: ${spring.application.name}   # 普罗米修斯标签
+
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+        step: 1m
+        descriptions: true
+
+  info:
+    env:
+      enabled: true                             # 显示环境信息
+    git:
+      enabled: true                             # 显示 Git 构建信息 (需插件支持)
+      mode: full                                # 显示详细 Git 信息 (包含提交信息等)
+    build:
+      enabled: true                             # 显示构建信息
+
+# ==============================================================================
+#  6. 日志配置 (Logging)
+# ==============================================================================
+logging:
+  file:
+    name: logs/personal-blog-backend.log           # 输出日志文件，供 Admin 查看
+  level:
+    root: INFO                                  # 全局日志级别
+    com.blog: INFO                              # 业务包日志级别
+    com.baomidou.mybatisplus.extension.ddl: INFO # DDL日志
+    org.springframework.web: INFO               # Web 日志
+
+# ==============================================================================
+#  7. 第三方服务 (OSS / Bitiful)
+# ==============================================================================
+bitiful:
+  endpoint: https://s3.bitiful.net
+  access-key: 5oiuy2PyCxTcLhbiWiiI8B94          # ⚠️ 建议使用环境变量
+  secret-key: vQePmfZ622H7A7JUV9txW4txFe2QeXX   # ⚠️ 建议使用环境变量
+  bucket: blog-module-file
+  region: cn-east-1
+
+oss:
+  type: BITIFUL                                 # OSS 类型标识
+
+# ==============================================================================
+#  8. 构建信息 (Maven Resource Filtering)
+# ==============================================================================
+info:
+  app:
+    name: '@project.name@'
+    description: '@project.description@'
+    version: '@project.version@'
+    encoding: '@project.build.sourceEncoding@'
+    java:
+      version: '@java.version@'
+
+# ==============================================================================
+#  9. SpringDoc OpenAPI 配置
+# ==============================================================================
+springdoc:
+  api-docs:
+    path: /v3/api-docs                  # OpenAPI 描述文件路径 (JSON格式)
+  swagger-ui:
+    path: /swagger-ui.html              # Swagger UI 访问路径
+    tags-sorter: alpha                  # 接口分组排序规则 (alpha=按字母顺序)
+    operations-sorter: alpha            # 接口方法排序规则 (alpha=按字母顺序)
+  packages-to-scan: com.blog            # 扫描包路径，避免扫描到框架自身的接口
+  show-actuator: true                   # 是否在 Swagger 中显示 Actuator 端点
