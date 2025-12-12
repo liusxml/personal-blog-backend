@@ -1,0 +1,79 @@
+server:
+  port: 9000
+
+spring:
+  application:
+    name: blog-admin-server
+
+  # ===================================================================
+  # 安全配置 (SECURITY) - 关键！
+  # 必须添加 spring-boot-starter-security 依赖
+  # ===================================================================
+  security:
+    user:
+      name: admin # 设置登录页面的用户名
+      # 【警告】生产环境严禁使用明文密码！
+      # 请替换为一个强密码，并建议使用环境变量注入，例如：${ADMIN_SERVER_PASSWORD}
+      password: "admin"
+
+  # ===================================================================
+  # Spring Boot Admin UI 自定义配置 (CUSTOMIZATION)
+  # ===================================================================
+  boot:
+    admin:
+      ui:
+        # 设置浏览器标签页的标题
+        title: "个人博客监控中心"
+        # 设置页面左上角的品牌 Logo 和名称
+        # 您可以使用自己的 Logo 图片，或保持默认
+        brand: "<img src='assets/img/icon-spring-boot-admin.svg'><span> 博客后台监控 </span>"
+        # 设置公共访问 URL，用于邮件通知等场景的回调链接
+        public-url: http://localhost:9000
+
+  # ===================================================================
+  # 自我监控 (SELF-MONITORING)
+  # Admin Server 本身也应该是一个被监控的应用
+  # ===================================================================
+management:
+  endpoints:
+    web:
+      exposure:
+        # 仅暴露必要的端点给外部监控系统（如 Prometheus）
+        include: "health,info,metrics,prometheus"
+  endpoint:
+    health:
+      # 登录后可在 UI 上看到详细的健康信息
+      show-details: when_authorized
+
+# ===================================================================
+# (可选，但推荐) 事件持久化 (EVENT PERSISTENCE)
+# 默认情况下，Admin Server 重启后所有应用的上下线历史记录都会丢失。
+# 开启此功能可以将事件存储起来。
+# ===================================================================
+# spring:
+#   boot:
+#     admin:
+#       events:
+#         store:
+#           # 使用内存存储，简单方便，但重启后依然会丢失
+#           type: in-memory
+
+# ===================================================================
+# (可选，高级功能) 状态变更通知 (NOTIFICATIONS)
+# 当被监控的应用状态改变时（如 UP -> DOWN），发送通知
+# 需要添加对应的 starter 依赖，例如 spring-boot-starter-mail
+# ===================================================================
+# spring:
+#   boot:
+#     admin:
+#       notify:
+#         # 示例：邮件通知
+#         mail:
+#           enabled: true
+#           to: "your-email@example.com"
+#           from: "monitor@example.com"
+#   mail:
+#     host: smtp.example.com
+#     port: 587
+#     username: "monitor@example.com"
+#     password: "your-smtp-password"
