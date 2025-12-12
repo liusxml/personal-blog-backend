@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.blog</groupId>
+        <artifactId>personal-blog-backend</artifactId>
+        <version>1.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>blog-common</artifactId>
+    <packaging>jar</packaging>
+
+    <name>blog-common (Common Utilities)</name>
+    <description>通用工具类、常量、枚举和基础异常定义。</description>
+
+    <dependencies>
+        <!-- =================================================== -->
+        <!-- ============== Spring 框架核心依赖 ============== -->
+        <!-- =================================================== -->
+        <!--
+         common 模块不引入 spring-boot-starter，因为它不应该成为可执行应用。
+         只引入必要的 Spring 核心依赖，保持模块轻量和职责单一。
+        -->
+        
+        <!-- Spring Context：提供核心的 IoC 容器和基础注解支持 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+        </dependency>
+        
+        <!-- Spring Boot：为支持 @ConfigurationProperties 等配置注解 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot</artifactId>
+        </dependency>
+        
+        <!-- Spring Transaction：为声明式事务管理提供支持 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-tx</artifactId>
+        </dependency>
+
+        <!-- =================================================== -->
+        <!-- =============== 持久层框架核心依赖 =============== -->
+        <!-- =================================================== -->
+        <!--
+         MyBatis-Plus 核心依赖用于定义 BaseService 和 BaseServiceImpl。
+         - mybatis-plus-core：提供 IService、Wrapper、BaseMapper 等核心接口
+         - mybatis-plus-extension：提供 ServiceImpl、Page 等扩展功能
+         - mybatis-plus-spring：Spring 集成支持
+         注意：版本由根 POM 的 MyBatis-Plus BOM 统一管理
+        -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-extension</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-spring</artifactId>
+        </dependency>
+
+        <!-- =================================================== -->
+        <!-- ============== 安全认证相关依赖 ============== -->
+        <!-- =================================================== -->
+        
+        <!-- Spring Security Core：核心安全框架，用于认证和授权 -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-core</artifactId>
+        </dependency>
+        
+        <!-- Spring Security Web：Web 应用安全支持 -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-web</artifactId>
+        </dependency>
+        
+        <!-- JWT (JSON Web Token) 相关依赖 -->
+        <!-- jjwt-api：JWT API 接口（编译时需要）-->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+        </dependency>
+        <!-- jjwt-impl：JWT 默认实现（运行时需要）-->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <!-- jjwt-jackson：JWT 的 Jackson JSON 序列化器（运行时需要）-->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- =================================================== -->
+        <!-- ================ 缓存相关依赖 ================ -->
+        <!-- =================================================== -->
+        
+        <!-- Spring Data Redis：Redis 客户端和 Spring 集成 -->
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-redis</artifactId>
+        </dependency>
+
+        <!-- =================================================== -->
+        <!-- ================ 开发工具依赖 ================ -->
+        <!-- =================================================== -->
+        
+        <!--
+         Lombok：编译期代码生成工具，简化 POJO 类开发。
+         scope 设置为 provided，只在编译和测试阶段需要，最终打包不包含。
+        -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        
+        <!-- MapStruct：高性能的 Bean 映射框架，用于 Entity、DTO、VO 之间的转换 -->
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+        </dependency>
+
+        <!-- =================================================== -->
+        <!-- ================ 通用工具类库 ================ -->
+        <!-- =================================================== -->
+        <!--
+         项目级别的基础工具库，定义在 common 模块中供所有其他模块复用。
+        -->
+        
+        <!-- Apache Commons Lang3：字符串、数字、日期等常用工具 -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+        
+        <!-- Apache Commons Collections4：集合工具库 -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-collections4</artifactId>
+        </dependency>
+        
+        <!-- Google Guava：Google 核心 Java 库（集合、缓存、并发工具等）-->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </dependency>
+
+        <!-- =================================================== -->
+        <!-- ================ Jakarta 标准 API ================ -->
+        <!-- =================================================== -->
+        
+        <!--
+         Jakarta Servlet API：用于认证过滤器等 Web 组件。
+         scope 为 provided，由应用服务器或容器提供。
+        -->
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        
+        <!-- Jakarta Validation API：JSR-303 Bean 验证标准 API -->
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+        </dependency>
+    </dependencies>
+
+</project>
