@@ -65,8 +65,8 @@ spring:
       serverTimezone=Asia/Shanghai&
       allowPublicKeyRetrieval=true&
       useSSL=false
-    username: root
-    password: s3cr3t_r00t_p@ssw0rd              # ⚠️ 生产环境请使用加密密码或环境变量
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:s3cr3t_r00t_p@ssw0rd}  # 生产环境通过环境变量注入
     
     # HikariCP 连接池优化配置
     hikari:
@@ -84,7 +84,7 @@ spring:
       host: 127.0.0.1                           # Redis 服务器地址
       port: 6379                                # Redis 端口
       database: 0                               # 使用的数据库索引 (0-15)
-      password:                                 # Redis 密码（如无密码则留空）
+      password: ${REDIS_PASSWORD:}              # Redis 密码（生产环境通过环境变量注入）
       timeout: 3000ms                           # 连接超时时间
       
       # Lettuce 连接池配置（Spring Boot 2.0+ 默认使用 Lettuce）
@@ -129,10 +129,10 @@ app:
       - "/actuator/**"
 
     # JWT 认证配置
-    jwt-secret: dev-blog-jwt-secret-key-minimum-256-bits-change-in-production-environment
-    # ⚠️ 生产环境建议通过环境变量注入: ${JWT_SECRET}
+    jwt-secret: ${JWT_SECRET:dev-blog-jwt-secret-key-minimum-256-bits-change-in-production-environment}
+    # 生产环境必须通过环境变量注入: export JWT_SECRET=your-production-secret
     
-    jwt-expiration: 7200000                     # Token有效期 (ms), 2小时
+    jwt-expiration: ${JWT_EXPIRATION:7200000}   # Token有效期 (ms), 默认2小时
 
 # ==============================================================================
 #  5. 监控与管理 (Actuator)
@@ -205,11 +205,11 @@ logging:
 #  7. 第三方服务 (OSS / Bitiful)
 # ==============================================================================
 bitiful:
-  endpoint: https://s3.bitiful.net
-  access-key: 5oiuy2PyCxTcLhbiWiiI8B94          # ⚠️ 建议使用环境变量
-  secret-key: vQePmfZ622H7A7JUV9txW4txFe2QeXX   # ⚠️ 建议使用环境变量
-  bucket: blog-module-file
-  region: cn-east-1
+  endpoint: ${BITIFUL_ENDPOINT:https://s3.bitiful.net}
+  access-key: ${BITIFUL_ACCESS_KEY:5oiuy2PyCxTcLhbiWiiI8B94}  # 生产环境通过环境变量注入
+  secret-key: ${BITIFUL_SECRET_KEY:vQePmfZ622H7A7JUV9txW4txFe2QeXX}  # 生产环境通过环境变量注入
+  bucket: ${BITIFUL_BUCKET:blog-module-file}
+  region: ${BITIFUL_REGION:cn-east-1}
 
 oss:
   type: BITIFUL                                 # OSS 类型标识

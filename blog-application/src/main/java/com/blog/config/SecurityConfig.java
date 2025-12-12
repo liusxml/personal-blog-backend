@@ -130,10 +130,10 @@ public class SecurityConfig {
     /**
      * <h3>JWT 认证过滤链</h3>
      * <p>
-     * 匹配 <strong>/auth/** 和 /api/**</strong> 的请求，使用 JWT Token 认证。
+     * 匹配 <strong>/api/**</strong> 的请求，使用 JWT Token 认证。
      * <ul>
-     * <li><code>/auth/**</code> - 认证相关端点（注册、登录等）需要放行</li>
-     * <li><code>/api/**</code> - 业务 API，需要JWT认证</li>
+     * <li><code>/api/v1/auth/**</code> - 认证相关端点（注册、登录等）需要放行</li>
+     * <li><code>/api/v1/**</code> - 业务 API，需要JWT认证</li>
      * </ul>
      * <p>
      * <strong>认证方式</strong>：JWT Bearer Token
@@ -145,11 +145,11 @@ public class SecurityConfig {
     @Bean
     @Order(2)
     public SecurityFilterChain jwtChain(HttpSecurity http) throws Exception {
-        http.securityMatcher("/auth/**", "/api/**")
+        http.securityMatcher("/api/**")
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/register", "/auth/login").permitAll() // 注册和登录公开
+                        .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login").permitAll() // 注册和登录公开
                         .anyRequest().authenticated() // 其他 /api/** 需要认证
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class); // 添加 JWT 过滤器
