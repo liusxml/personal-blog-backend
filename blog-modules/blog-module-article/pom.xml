@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- 父级是所有业务模块的总聚合器，这部分是正确的 -->
+    <parent>
+        <groupId>com.blog</groupId>
+        <artifactId>blog-modules</artifactId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>blog-module-article</artifactId>
+    <!-- 1. 聚合器必须是 pom 打包方式 -->
+    <packaging>pom</packaging>
+
+    <!-- 2. 优化 name 和 description，清晰地描述其职责 -->
+    <name>blog-module-article (Article Module Aggregator)</name>
+    <description>文章领域模块聚合器 (聚合 API 和 Service)</description>
+
+    <!-- 3. 正确列出其管理的子模块 -->
+    <modules>
+        <module>blog-article-api</module>
+        <module>blog-article-service</module>
+    </modules>
+
+    <!-- 4. 移除了不必要的 <url> 和 <properties>，保持聚合器纯净。
+           聚合器自身不应有任何 <dependencies> -->
+
+</project>
