@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    ================================================================================
+     企业级 Logback 日志配置文件 (Final & Best Practice Edition)
+    ================================================================================
+    设计哲学:
+    1.  [完全掌控] 不依赖 Spring Boot 的 `base.xml`，手动定义所有组件，确保配置的确定性和可维护性。
+    2.  [环境隔离] 使用 `<springProfile>` 标签，为“开发/调试(dev,debug)”、“生产(prod)”和“测试(test)”等环境提供量身定制的日志策略。
+    3.  [性能优先] 对文件输出采用 `AsyncAppender`，将日志I/O操作从业务线程中剥离，大幅降低对应用性能的影响。
+    4.  [问题导向] 将 `ERROR` 级别的日志独立记录到专门的文件，便于在生产环境快速定位和分析问题。
+    5.  [可读性强] 在控制台输出中使用颜色高亮，提升开发体验；文件日志则保持朴素格式，便于机器解析。
+-->
+<configuration>
+
+    <!-- ================================================================================= -->
+    <!--  1. 核心属性与规则定义 (Core Properties & Rules)                               -->
+    <!-- ================================================================================= -->
+
+    <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="personal-blog-backend"/>
+    <property name="LOG_HOME" value="./logs"/>
+
+    <conversionRule conversionWord="clr" class="org.springframework.boot.logging.logback.ColorConverter"/>
+
+    <!-- ================================================================================= -->
+    <!--  2. Appender 定义 (配置日志的输出目的地)                                          -->
+    <!-- ================================================================================= -->
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %clr(%-5level){blue} [%clr(%thread){magenta}] [%X{traceId}/%X{spanId}] %clr(%logger{40}){cyan}: %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/${APP_NAME}.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/${APP_NAME}-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>200MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>3GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] [%X{traceId}/%X{spanId}] %logger{40}: %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="FILE"/>
+        <!-- 队列满时不阻塞，丢弃低优先级日志 -->
+        <neverBlock>true</neverBlock>
+        <!-- 增大队列以应对流量峰值 -->
+        <queueSize>1024</queueSize>
+        <!-- 队列剩余20%时开始丢弃TRACE/DEBUG/INFO日志 -->
+        <discardingThreshold>204</discardingThreshold>
+        <!-- 队列满时的最大刷新时间 -->
+        <maxFlushTime>5000</maxFlushTime>
+        <!-- 不包含调用者信息以提升性能 -->
+        <includeCallerData>false</includeCallerData>
+    </appender>
+
+    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/${APP_NAME}-error.log</file>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/${APP_NAME}-error-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>100MB</maxFileSize>
+            <maxHistory>60</maxHistory>
+            <totalSizeCap>2GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{40}: %msg%n%ex{full}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- JSON格式日志文件 (用于日志收集系统) -->
+    <appender name="JSON_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/${APP_NAME}-json.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/${APP_NAME}-json-%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>200MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>3GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <!-- 自动包含MDC中的traceId和spanId -->
+            <includeMdcKeyName>traceId</includeMdcKeyName>
+            <includeMdcKeyName>spanId</includeMdcKeyName>
+            <includeMdcKeyName>userId</includeMdcKeyName>
+            <!-- 自定义字段 -->
+            <customFields>{"app":"${APP_NAME}","env":"${ACTIVE_PROFILE:-default}"}</customFields>
+            <!-- 时间戳格式 -->
+            <timestampPattern>yyyy-MM-dd'T'HH:mm:ss.SSS'Z'</timestampPattern>
+        </encoder>
+    </appender>
+
+    <!-- 异步JSON日志 -->
+    <appender name="ASYNC_JSON_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="JSON_FILE"/>
+        <neverBlock>true</neverBlock>
+        <queueSize>1024</queueSize>
+        <discardingThreshold>204</discardingThreshold>
+        <includeCallerData>false</includeCallerData>
+    </appender>
+
+    <!-- 异步错误日志 Appender (高优先级优化) -->
+    <appender name="ASYNC_ERROR_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="ERROR_FILE"/>
+        <!-- ERROR日志不能丢失，队列满时阻塞 -->
+        <neverBlock>false</neverBlock>
+        <queueSize>256</queueSize>
+        <!-- 不丢弃任何ERROR日志 -->
+        <discardingThreshold>0</discardingThreshold>
+    </appender>
+
+    <!-- ================================================================================= -->
+    <!--  3. Logger 定义 (配置哪些包使用哪个级别的日志，并输出到哪里)                   -->
+    <!-- ================================================================================= -->
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ASYNC_FILE"/>
+        <appender-ref ref="ASYNC_ERROR_FILE"/>
+        <appender-ref ref="ASYNC_JSON_FILE"/>
+    </root>
+
+    <springProfile name="dev, debug">
+        <root level="DEBUG">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="ASYNC_FILE"/>
+            <appender-ref ref="ASYNC_ERROR_FILE"/>
+            <appender-ref ref="ASYNC_JSON_FILE"/>
+        </root>
+
+        <logger name="com.baomidou.mybatisplus.core.mapper" level="DEBUG"/>
+        <logger name="java.sql.PreparedStatement" level="DEBUG"/>
+    </springProfile>
+
+    <springProfile name="prod">
+        <!-- 生产环境：禁用控制台输出，只记录警告及以上级别 -->
+        <root level="WARN">
+            <!-- 移除 CONSOLE appender，减少性能开销 -->
+            <appender-ref ref="ASYNC_FILE"/>
+            <appender-ref ref="ASYNC_ERROR_FILE"/>
+            <appender-ref ref="ASYNC_JSON_FILE"/>
+        </root>
+        
+        <!-- 项目日志保持INFO级别 -->
+        <logger name="com.blog" level="INFO"/>
+        
+        <!-- 框架日志只记录警告 -->
+        <logger name="org.springframework" level="WARN"/>
+        <logger name="org.apache" level="WARN"/>
+        <logger name="com.zaxxer.hikari" level="WARN"/>
+    </springProfile>
+
+    <springProfile name="test">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+
+        <logger name="com.baomidou.mybatisplus.core.mapper" level="DEBUG"/>
+    </springProfile>
+
+</configuration>
