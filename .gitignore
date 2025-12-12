@@ -1,0 +1,62 @@
+# ==================================
+# IDEs & Editor Configuration
+#
+# 忽略开发者个人的 IDE 设置，但可以保留共享的配置.
+# ==================================
+# IntelliJ
+# 忽略整个目录，这是最简单和最安全的方式.
+# 如果有需要共享的配置 (如 code styles)，可以使用 ! 语法豁免.
+.idea/
+# 模块文件由 Maven pom.xml 生成，必须忽略.
+*.iml
+# Visual Studio Code
+# 忽略大部分，除了用于团队协作的设置文件.
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+# Eclipse
+.project
+.classpath
+.settings/
+# ==================================
+# Build Tool - Maven
+#
+# 忽略所有由 Maven 生成的产物.
+# ==================================
+# Maven 的构建输出目录，这是最重要的规则.
+target/
+# Maven 发布插件生成的备份文件.
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+# Maven Wrapper 的临时文件.
+# 注意：.mvn/wrapper/maven-wrapper.jar 应该被提交到 Git，而不是忽略!
+.mvn/timing.properties
+# ==================================
+# Language & Runtime - Java
+# ==================================
+# 日志文件
+*.log
+*.log.*
+# JVM 崩溃日志
+hs_err_pid*
+# ==================================
+# OS & General
+#
+# 忽略操作系统自动生成的文件.
+# ==================================
+# macOS
+.DS_Store
+# Windows
+Thumbs.db
+.spec-workflow/
+.claude/
+/.vscode/settings.json
+docs/
