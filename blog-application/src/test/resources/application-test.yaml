@@ -1,0 +1,53 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:blog_test_db;MODE=MySQL;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  boot:
+    admin:
+      client:
+        enabled: false
+  # 明确指示 Spring Boot 在测试启动时执行 schema.sql
+  sql:
+    init:
+      mode: embedded # 'embedded' 模式只对内存数据库生效，非常适合测试
+
+  # 保持关闭 Hibernate 的自动操作，避免冲突
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+
+mybatis-plus:
+  global-config:
+    db-config:
+      id-type: assign_id
+# security自定义安全配置
+app:
+  security:
+    # URL 白名单，这些路径将无需认证即可访问
+    permit-all-urls:
+      - "/v3/api-docs/**"
+      - "/swagger-ui/**"
+      - "/swagger-ui.html"
+      # 未来如果还有其他公共接口，比如登录、注册，可以直接在这里添加
+      # - "/api/auth/login"
+      # - "/api/auth/register"
+bitiful:
+  endpoint: https://s3.bitiful.net/
+  access-key: test-access-key
+  secret-key: test-secret-key
+  bucket: blog-files-test
+  region: cn-east-1
+  max-file-size: 10485760  # 10MB
+  allowed-extensions:
+    - jpg
+    - jpeg
+    - png
+    - gif
+    - webp
+    - pdf
+    - docx
+oss:
+  type: BITIFUL

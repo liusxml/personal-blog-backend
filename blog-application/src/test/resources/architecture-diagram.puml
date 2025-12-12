@@ -1,0 +1,68 @@
+@startuml
+!theme plain
+
+' ==========================================
+' Personal Blog Backend Architecture Diagram
+' 使用 ArchUnit 可识别的语法
+' ==========================================
+
+' Common 层 - 公共组件
+component [blog-common] <<com.blog.common..>> as common
+
+' API 层 (契约层) - 使用 package stereotype
+component [blog-system-api] <<com.blog.system.api..>> as sysApi
+component [blog-article-api] <<com.blog.article.api..>> as artApi
+component [blog-comment-api] <<com.blog.comment.api..>> as cmtApi
+component [blog-file-api] <<com.blog.file.api..>> as fileApi
+
+' Service 层 (实现层)
+component [blog-system-service] <<com.blog.system.service..>> as sysSvc
+component [blog-article-service] <<com.blog.article.service..>> as artSvc
+component [blog-comment-service] <<com.blog.comment.service..>> as cmtSvc
+component [blog-file-service] <<com.blog.file.service..>> as fileSvc
+
+' Application 层
+component [blog-application] <<com.blog.application..>> as app
+
+' ==========================================
+' 依赖关系定义（允许的依赖）
+' ==========================================
+
+' Service -> 自己的 API
+sysSvc --> sysApi : uses
+artSvc --> artApi : uses
+cmtSvc --> cmtApi : uses
+fileSvc --> fileApi : uses
+
+' Service -> Common
+sysSvc --> common : uses
+artSvc --> common : uses
+cmtSvc --> common : uses
+fileSvc --> common : uses
+
+' 跨模块调用 (Service -> 其他 API)
+artSvc --> sysApi : <<cross-module>>
+cmtSvc --> artApi : <<cross-module>>
+cmtSvc --> sysApi : <<cross-module>>
+
+' API -> Common
+sysApi --> common : uses
+artApi --> common : uses
+cmtApi --> common : uses
+fileApi --> common : uses
+
+' Application -> Service 模块
+app --> sysSvc : uses
+app --> artSvc : uses
+app --> cmtSvc : uses
+app --> fileSvc : uses
+
+note right of sysSvc
+    <b>架构规则</b>
+    ✅ Service 可以访问自己的 API
+    ✅ Service 可以访问 Common  
+    ✅ Service 可以访问其他模块的 API
+    ❌ Service 不能访问其他 Service
+end note
+
+@enduml
