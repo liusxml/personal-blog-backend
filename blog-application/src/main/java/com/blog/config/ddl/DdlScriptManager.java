@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Component
 @Profile("!test")
-@ConditionalOnProperty(name = "mybatis-plus.auto-ddl.enabled", havingValue = "true", matchIfMissing = false)
+@ConditionalOnProperty(name = "mybatis-plus.auto-ddl.enabled", havingValue = "true")
 public class DdlScriptManager implements IDdl {
 
     private final DataSource dataSource;
