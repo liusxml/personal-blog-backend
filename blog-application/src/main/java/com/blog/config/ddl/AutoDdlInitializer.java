@@ -54,7 +54,7 @@ import java.util.List;
 @Configuration
 @Order(0) // 可选：设置高优先级，确保它在其他 ApplicationRunner 之前执行
 @Profile("!test") // 关键新增：表示当 "test" profile 未激活时，此Bean才生效
-@ConditionalOnProperty(name = "mybatis-plus.auto-ddl.enabled", havingValue = "true", matchIfMissing = false // 默认禁用，必须显式配置才启用
+@ConditionalOnProperty(name = "mybatis-plus.auto-ddl.enabled", havingValue = "true" // matchIfMissing = false  默认禁用，必须显式配置才启用
 )
 public class AutoDdlInitializer implements ApplicationRunner {
 
