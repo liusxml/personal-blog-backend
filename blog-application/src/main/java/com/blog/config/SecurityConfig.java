@@ -117,6 +117,7 @@ public class SecurityConfig {
             return http.build();
         }
         http.securityMatcher(urls.toArray(new String[0]))
+                .cors(Customizer.withDefaults()) // 启用CORS
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
@@ -146,6 +147,7 @@ public class SecurityConfig {
     @Order(2)
     public SecurityFilterChain jwtChain(HttpSecurity http) throws Exception {
         http.securityMatcher("/api/**")
+                .cors(Customizer.withDefaults()) // 启用CORS
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth

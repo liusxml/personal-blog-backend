@@ -26,8 +26,10 @@ class AuthControllerTest extends BaseControllerTest {
     void should_register_success() throws Exception {
         RegisterDTO registerDTO = new RegisterDTO();
         registerDTO.setUsername("testuser");
-        registerDTO.setPassword("password123");
+        registerDTO.setPassword("Password123!");
         registerDTO.setEmail("test@example.com");
+        registerDTO.setNickname("testnick");
+
         UserVO userVO = new UserVO();
         userVO.setId(1L);
         userVO.setUsername("testuser");
@@ -35,14 +37,23 @@ class AuthControllerTest extends BaseControllerTest {
 
         when(userService.register(any(RegisterDTO.class))).thenReturn(userVO);
 
-        String requestBody = "{\"username\":\"testuser\",\"password\":\"Password123!\",\"email\":\"test@example.com\",\"nickname\":\"testnick\"}";
-
-        mockMvc.perform(post("/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBody))
+                .content(objectMapper.writeValueAsString(registerDTO)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.username").value("testuser"));
+    }
+
+    @Test
+    void should_register_fail_when_invalid_dto() throws Exception {
+        RegisterDTO registerDTO = new RegisterDTO();
+        // Missing required fields (username, password)
+
+        mockMvc.perform(post("/api/v1/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(registerDTO)))
+                .andExpect(status().isBadRequest()); // Expect 400 Param Error
     }
 
     @Test
@@ -53,11 +64,10 @@ class AuthControllerTest extends BaseControllerTest {
 
         LoginVO loginVO = new LoginVO();
         loginVO.setToken("access_token");
-        // loginVO.setRefreshToken("refresh_token"); // Field does not exist
 
         when(userService.login(any(LoginDTO.class))).thenReturn(loginVO);
 
-        mockMvc.perform(post("/auth/login")
+        mockMvc.perform(post("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(loginDTO)))
                 .andExpect(status().isOk())
@@ -67,7 +77,7 @@ class AuthControllerTest extends BaseControllerTest {
 
     @Test
     void should_logout_success() throws Exception {
-        mockMvc.perform(post("/auth/logout"))
+        mockMvc.perform(post("/api/v1/auth/logout"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0));
     }

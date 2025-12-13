@@ -1,8 +1,9 @@
 package com.blog.infrastructure.oss;
 
 import com.blog.common.exception.BusinessException;
+import com.blog.common.config.BitifulProperties;
+import com.blog.common.exception.BusinessException;
 import com.blog.enums.FileErrorCode;
-import com.blog.infrastructure.config.BitifulProperties;
 import com.blog.infrastructure.constant.FileStorageConstants;
 import com.blog.infrastructure.storage.FileStorageStrategy;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,8 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
@@ -176,10 +179,13 @@ public class BitifulStorage implements FileStorageStrategy {
         validateExpireMinutes(expireMinutes);
 
         try {
+            // CRITICAL: 不设置contentType，让前端PUT请求也不带Content-Type
+            // 根据Bitiful官方文档，浏览器上传时不应设置Content-Type，S3会自动检测
+            // 如果这里设置了contentType，预签名URL的签名会包含它，前端必须匹配否则403
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                     .bucket(properties.getBucket())
                     .key(fileKey)
-                    .contentType("application/octet-stream") // 前端可覆盖
+                    // .contentType("application/octet-stream") // 移除！否则签名不匹配
                     .build();
 
             PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
@@ -197,6 +203,46 @@ public class BitifulStorage implements FileStorageStrategy {
             log.error(FileStorageConstants.LOG_PRESIGNED_URL_FAILED, fileKey, e.getMessage(), e);
             throw new BusinessException(FileErrorCode.FILE_PRESIGNED_URL_FAILED,
                     "预签名 URL 生成失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 生成预签名 GET URL（下载/访问）
+     * <p>
+     * 用于访问私有文件，生成带签名的临时下载链接。
+     * </p>
+     *
+     * @param fileKey       存储键
+     * @param expireMinutes 过期分钟数
+     * @return 预签名 GET URL
+     * @throws BusinessException 生成失败
+     */
+    @Override
+    public String generateDownloadUrl(String fileKey, int expireMinutes) {
+        validateFileKey(fileKey);
+        validateExpireMinutes(expireMinutes);
+
+        try {
+            GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                    .bucket(properties.getBucket())
+                    .key(fileKey)
+                    .build();
+
+            GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+                    .signatureDuration(Duration.ofMinutes(expireMinutes))
+                    .getObjectRequest(getObjectRequest)
+                    .build();
+
+            PresignedGetObjectRequest presignedRequest = s3Presigner.presignGetObject(presignRequest);
+            String url = presignedRequest.url().toString();
+
+            log.info("预签名下载 URL 生成成功: key={}, expireMinutes={}", fileKey, expireMinutes);
+            return url;
+
+        } catch (Exception e) {
+            log.error("预签名下载 URL 生成失败: key={}, error={}", fileKey, e.getMessage(), e);
+            throw new BusinessException(FileErrorCode.FILE_PRESIGNED_URL_FAILED,
+                    "预签名下载 URL 生成失败: " + e.getMessage());
         }
     }
 

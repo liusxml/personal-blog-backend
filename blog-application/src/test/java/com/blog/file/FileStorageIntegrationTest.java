@@ -1,8 +1,8 @@
 package com.blog.file;
 
 import com.blog.BlogApplication;
+import com.blog.common.config.BitifulProperties;
 import com.blog.common.exception.BusinessException;
-import com.blog.infrastructure.config.BitifulProperties;
 import com.blog.infrastructure.oss.BitifulStorage;
 import com.blog.infrastructure.storage.FileStorageStrategy;
 import com.blog.infrastructure.storage.StorageContext;
@@ -10,9 +10,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
@@ -82,11 +82,11 @@ class FileStorageIntegrationTest {
     // TODO: 升级到 Spring Boot 4.0+ 时迁移到 @MockitoBean
 
     @SuppressWarnings("deprecation")
-    @MockBean
+    @MockitoBean
     private S3Client s3Client; // 替换真实的 S3Client Bean
 
     @SuppressWarnings("deprecation")
-    @MockBean
+    @MockitoBean
     private S3Presigner s3Presigner; // 替换真实的 S3Presigner Bean
 
     // ==================== 使用 @Autowired 注入真实的 Spring Bean ====================
