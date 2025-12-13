@@ -1,6 +1,5 @@
 package com.blog.system.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.blog.common.exception.BusinessException;
 import com.blog.common.security.JwtTokenProvider;
 import com.blog.system.api.dto.RegisterDTO;
@@ -12,8 +11,11 @@ import com.blog.system.entity.SysUser;
 import com.blog.system.mapper.RoleMapper;
 import com.blog.system.mapper.UserMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -56,6 +58,14 @@ class UserServiceImplTest {
 
     @InjectMocks
     private UserServiceImpl userService;
+
+    @BeforeEach
+    void setUp() {
+        // 注入配置属性 jwtExpiration
+        org.springframework.test.util.ReflectionTestUtils.setField(userService, "jwtExpiration", 7200000L);
+        // 注入父类 MybatisPlus 的 baseMapper (避免 updateByDto 报错)
+        org.springframework.test.util.ReflectionTestUtils.setField(userService, "baseMapper", userMapper);
+    }
 
     @Test
     @DisplayName("should_ReturnUserVo_When_RegisterSuccess: 验证用户注册成功流程")
@@ -151,5 +161,104 @@ class UserServiceImplTest {
         // 验证异常类型或错误码 (假设 SystemErrorCode 这里未直接暴露，验证消息或Code即可)
         // 这里简单验证不需要 insert 操作
         verify(userMapper, never()).insert(any(SysUser.class));
+    }
+
+    @Test
+    @DisplayName("should_ReturnLoginVo_When_LoginSuccess: 验证用户登录成功流程")
+    void should_ReturnLoginVo_When_LoginSuccess() {
+        log.info("Testing: User Login - Success Scenario");
+
+        // Given
+        com.blog.system.api.dto.LoginDTO loginDTO = new com.blog.system.api.dto.LoginDTO();
+        loginDTO.setUsername("testuser");
+        loginDTO.setPassword("password");
+
+        SysUser mockUser = new SysUser();
+        mockUser.setId(100L);
+        mockUser.setUsername("testuser");
+        mockUser.setPassword("encodedPassword");
+        mockUser.setStatus(1); // 正常状态
+
+        // Mock: 根据用户名查用户
+        when(userMapper.selectOne(any())).thenReturn(mockUser);
+
+        // Mock: 密码验证
+        when(passwordEncoder.matches("password", "encodedPassword")).thenReturn(true);
+
+        // Mock: 角色查询 (用于 getUserRoleKeys)
+        SysRole role = new SysRole();
+        role.setRoleKey("USER");
+        when(userMapper.selectRolesByUserId(100L)).thenReturn(List.of(role));
+
+        // Mock: Token生成
+        when(jwtTokenProvider.generateToken(any(), eq(100L))).thenReturn("mockToken");
+
+        // Mock: Converter
+        UserVO mockUserVO = new UserVO();
+        mockUserVO.setId(100L);
+        mockUserVO.setUsername("testuser");
+        when(userConverter.entityToVo(mockUser)).thenReturn(mockUserVO);
+
+        // When
+        com.blog.system.api.vo.LoginVO result = userService.login(loginDTO);
+        log.info("When: userService.login called");
+
+        // Then
+        assertNotNull(result);
+        assertEquals("mockToken", result.getToken());
+        assertEquals("testuser", result.getUser().getUsername());
+        assertTrue(result.getUser().getRoles().contains("ROLE_USER"));
+        log.info("Then: Login flow verified successfully.");
+    }
+
+    @Test
+    @DisplayName("should_ThrowException_When_InvalidCredentials: 验证登录密码错误抛出异常")
+    void should_ThrowException_When_InvalidCredentials() {
+        log.info("Testing: User Login - Invalid Credentials");
+
+        // Given
+        com.blog.system.api.dto.LoginDTO loginDTO = new com.blog.system.api.dto.LoginDTO();
+        loginDTO.setUsername("testuser");
+        loginDTO.setPassword("wrongPassword");
+
+        SysUser mockUser = new SysUser();
+        mockUser.setId(100L);
+        mockUser.setPassword("encodedPassword");
+
+        when(userMapper.selectOne(any())).thenReturn(mockUser);
+        when(passwordEncoder.matches("wrongPassword", "encodedPassword")).thenReturn(false);
+
+        // When & Then
+        assertThrows(BusinessException.class, () -> userService.login(loginDTO));
+        log.info("Then: BusinessException thrown for invalid password");
+    }
+
+    @Test
+    @MockitoSettings(strictness = Strictness.LENIENT)
+    @DisplayName("should_UpdateUser_When_UpdateByDto: 验证用户更新及缓存清理")
+    void should_UpdateUser_When_UpdateByDto() {
+        log.info("Testing: User Update - Success Scenario");
+
+        // Given
+        com.blog.system.api.dto.UserDTO userDTO = new com.blog.system.api.dto.UserDTO();
+        userDTO.setId(100L);
+        userDTO.setNickname("Updated Nickname");
+
+        SysUser mockUser = new SysUser();
+        mockUser.setId(100L);
+        lenient().when(userMapper.selectById(100L)).thenReturn(mockUser);
+
+        when(userConverter.dtoToEntity(userDTO)).thenReturn(mockUser);
+        when(userMapper.updateById(mockUser)).thenReturn(1);
+
+        // When
+        boolean result = userService.updateByDto(userDTO);
+
+        // Then
+        assertTrue(result);
+        verify(userMapper).updateById(mockUser);
+        // 注意: @CacheEvict 是 Spring AOP 行为，单元测试默认不生效，除非使用集成测试或特殊配置
+        // 但我们可以验证业务逻辑是否执行
+        log.info("Then: param update executed.");
     }
 }
