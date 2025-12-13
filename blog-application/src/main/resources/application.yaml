@@ -127,6 +127,7 @@ app:
       - "/swagger-ui/**"
       - "/swagger-ui.html"
       - "/actuator/**"
+      - "/api/v1/files/**"
 
     # JWT 认证配置
     jwt-secret: ${JWT_SECRET:dev-blog-jwt-secret-key-minimum-256-bits-change-in-production-environment}
@@ -202,17 +203,28 @@ logging:
     org.springframework.web: INFO               # Web 日志
 
 # ==============================================================================
-#  7. 第三方服务 (OSS / Bitiful)
+#  7. 对象存储 (OSS)
 # ==============================================================================
-bitiful:
-  endpoint: ${BITIFUL_ENDPOINT:https://s3.bitiful.net}
-  access-key: ${BITIFUL_ACCESS_KEY:5oiuy2PyCxTcLhbiWiiI8B94}  # 生产环境通过环境变量注入
-  secret-key: ${BITIFUL_SECRET_KEY:vQePmfZ622H7A7JUV9txW4txFe2QeXX}  # 生产环境通过环境变量注入
-  bucket: ${BITIFUL_BUCKET:blog-module-file}
-  region: ${BITIFUL_REGION:cn-east-1}
-
 oss:
-  type: BITIFUL                                 # OSS 类型标识
+  # 存储类型：BITIFUL、ALIYUN、MINIO、LOCAL
+  type: ${OSS_TYPE:BITIFUL}
+  
+  # Bitiful 配置
+  bitiful:
+    endpoint: ${BITIFUL_ENDPOINT:https://s3.bitiful.net}
+    access-key: ${BITIFUL_ACCESS_KEY:e665xOEYha7D25M9ksQdtCSP}
+    secret-key: ${BITIFUL_SECRET_KEY:hQkUH8bRDVI92OTYKxWfBZ8TE5meAPS}
+    bucket: ${BITIFUL_BUCKET:blog-module-file}  # 必须与Bitiful控制台的bucket名称一致
+    region: ${BITIFUL_REGION:cn-east-1}
+    max-file-size: 10485760                 # 10MB
+    allowed-extensions:
+      - jpg
+      - jpeg
+      - png
+      - gif
+      - webp
+      - pdf
+      - docx
 
 # ==============================================================================
 #  8. 构建信息 (Maven Resource Filtering)
