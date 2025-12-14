@@ -45,7 +45,7 @@
         <!-- 常用工具库 -->
         <commons-lang3.version>3.18.0</commons-lang3.version>
         <commons-collections4.version>4.5.0</commons-collections4.version>
-        <commons-io.version>2.20.0</commons-io.version>
+        <commons-io.version>2.21.0</commons-io.version>
         <guava.version>33.5.0-jre</guava.version>
         <!-- Maven 插件 -->
         <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
