@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
  * TODO: 集成 CommonMark 或 Flexmark 库进行专业解析。
  * </p>
  *
- * @author blog-system
+ * @author liusxml
  * @since 1.1.0
  */
 @Slf4j

@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
  * 从Markdown内容中提取标题，生成目录结构（TOC）。
  * </p>
  *
- * @author blog-system
+ * @author liusxml
  * @since 1.1.0
  */
 @Slf4j
@@ -28,9 +28,8 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class TocGeneratorProcessor extends AbstractContentProcessor {
 
-    private final ObjectMapper objectMapper;
-
     private static final Pattern HEADING_PATTERN = Pattern.compile("(?m)^(#{1,6})\\s+(.+)$");
+    private final ObjectMapper objectMapper;
 
     @Override
     protected ProcessResult doProcess(ProcessResult result) {

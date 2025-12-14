@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
  * <li>❌ 发布（已经是发布状态）</li>
  * </ul>
  *
- * @author blog-system
+ * @author liusxml
  * @since 1.1.0
  */
 @Slf4j

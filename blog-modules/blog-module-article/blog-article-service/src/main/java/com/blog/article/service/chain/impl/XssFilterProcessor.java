@@ -21,7 +21,7 @@ import org.springframework.stereotype.Component;
  * <li>转义特殊字符</li>
  * </ul>
  *
- * @author blog-system
+ * @author liusxml
  * @since 1.1.0
  */
 @Slf4j

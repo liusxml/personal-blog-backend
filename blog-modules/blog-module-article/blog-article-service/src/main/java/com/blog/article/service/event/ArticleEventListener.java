@@ -1,6 +1,7 @@
 package com.blog.article.service.event;
 
 import com.blog.article.domain.event.ArticlePublishedEvent;
+import com.blog.article.infrastructure.vector.EmbeddingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -23,7 +24,7 @@ import org.springframework.stereotype.Component;
  * <li>异常不会影响核心业务（事件发布成功即可）</li>
  * </ul>
  *
- * @author blog-system
+ * @author liusxml
  * @since 1.1.0
  */
 @Slf4j
@@ -31,10 +32,8 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class ArticleEventListener {
 
-    private final com.blog.article.infrastructure.vector.EmbeddingService embeddingService;
-    // TODO: 注入所需的Service（缓存、统计等 Day 5实现）
-    // private final ArticleStatsService statsService;
-    // private final CacheManager cacheManager;
+    private final EmbeddingService embeddingService;
+    // 待实现: CacheManager, ArticleStatsService, NotificationService
 
     /**
      * 处理文章发布事件
@@ -81,8 +80,7 @@ public class ArticleEventListener {
      */
     private void clearCache(ArticlePublishedEvent event) {
         log.debug("清理文章缓存: articleId={}", event.getArticleId());
-        // TODO: cacheManager.evict("article::" + event.getArticleId());
-        // TODO: cacheManager.evict("article::list");
+        // 待实现: 清除文章详情和列表缓存
     }
 
     /**
@@ -90,7 +88,7 @@ public class ArticleEventListener {
      */
     private void initializeStats(ArticlePublishedEvent event) {
         log.debug("初始化文章统计: articleId={}", event.getArticleId());
-        // TODO: statsService.initStats(event.getArticleId());
+        // 待实现: 初始化统计表记录
     }
 
     /**
@@ -107,7 +105,6 @@ public class ArticleEventListener {
      */
     private void sendNotification(ArticlePublishedEvent event) {
         log.debug("发送文章发布通知: authorId={}", event.getAuthorId());
-        // TODO: notificationService.notifySubscribers(event.getAuthorId(),
-        // event.getTitle());
+        // 待实现: 发送订阅通知
     }
 }

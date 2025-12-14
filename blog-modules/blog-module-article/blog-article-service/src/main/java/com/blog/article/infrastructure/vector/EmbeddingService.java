@@ -17,7 +17,7 @@ package com.blog.article.infrastructure.vector;
  * <li>错误处理：API调用失败时应有降级策略</li>
  * </ul>
  *
- * @author blog-system
+ * @author liusxml
  * @since 1.1.0
  */
 public interface EmbeddingService {

@@ -21,7 +21,7 @@ import lombok.Data;
  * <li>通过唯一索引保证数据一致性</li>
  * </ul>
  *
- * @author blog-system
+ * @author liusxml
  * @since 1.1.0
  */
 @Data

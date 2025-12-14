@@ -20,12 +20,12 @@ package com.blog.article.service.chain;
  * <p>
  * 处理链示例：
  * </p>
- * 
+ *
  * <pre>
  * XssFilter → MarkdownParser → TocGenerator → SummaryExtractor
  * </pre>
  *
- * @author blog-system
+ * @author liusxml
  * @since 1.1.0
  */
 public interface ContentProcessor {

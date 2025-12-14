@@ -7,7 +7,7 @@ import org.apache.ibatis.annotations.Mapper;
 /**
  * 文章统计 Mapper
  *
- * @author blog-system
+ * @author liusxml
  * @since 1.1.0
  */
 @Mapper

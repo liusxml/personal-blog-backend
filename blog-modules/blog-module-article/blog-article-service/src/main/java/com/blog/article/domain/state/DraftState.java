@@ -22,7 +22,7 @@ import java.time.LocalDateTime;
  * <li>❌ 归档（草稿无法归档）</li>
  * </ul>
  *
- * @author blog-system
+ * @author liusxml
  * @since 1.1.0
  */
 @Slf4j
@@ -36,7 +36,7 @@ public class DraftState implements ArticleState {
         article.setStatus(ArticleStatus.PUBLISHED.getCode());
         article.setPublishTime(LocalDateTime.now());
 
-        // TODO: 发布事件将在 Service 层触发
+        // 事件在 Service 层触发
     }
 
     @Override

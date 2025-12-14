@@ -30,7 +30,7 @@ import org.springframework.context.ApplicationEvent;
  * <li>发送通知给订阅者</li>
  * </ul>
  *
- * @author blog-system
+ * @author liusxml
  * @since 1.1.0
  */
 @Getter

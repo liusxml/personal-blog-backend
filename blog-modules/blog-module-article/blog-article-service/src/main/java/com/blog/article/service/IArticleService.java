@@ -2,7 +2,9 @@ package com.blog.article.service;
 
 import com.blog.article.domain.entity.ArticleEntity;
 import com.blog.common.base.IBaseService;
+import com.blog.common.model.PageResult;
 import com.blog.dto.ArticleDTO;
+import com.blog.dto.ArticleQueryDTO;
 import com.blog.vo.ArticleDetailVO;
 import com.blog.vo.ArticleListVO;
 
@@ -24,7 +26,7 @@ import java.util.List;
  * <li>此接口位于 blog-article-api，供其他模块调用</li>
  * </ul>
  *
- * @author blog-system
+ * @author liusxml
  * @since 1.1.0
  */
 public interface IArticleService extends IBaseService<ArticleEntity, ArticleDetailVO, ArticleDTO> {
@@ -109,4 +111,22 @@ public interface IArticleService extends IBaseService<ArticleEntity, ArticleDeta
      * @return true 如果允许访问
      */
     boolean checkAccessPermission(Long articleId, String password);
+
+    /**
+     * 分页查询文章列表
+     *
+     * <p>
+     * 根据查询条件分页获取文章列表，支持：
+     * </p>
+     * <ul>
+     * <li>分类筛选</li>
+     * <li>标签筛选</li>
+     * <li>关键词搜索</li>
+     * <li>状态筛选</li>
+     * </ul>
+     *
+     * @param query 查询参数（包含分页和筛选条件）
+     * @return 分页结果
+     */
+    PageResult<ArticleListVO> pageList(ArticleQueryDTO query);
 }

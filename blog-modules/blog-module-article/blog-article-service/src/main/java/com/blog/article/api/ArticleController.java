@@ -1,17 +1,23 @@
 package com.blog.article.api;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.blog.article.service.impl.ArticleServiceImpl;
 import com.blog.common.exception.SystemErrorCode;
+import com.blog.common.model.PageResult;
 import com.blog.common.model.Result;
+import com.blog.dto.ArticleQueryDTO;
 import com.blog.vo.ArticleDetailVO;
 import com.blog.vo.ArticleListVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Optional;
@@ -42,8 +48,8 @@ import java.util.Optional;
  * <li>GET /api/v1/articles/{id}/related - 相关文章推荐</li>
  * </ul>
  *
- * @author blog-system
- * @since 1.1.0
+ * @author liusxml
+ * @since 1.0.0
  */
 @Slf4j
 @RestController
@@ -61,32 +67,20 @@ public class ArticleController {
      * 支持分页查询，默认按发布时间倒序。
      * </p>
      *
-     * @param current    当前页码（从1开始）
-     * @param size       每页大小
-     * @param categoryId 分类ID（可选）
-     * @param tagId      标签ID（可选）
+     * @param current 当前页码（从1开始）
+     * @param size    每页大小
+     * @param tagId   标签ID（可选）
      * @return 分页结果
      */
     @GetMapping
     @Operation(summary = "获取文章列表", description = "分页查询已发布的文章列表")
-    public Result<Page<ArticleListVO>> listArticles(
-            @Parameter(description = "当前页码", example = "1") @RequestParam(defaultValue = "1") Long current,
-
-            @Parameter(description = "每页大小", example = "10") @RequestParam(defaultValue = "10") Long size,
-
-            @Parameter(description = "分类ID（可选）") @RequestParam(required = false) Long categoryId,
-
-            @Parameter(description = "标签ID（可选）") @RequestParam(required = false) Long tagId) {
-
+    @ApiResponse(responseCode = "200", description = "查询成功")
+    public Result<PageResult<ArticleListVO>> listArticles(ArticleQueryDTO query) {
         log.info("查询文章列表: current={}, size={}, categoryId={}, tagId={}",
-                current, size, categoryId, tagId);
+                query.getCurrent(), query.getSize(), query.getCategoryId(), query.getTagId());
 
-        // TODO: 实现分页查询逻辑
-        // 1. 构建查询条件（status=PUBLISHED, 分类、标签筛选）
-        // 2. 调用 MyBatis-Plus 分页方法
-        // 3. Entity -> VO 转换
-
-        Page<ArticleListVO> pageResult = new Page<>(current, size);
+        // 调用 Service 层分页查询
+        PageResult<ArticleListVO> pageResult = articleService.pageList(query);
 
         return Result.success(pageResult);
     }

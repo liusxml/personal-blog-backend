@@ -22,14 +22,14 @@ import com.blog.article.domain.entity.ArticleEntity;
  * <p>
  * 状态流转图：
  * </p>
- * 
+ *
  * <pre>
  * DRAFT (草稿) → PUBLISHED (已发布) → ARCHIVED (已归档)
  *      ↓              ↓                    ↓
  *   DELETE         ARCHIVE              UNARCHIVE
  * </pre>
  *
- * @author blog-system
+ * @author liusxml
  * @since 1.1.0
  */
 public interface ArticleState {

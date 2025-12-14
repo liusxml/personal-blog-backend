@@ -1,6 +1,5 @@
 package com.blog.article.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.blog.article.domain.entity.ArticleEntity;
 import com.blog.article.domain.event.ArticlePublishedEvent;
 import com.blog.article.domain.state.ArticleState;
@@ -25,13 +24,18 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * ArticleServiceImpl 单元测试
@@ -47,7 +51,7 @@ import static org.mockito.Mockito.*;
  * <li>异常处理</li>
  * </ul>
  *
- * @author blog-system
+ * @author liusxml
  * @since 1.1.0
  */
 @ExtendWith(MockitoExtension.class)
@@ -206,7 +210,7 @@ class ArticleServiceImplTest {
         Long articleId = 1L;
         Integer limit = 5;
 
-        List<ArticleListVO> expectedResult = new ArrayList<>();
+        List<ArticleListVO> expectedResult = new java.util.ArrayList<>();
         ArticleListVO relatedArticle = new ArticleListVO();
         relatedArticle.setId(String.valueOf(2L));
         relatedArticle.setTitle("相关文章");
@@ -232,7 +236,7 @@ class ArticleServiceImplTest {
         Integer limit = 10;
 
         when(vectorSearchService.findRelatedArticles(anyLong(), anyInt()))
-                .thenReturn(new ArrayList<>());
+                .thenReturn(List.of());
 
         // When
         articleService.getRelatedArticles(articleId, limit);
@@ -320,7 +324,7 @@ class ArticleServiceImplTest {
         Integer limit = 5;
 
         when(vectorSearchService.findRelatedArticles(articleId, limit))
-                .thenReturn(new ArrayList<>());
+                .thenReturn(List.of());
 
         // When
         List<ArticleListVO> result = articleService.getRelatedArticles(articleId, limit);

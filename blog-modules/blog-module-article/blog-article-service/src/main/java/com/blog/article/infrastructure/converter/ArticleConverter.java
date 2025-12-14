@@ -29,7 +29,7 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
  * <li>VO 包含关联对象（Author/Category/Tags），需业务层手动填充</li>
  * </ul>
  *
- * @author blog-system
+ * @author liusxml
  * @since 1.1.0
  */
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
@@ -48,7 +48,8 @@ public interface ArticleConverter extends BaseConverter<ArticleDTO, ArticleEntit
     @Mapping(target = "author", ignore = true) // 需业务层填充
     @Mapping(target = "category", ignore = true) // 需业务层填充
     @Mapping(target = "tags", ignore = true) // 需业务层填充
-    @Mapping(target = "stats", ignore = true) // 需业务层填充
+    @Mapping(target = "stats", ignore = true)
+    // 需业务层填充
     ArticleDetailVO entityToVo(ArticleEntity entity);
 
     /**
@@ -65,7 +66,8 @@ public interface ArticleConverter extends BaseConverter<ArticleDTO, ArticleEntit
     @Mapping(target = "tags", ignore = true) // 需业务层填充
     @Mapping(target = "viewCount", ignore = true) // 需业务层填充
     @Mapping(target = "likeCount", ignore = true) // 需业务层填充
-    @Mapping(target = "commentCount", ignore = true) // 需业务层填充
+    @Mapping(target = "commentCount", ignore = true)
+    // 需业务层填充
     ArticleListVO entityToListVo(ArticleEntity entity);
 
     /**

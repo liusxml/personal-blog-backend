@@ -14,8 +14,8 @@ import java.util.List;
  * 用于文章列表查询，不包含完整内容，提升性能。
  * </p>
  *
- * @author blog-system
- * @since 1.1.0
+ * @author liusxml
+ * @since 1.0.0
  */
 @Data
 @Schema(description = "文章列表VO")

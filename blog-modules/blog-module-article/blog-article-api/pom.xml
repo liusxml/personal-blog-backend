@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <!-- 父级是 article 领域的聚合器，正确 -->
@@ -18,7 +18,7 @@
         <!-- =================================================== -->
         <!-- ================ 项目内部模块依赖 ================ -->
         <!-- =================================================== -->
-        
+
         <!--
          依赖公共模块，获取通用工具类、基础组件和 DTO 基类。
          API 模块保持轻量，只包含接口定义和数据传输对象。
@@ -31,13 +31,13 @@
         <!-- =================================================== -->
         <!-- ================== 开发工具依赖 ================== -->
         <!-- =================================================== -->
-        
+
         <!-- SpringDoc OpenAPI：用于 @Schema 注解，生成 API 文档 -->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-api</artifactId>
         </dependency>
-        
+
         <!-- Lombok：编译期代码生成工具，用于简化 DTO 类开发 -->
         <dependency>
             <groupId>org.projectlombok</groupId>

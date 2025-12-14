@@ -19,7 +19,7 @@ import lombok.Getter;
  * <li>任意状态 → 逻辑删除(通过 is_deleted 标志)</li>
  * </ul>
  *
- * @author blog-system
+ * @author liusxml
  * @since 1.1.0
  */
 @Getter

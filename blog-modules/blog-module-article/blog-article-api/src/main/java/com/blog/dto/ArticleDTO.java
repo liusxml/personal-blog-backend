@@ -26,8 +26,8 @@ import java.util.List;
  * <li>使用 Jakarta Validation 注解进行参数校验</li>
  * </ul>
  *
- * @author blog-system
- * @since 1.1.0
+ * @author liusxml
+ * @since 1.0.0
  */
 @Data
 @Schema(description = "文章创建/更新DTO")

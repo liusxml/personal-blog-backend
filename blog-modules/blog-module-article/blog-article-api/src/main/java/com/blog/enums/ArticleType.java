@@ -9,7 +9,7 @@ import lombok.Getter;
  * 区分文章的来源和版权属性。
  * </p>
  *
- * @author blog-system
+ * @author liusxml
  * @since 1.1.0
  */
 @Getter

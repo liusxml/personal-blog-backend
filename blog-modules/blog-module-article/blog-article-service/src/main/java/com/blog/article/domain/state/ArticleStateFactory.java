@@ -1,5 +1,6 @@
 package com.blog.article.domain.state;
 
+import com.blog.article.domain.entity.ArticleEntity;
 import com.blog.enums.ArticleStatus;
 import org.springframework.stereotype.Component;
 
@@ -14,7 +15,7 @@ import org.springframework.stereotype.Component;
  * 使用单例模式缓存状态实例，避免重复创建。
  * </p>
  *
- * @author blog-system
+ * @author liusxml
  * @since 1.1.0
  */
 @Component
@@ -49,7 +50,7 @@ public class ArticleStateFactory {
      * @param article 文章实体
      * @return 状态对象
      */
-    public ArticleState getState(com.blog.article.domain.entity.ArticleEntity article) {
+    public ArticleState getState(ArticleEntity article) {
         return getState(article.getStatus());
     }
 }

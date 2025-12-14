@@ -9,7 +9,7 @@ import lombok.Data;
  * 封装责任链处理后的结果。
  * </p>
  *
- * @author blog-system
+ * @author liusxml
  * @since 1.1.0
  */
 @Data

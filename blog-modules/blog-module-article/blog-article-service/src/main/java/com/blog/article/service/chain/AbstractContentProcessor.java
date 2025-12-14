@@ -9,7 +9,7 @@ import lombok.extern.slf4j.Slf4j;
  * 提供责任链的基础实现。
  * </p>
  *
- * @author blog-system
+ * @author liusxml
  * @since 1.1.0
  */
 @Slf4j

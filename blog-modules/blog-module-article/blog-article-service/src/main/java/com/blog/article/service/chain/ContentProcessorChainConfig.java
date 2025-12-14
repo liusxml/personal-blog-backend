@@ -19,7 +19,7 @@ import org.springframework.context.annotation.Configuration;
  * <p>
  * 处理顺序：
  * </p>
- * 
+ *
  * <pre>
  * 1. XssFilter        - XSS过滤
  * 2. MarkdownParser   - Markdown转HTML
@@ -27,7 +27,7 @@ import org.springframework.context.annotation.Configuration;
  * 4. SummaryExtractor - 提取摘要
  * </pre>
  *
- * @author blog-system
+ * @author liusxml
  * @since 1.1.0
  */
 @Slf4j

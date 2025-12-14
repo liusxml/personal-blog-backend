@@ -23,6 +23,7 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -91,6 +92,17 @@ public abstract class BaseServiceImpl<M extends BaseMapper<E>, E, V, D extends I
     public IPage<V> pageVo(Page<E> page, Wrapper<E> queryWrapper) {
         IPage<E> entityPage = this.page(page, queryWrapper);
         return entityPage.convert(converter::entityToVo);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public <R> IPage<R> pageWithConverter(Page<E> page, Wrapper<E> queryWrapper,
+                                          Function<E, R> converterFunc) {
+        Assert.notNull(page, "分页参数不能为空");
+        Assert.notNull(converterFunc, "转换函数不能为空");
+
+        IPage<E> entityPage = this.page(page, queryWrapper);
+        return entityPage.convert(converterFunc);
     }
 
     @Override
@@ -199,7 +211,7 @@ public abstract class BaseServiceImpl<M extends BaseMapper<E>, E, V, D extends I
          * 子类中的实现示例：
          *
          * @Override
-         * 
+         *
          * @Transactional(readOnly = true)
          * public void streamVo(Wrapper<User> queryWrapper, StreamProcessor<UserVO>
          * processor) {
@@ -212,9 +224,9 @@ public abstract class BaseServiceImpl<M extends BaseMapper<E>, E, V, D extends I
          * 对应的 UserMapper.java:
          *
          * @Select("SELECT * FROM user")
-         * 
+         *
          * @Options(resultSetType = ResultSetType.FORWARD_ONLY, fetchSize = 1000)
-         * 
+         *
          * @ResultType(User.class)
          * Stream<User> streamList(@Param(Constants.WRAPPER) Wrapper<User> wrapper);
          */

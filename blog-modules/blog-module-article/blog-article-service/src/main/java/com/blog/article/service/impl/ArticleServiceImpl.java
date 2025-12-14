@@ -1,19 +1,35 @@
 package com.blog.article.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.blog.article.domain.entity.ArticleEntity;
+import com.blog.article.domain.event.ArticlePublishedEvent;
+import com.blog.article.domain.state.ArticleState;
+import com.blog.article.domain.state.ArticleStateFactory;
 import com.blog.article.infrastructure.converter.ArticleConverter;
 import com.blog.article.infrastructure.mapper.ArticleMapper;
+import com.blog.article.infrastructure.vector.VectorSearchService;
 import com.blog.article.service.IArticleService;
+import com.blog.article.service.chain.ContentProcessor;
+import com.blog.article.service.chain.ProcessResult;
 import com.blog.common.base.BaseServiceImpl;
+import com.blog.common.exception.BusinessException;
+import com.blog.common.exception.SystemErrorCode;
+import com.blog.common.model.PageResult;
+import com.blog.common.utils.SecurityUtils;
 import com.blog.dto.ArticleDTO;
+import com.blog.dto.ArticleQueryDTO;
 import com.blog.enums.ArticleStatus;
 import com.blog.vo.ArticleDetailVO;
 import com.blog.vo.ArticleListVO;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * 文章服务实现
@@ -38,8 +54,8 @@ import java.util.List;
  * <li>访问权限校验</li>
  * </ul>
  *
- * @author blog-system
- * @since 1.1.0
+ * @author liusxml
+ * @since 1.0.0
  */
 @Slf4j
 @Service
@@ -48,19 +64,19 @@ public class ArticleServiceImpl
         implements IArticleService {
 
     private final ArticleConverter converter;
-    private final com.blog.article.domain.state.ArticleStateFactory stateFactory;
-    private final com.blog.article.service.chain.ContentProcessor contentProcessorChain;
-    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
-    private final com.blog.article.infrastructure.vector.VectorSearchService vectorSearchService;
+    private final ArticleStateFactory stateFactory;
+    private final ContentProcessor contentProcessorChain;
+    private final ApplicationEventPublisher eventPublisher;
+    private final VectorSearchService vectorSearchService;
 
     /**
      * 调用父类构造函数注入 converter
      */
     public ArticleServiceImpl(ArticleConverter converter,
-            com.blog.article.domain.state.ArticleStateFactory stateFactory,
-            com.blog.article.service.chain.ContentProcessor contentProcessorChain,
-            org.springframework.context.ApplicationEventPublisher eventPublisher,
-            com.blog.article.infrastructure.vector.VectorSearchService vectorSearchService) {
+            ArticleStateFactory stateFactory,
+            ContentProcessor contentProcessorChain,
+            ApplicationEventPublisher eventPublisher,
+            VectorSearchService vectorSearchService) {
         super(converter);
         this.converter = converter;
         this.stateFactory = stateFactory;
@@ -69,9 +85,6 @@ public class ArticleServiceImpl
         this.vectorSearchService = vectorSearchService;
     }
 
-    // BaseServiceImpl 已注入：
-    // - baseMapper (ArticleMapper)
-    // - converter (ArticleConverter)
 
     /**
      * 保存前钩子：设置默认值 + 内容处理
@@ -97,20 +110,26 @@ public class ArticleServiceImpl
             entity.setStatus(ArticleStatus.DRAFT.getCode());
         }
 
-        // 设置默认特性标记
-        if (entity.getIsTop() == null) {
-            entity.setIsTop(0);
-        }
-        if (entity.getIsFeatured() == null) {
-            entity.setIsFeatured(0);
-        }
-        if (entity.getIsCommentDisabled() == null) {
-            entity.setIsCommentDisabled(0);
+        // 设置作者ID为当前登录用户（必填字段）
+        if (entity.getAuthorId() == null) {
+            Long currentUserId = SecurityUtils.getCurrentUserId();
+            if (currentUserId != null) {
+                entity.setAuthorId(currentUserId);
+                log.debug("自动设置作者ID: authorId={}", currentUserId);
+            } else {
+                log.error("创建文章失败: 无法获取当前登录用户");
+                throw new BusinessException(SystemErrorCode.UNAUTHORIZED);
+            }
         }
 
+        // 设置默认特性标记（使用 Objects.requireNonNullElse 替代 if-null 检查）
+        entity.setIsTop(Objects.requireNonNullElse(entity.getIsTop(), 0));
+        entity.setIsFeatured(Objects.requireNonNullElse(entity.getIsFeatured(), 0));
+        entity.setIsCommentDisabled(Objects.requireNonNullElse(entity.getIsCommentDisabled(), 0));
+
         // 使用责任链处理内容
-        if (entity.getContent() != null && !entity.getContent().isEmpty()) {
-            com.blog.article.service.chain.ProcessResult result = new com.blog.article.service.chain.ProcessResult();
+        if (StringUtils.isNotBlank(entity.getContent())) {
+            ProcessResult result = new ProcessResult();
             result.setMarkdown(entity.getContent());
 
             // 通过处理链
@@ -121,7 +140,7 @@ public class ArticleServiceImpl
                 entity.setTocJson(result.getTocJson());
 
                 // 如果没有手动填写摘要，使用自动提取的
-                if (entity.getSummary() == null || entity.getSummary().isEmpty()) {
+                if (StringUtils.isBlank(entity.getSummary())) {
                     entity.setSummary(result.getSummary());
                 }
 
@@ -174,14 +193,14 @@ public class ArticleServiceImpl
         }
 
         // 使用状态模式处理发布逻辑
-        com.blog.article.domain.state.ArticleState state = stateFactory.getState(article);
+        ArticleState state = stateFactory.getState(article);
         state.publish(article);
 
         // 更新数据库
         baseMapper.updateById(article);
 
         // 发布 ArticlePublishedEvent（异步处理副作用）
-        com.blog.article.domain.event.ArticlePublishedEvent event = new com.blog.article.domain.event.ArticlePublishedEvent(
+        ArticlePublishedEvent event = new ArticlePublishedEvent(
                 this,
                 article.getId(),
                 article.getAuthorId(),
@@ -210,7 +229,7 @@ public class ArticleServiceImpl
         }
 
         // 使用状态模式处理归档逻辑
-        com.blog.article.domain.state.ArticleState state = stateFactory.getState(article);
+        ArticleState state = stateFactory.getState(article);
         state.archive(article);
 
         baseMapper.updateById(article);
@@ -237,7 +256,7 @@ public class ArticleServiceImpl
         }
 
         // 使用状态模式处理恢复逻辑
-        com.blog.article.domain.state.ArticleState state = stateFactory.getState(article);
+        ArticleState state = stateFactory.getState(article);
         state.unarchive(article);
 
         baseMapper.updateById(article);
@@ -284,7 +303,7 @@ public class ArticleServiceImpl
     @Override
     public void incrementViewCount(Long articleId) {
         log.debug("增加浏览量: articleId={}", articleId);
-        // TODO: 异步更新 art_article_stats
+        // 待实现: 异步更新 art_article_stats
     }
 
     /**
@@ -310,14 +329,95 @@ public class ArticleServiceImpl
             return false;
         }
 
-        // TODO: 添加作者权限检查（需要从 SecurityContext 获取当前用户）
+        // 待实现: 作者权限检查
 
         // 检查密码保护
-        if (article.getPassword() != null && !article.getPassword().isEmpty()) {
+        if (StringUtils.isNotBlank(article.getPassword())) {
             return article.getPassword().equals(password);
         }
 
         // 检查发布状态
         return ArticleStatus.of(article.getStatus()).isPublic();
+    }
+
+    /**
+     * 分页查询文章列表
+     *
+     * <p>
+     * 支持多种筛选条件：分类、标签、关键词、状态。
+     * </p>
+     *
+     * <p>
+     * 使用 {@link BaseServiceImpl#pageWithConverter} 实现，直接转换为 ListVO。
+     * </p>
+     *
+     * @param query 查询参数
+     * @return 分页结果
+     */
+    @Override
+    public PageResult<ArticleListVO> pageList(ArticleQueryDTO query) {
+        log.info("分页查询文章: current={}, size={}, categoryId={}, tagId={}, keyword={}",
+                query.getCurrent(), query.getSize(), query.getCategoryId(),
+                query.getTagId(), query.getKeyword());
+
+        // 构造分页对象
+        Page<ArticleEntity> page = new Page<>(query.getCurrent(), query.getSize());
+
+        // 构建查询条件
+        LambdaQueryWrapper<ArticleEntity> wrapper = buildQueryWrapper(query);
+
+        // 使用 BaseServiceImpl 的 pageWithConverter（直接 Entity -> ListVO）
+        IPage<ArticleListVO> listVoPage = this.pageWithConverter(page, wrapper, converter::entityToListVo);
+
+        // 转换为 PageResult
+        return PageResult.of(listVoPage);
+    }
+
+    /**
+     * 构建查询条件（抽取为私有方法，提高可维护性）
+     */
+    private LambdaQueryWrapper<ArticleEntity> buildQueryWrapper(ArticleQueryDTO query) {
+        LambdaQueryWrapper<ArticleEntity> wrapper = new LambdaQueryWrapper<>();
+
+        // 基础条件：未删除
+        wrapper.eq(ArticleEntity::getIsDeleted, 0);
+
+        // 状态筛选（默认只查已发布）
+        if (query.getStatus() != null) {
+            wrapper.eq(ArticleEntity::getStatus, query.getStatus());
+        } else {
+            // 用户端默认只查询已发布
+            wrapper.eq(ArticleEntity::getStatus, ArticleStatus.PUBLISHED.getCode());
+        }
+
+        // 分类筛选
+        if (query.getCategoryId() != null) {
+            wrapper.eq(ArticleEntity::getCategoryId, query.getCategoryId());
+        }
+
+        // 作者筛选
+        if (query.getAuthorId() != null) {
+            wrapper.eq(ArticleEntity::getAuthorId, query.getAuthorId());
+        }
+
+        // 关键词搜索（标题 + 摘要）
+        if (StringUtils.isNotBlank(query.getKeyword())) {
+            wrapper.and(w -> w
+                    .like(ArticleEntity::getTitle, query.getKeyword())
+                    .or()
+                    .like(ArticleEntity::getSummary, query.getKeyword()));
+        }
+
+        // 标签筛选（需要子查询）
+        if (query.getTagId() != null) {
+            wrapper.inSql(ArticleEntity::getId,
+                    "SELECT article_id FROM art_article_tag WHERE tag_id = " + query.getTagId()
+                            + " AND is_deleted = 0");
+        }
+
+        // 排序：置顶优先，然后按发布时间倒序
+        wrapper.orderByDesc(ArticleEntity::getIsTop, ArticleEntity::getPublishTime);
+
+        return wrapper;
     }
 }
