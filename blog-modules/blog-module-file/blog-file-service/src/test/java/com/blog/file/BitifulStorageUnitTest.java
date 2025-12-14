@@ -1,8 +1,8 @@
 package com.blog.file;
 
+import com.blog.common.config.BitifulProperties;
 import com.blog.common.exception.BusinessException;
 import com.blog.enums.FileErrorCode;
-import com.blog.infrastructure.config.BitifulProperties;
 import com.blog.infrastructure.oss.BitifulStorage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,7 +31,6 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
