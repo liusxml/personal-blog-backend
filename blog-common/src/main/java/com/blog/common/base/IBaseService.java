@@ -9,12 +9,14 @@ import com.blog.common.exception.EntityNotFoundException;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * 基础 Service 接口，在 MyBatis-Plus IService 基础上增加通用方法，支持 RESTful API CRUD 操作。
  * <p>
  * 该接口提供类型安全的 DTO/Entity/VO 转换方法，适用于 Spring Boot 3 环境。
- * 方法设计符合 RESTful API 原则：get/list/page 为读取 (GET)，save/update 为修改 (POST/PUT)，remove 为删除 (DELETE)。
+ * 方法设计符合 RESTful API 原则：get/list/page 为读取 (GET)，save/update 为修改
+ * (POST/PUT)，remove 为删除 (DELETE)。
  * 所有方法均为线程安全，支持 Java 21 的虚拟线程执行。
  *
  * @param <E> Entity 类型 - 数据库持久化对象，必须实现 Serializable 并可选标注 @Version/@TableLogic。
@@ -65,6 +67,33 @@ public interface IBaseService<E, V, D extends Identifiable<? extends Serializabl
      * @since 1.0
      */
     IPage<V> pageVo(Page<E> page, Wrapper<E> queryWrapper);
+
+    /**
+     * 根据查询条件进行分页查询，并使用自定义转换器转换结果。
+     * <p>
+     * 相比 {@link #pageVo(Page, Wrapper)}，此方法支持任意类型的转换器，
+     * 可用于转换为 ListVO、DetailVO 或其他自定义类型。
+     * </p>
+     *
+     * <p>
+     * 使用场景：
+     * </p>
+     * <ul>
+     * <li>列表查询需要 ListVO（精简字段）而非 DetailVO</li>
+     * <li>需要在转换时应用自定义逻辑</li>
+     * <li>避免中间对象的性能损失</li>
+     * </ul>
+     *
+     * @param page         分页参数对象
+     * @param queryWrapper 查询条件包装器
+     * @param converter    转换函数 (Entity -> R)
+     * @param <R>          目标类型（如 ListVO、DetailVO）
+     * @return 包含自定义类型的分页结果
+     * @throws IllegalArgumentException 如果 page 或 converter 为 null
+     * @implNote 使用 MyBatis-Plus page + IPage.convert() 实现
+     * @since 1.1.0
+     */
+    <R> IPage<R> pageWithConverter(Page<E> page, Wrapper<E> queryWrapper, Function<E, R> converter);
 
     /**
      * 通过 DTO 保存新实体，支持 RESTful API POST 操作。

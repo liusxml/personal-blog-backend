@@ -135,10 +135,16 @@
         </dependency>
 
         <!-- Spring Boot Devtools 热部署插件 -->
+        <!-- ⚠️ 暂时禁用：DevTools 的 RestartClassLoader 有缓存问题导致 ClassNotFoundException -->
+        <!-- 如需开发热重载，取消下面注释，但需确保先执行 mvn clean install -->
+        <!--
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
         </dependency>
+        -->
 
         <!-- =================================================== -->
         <!-- ============== API 文档生成工具 ============== -->

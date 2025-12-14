@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
@@ -16,7 +16,7 @@
         <!-- =================================================== -->
         <!-- ================ 项目内部模块依赖 ================ -->
         <!-- =================================================== -->
-        
+
         <!--
          依赖本模块的 API 层，Service 实现必须依赖并实现 API 中定义的接口。
          这是分层架构的关键：API 层定义契约，Service 层提供实现。
@@ -25,12 +25,115 @@
             <groupId>com.blog</groupId>
             <artifactId>blog-article-api</artifactId>
         </dependency>
-        
+
         <!-- 依赖公共模块，获取 BaseService、工具类等基础设施 -->
         <dependency>
             <groupId>com.blog</groupId>
             <artifactId>blog-common</artifactId>
         </dependency>
+
+        <!-- =================================================== -->
+        <!-- =============== Spring 框架相关依赖 =============== -->
+        <!-- =================================================== -->
+
+        <!-- Spring Boot：提供配置属性绑定等基础功能 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- =================================================== -->
+        <!-- ================== 数据库相关依赖 ================== -->
+        <!-- =================================================== -->
+
+        <!-- MyBatis-Plus：简化数据库操作 -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+        </dependency>
+
+        <!-- =================================================== -->
+        <!-- ================== 工具类库依赖 ================== -->
+        <!-- =================================================== -->
+
+        <!-- Lombok：编译期代码生成工具，简化实体和服务类开发 -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
+
+        <!-- MapStruct：Bean映射工具 -->
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+        </dependency>
+
+        <!-- =================================================== -->
+        <!-- ================= 验证和注解依赖 ================= -->
+        <!-- =================================================== -->
+
+        <!-- Jakarta Validation API：JSR-303 Bean 验证 -->
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+        </dependency>
+
+        <!-- =================================================== -->
+        <!-- =================== 测试依赖 =================== -->
+        <!-- =================================================== -->
+
+        <!-- JUnit 5: 单元测试框架 -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Mockito: Mock框架 -->
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- AssertJ: 流畅断言库 -->
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Spring Boot Test: 集成测试支持 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
+
+    <build>
+        <plugins>
+            <!-- MapStruct 编译器插件 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                        <path>
+                            <groupId>org.mapstruct</groupId>
+                            <artifactId>mapstruct-processor</artifactId>
+                            <version>${mapstruct.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
