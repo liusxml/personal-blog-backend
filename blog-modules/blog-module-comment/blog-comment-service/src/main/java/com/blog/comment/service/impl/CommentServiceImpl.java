@@ -4,9 +4,15 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.blog.comment.api.dto.CommentDTO;
 import com.blog.comment.api.enums.CommentStatus;
 import com.blog.comment.api.enums.CommentTargetType;
+import com.blog.comment.api.enums.ReportStatus;
 import com.blog.comment.api.vo.CommentTreeVO;
 import com.blog.comment.api.vo.CommentVO;
 import com.blog.comment.domain.entity.CommentEntity;
+import com.blog.comment.domain.entity.CommentLikeEntity;
+import com.blog.comment.domain.entity.CommentReportEntity;
+import com.blog.comment.domain.event.CommentLikedEvent;
+import com.blog.comment.domain.event.CommentReportedEvent;
+import com.blog.comment.domain.event.CommentUnlikedEvent;
 import com.blog.comment.domain.processor.CommentProcessorChain;
 import com.blog.comment.domain.processor.ProcessContext;
 import com.blog.comment.domain.state.CommentState;
@@ -17,6 +23,7 @@ import com.blog.comment.service.ICommentService;
 import com.blog.common.base.BaseServiceImpl;
 import com.blog.common.exception.BusinessException;
 import com.blog.common.exception.SystemErrorCode;
+import com.blog.common.utils.SecurityUtils;
 import com.blog.common.util.TreeBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -47,13 +54,22 @@ public class CommentServiceImpl
     private final TreeBuilder<CommentTreeVO, Long> treeBuilder;
     private final CommentStateFactory stateFactory;
     private final CommentProcessorChain processorChain;
+    private final com.blog.comment.infrastructure.mapper.CommentLikeMapper commentLikeMapper;
+    private final com.blog.comment.infrastructure.mapper.CommentReportMapper commentReportMapper;
+    private final org.springframework.context.ApplicationEventPublisher applicationEventPublisher;
 
     public CommentServiceImpl(CommentConverter converter,
             CommentStateFactory stateFactory,
-            CommentProcessorChain processorChain) {
+            CommentProcessorChain processorChain,
+            com.blog.comment.infrastructure.mapper.CommentLikeMapper commentLikeMapper,
+            com.blog.comment.infrastructure.mapper.CommentReportMapper commentReportMapper,
+            org.springframework.context.ApplicationEventPublisher applicationEventPublisher) {
         super(converter);
         this.stateFactory = stateFactory;
         this.processorChain = processorChain;
+        this.commentLikeMapper = commentLikeMapper;
+        this.commentReportMapper = commentReportMapper;
+        this.applicationEventPublisher = applicationEventPublisher;
         this.treeBuilder = new TreeBuilder<>(
                 CommentTreeVO::getId,
                 CommentTreeVO::getParentId,
@@ -308,5 +324,121 @@ public class CommentServiceImpl
         state.deleteByAdmin(comment, reason);
 
         updateById(comment);
+    }
+
+    // ========== Phase 5: 点赞和举报功能 ==========
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void likeComment(Long commentId) {
+        Long userId = SecurityUtils.getCurrentUserId();
+
+        // 幂等性检查
+        if (commentLikeMapper.hasLiked(userId, commentId)) {
+            return; // 已点赞，直接返回
+        }
+
+        // 插入点赞记录
+        CommentLikeEntity like = new CommentLikeEntity();
+        like.setCommentId(commentId);
+        like.setUserId(userId);
+        commentLikeMapper.insert(like);
+
+        // 发布事件（异步更新计数）
+        applicationEventPublisher.publishEvent(new CommentLikedEvent(commentId));
+
+        log.info("用户点赞评论: userId={}, commentId={}", userId, commentId);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void unlikeComment(Long commentId) {
+        Long userId = SecurityUtils.getCurrentUserId();
+
+        // 使用逻辑删除（BaseMapper.deleteById 自动使用 @TableLogic）
+        CommentLikeEntity like = commentLikeMapper.selectOne(
+                new LambdaQueryWrapper<CommentLikeEntity>()
+                        .eq(CommentLikeEntity::getUserId, userId)
+                        .eq(CommentLikeEntity::getCommentId, commentId));
+
+        if (like != null) {
+            commentLikeMapper.deleteById(like.getId());
+
+            // 发布取消点赞事件
+            applicationEventPublisher.publishEvent(new CommentUnlikedEvent(commentId));
+
+            log.info("用户取消点赞: userId={}, commentId={}", userId, commentId);
+        }
+    }
+
+    @Override
+    public boolean hasLiked(Long commentId) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        return commentLikeMapper.hasLiked(userId, commentId);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Long reportComment(com.blog.comment.api.dto.CommentReportDTO dto) {
+        Long userId = SecurityUtils.getCurrentUserId();
+
+        // 创建举报记录
+        CommentReportEntity report = new CommentReportEntity();
+        report.setCommentId(dto.getCommentId());
+        report.setReporterId(userId);
+        report.setReasonType(dto.getReasonType());
+        report.setReasonDetail(dto.getReasonDetail());
+        report.setStatus(ReportStatus.PENDING);
+
+        commentReportMapper.insert(report);
+
+        // 发布举报事件
+        applicationEventPublisher.publishEvent(
+                new CommentReportedEvent(dto.getCommentId(), report.getId()));
+
+        log.warn("用户举报评论: userId={}, commentId={}, reportId={}, reason={}",
+                userId, dto.getCommentId(), report.getId(), dto.getReasonType());
+
+        return report.getId();
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void approveReport(Long reportId, String remark) {
+        CommentReportEntity report = commentReportMapper.selectById(reportId);
+        if (report == null) {
+            throw new BusinessException(SystemErrorCode.NOT_FOUND, "举报记录不存在");
+        }
+
+        if (report.getStatus() != ReportStatus.PENDING) {
+            throw new BusinessException(SystemErrorCode.PARAM_ERROR, "该举报已处理，无法重复审核");
+        }
+
+        report.setStatus(ReportStatus.APPROVED);
+        report.setAdminRemark(remark);
+        commentReportMapper.updateById(report);
+
+        log.info("管理员审核通过举报: reportId={}, commentId={}, remark={}",
+                reportId, report.getCommentId(), remark);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void rejectReport(Long reportId, String remark) {
+        CommentReportEntity report = commentReportMapper.selectById(reportId);
+        if (report == null) {
+            throw new BusinessException(SystemErrorCode.NOT_FOUND, "举报记录不存在");
+        }
+
+        if (report.getStatus() != ReportStatus.PENDING) {
+            throw new BusinessException(SystemErrorCode.PARAM_ERROR, "该举报已处理，无法重复审核");
+        }
+
+        report.setStatus(ReportStatus.REJECTED);
+        report.setAdminRemark(remark);
+        commentReportMapper.updateById(report);
+
+        log.info("管理员审核拒绝举报: reportId={}, commentId={}, remark={}",
+                reportId, report.getCommentId(), remark);
     }
 }

@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.Serializable;
@@ -109,6 +110,93 @@ public class CommentController {
     @Operation(summary = "删除评论")
     public Result<Void> delete(@PathVariable Long id) {
         commentService.deleteCommentByUser(id);
+        return Result.success();
+    }
+
+    // ========== Phase 5: 点赞和举报功能 ==========
+
+    /**
+     * 点赞评论
+     *
+     * @param id 评论ID
+     * @return 成功提示
+     */
+    @PostMapping("/{id}/like")
+    @Operation(summary = "点赞评论")
+    public Result<Void> like(@PathVariable Long id) {
+        commentService.likeComment(id);
+        return Result.success();
+    }
+
+    /**
+     * 取消点赞
+     *
+     * @param id 评论ID
+     * @return 成功提示
+     */
+    @DeleteMapping("/{id}/like")
+    @Operation(summary = "取消点赞")
+    public Result<Void> unlike(@PathVariable Long id) {
+        commentService.unlikeComment(id);
+        return Result.success();
+    }
+
+    /**
+     * 检查是否已点赞
+     *
+     * @param id 评论ID
+     * @return 是否已点赞
+     */
+    @GetMapping("/{id}/liked")
+    @Operation(summary = "检查是否已点赞")
+    public Result<Boolean> hasLiked(@PathVariable Long id) {
+        return Result.success(commentService.hasLiked(id));
+    }
+
+    /**
+     * 举报评论
+     *
+     * @param id  评论ID
+     * @param dto 举报DTO
+     * @return 举报ID
+     */
+    @PostMapping("/{id}/report")
+    @Operation(summary = "举报评论")
+    public Result<Long> report(@PathVariable Long id,
+            @Valid @RequestBody com.blog.comment.api.dto.CommentReportDTO dto) {
+        dto.setCommentId(id);
+        return Result.success(commentService.reportComment(dto));
+    }
+
+    /**
+     * 审核通过举报（管理员）
+     *
+     * @param reportId 举报ID
+     * @param remark   管理员备注
+     * @return 成功提示
+     */
+    @PostMapping("/reports/{reportId}/approve")
+    @Operation(summary = "审核通过举报", description = "需要管理员权限")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    public Result<Void> approveReport(@PathVariable Long reportId,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String remark) {
+        commentService.approveReport(reportId, remark);
+        return Result.success();
+    }
+
+    /**
+     * 审核拒绝举报（管理员）
+     *
+     * @param reportId 举报ID
+     * @param remark   管理员备注
+     * @return 成功提示
+     */
+    @PostMapping("/reports/{reportId}/reject")
+    @Operation(summary = "审核拒绝举报", description = "需要管理员权限")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Result<Void> rejectReport(@PathVariable Long reportId,
+            @RequestParam(required = false) String remark) {
+        commentService.rejectReport(reportId, remark);
         return Result.success();
     }
 }
