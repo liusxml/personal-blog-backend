@@ -29,6 +29,30 @@
             <groupId>com.blog</groupId>
             <artifactId>blog-common</artifactId>
         </dependency>
+
+        <!-- =================================================== -->
+        <!-- ================== 开发工具依赖 ================== -->
+        <!-- =================================================== -->
+        
+        <!-- Lombok：编译期代码生成工具，用于简化 DTO 类开发 -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- =================================================== -->
+        <!-- ================ API 文档生成工具 ================ -->
+        <!-- =================================================== -->
+        
+        <!--
+         SpringDoc OpenAPI Starter Common：提供 API 文档注解支持。
+         API 模块中使用 @Schema、@Operation 等注解来描述接口和数据模型。
+        -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-common</artifactId>
+        </dependency>
     </dependencies>
 
 </project>

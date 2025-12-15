@@ -47,6 +47,28 @@
             <groupId>com.blog</groupId>
             <artifactId>blog-common</artifactId>
         </dependency>
+
+        <!-- =================================================== -->
+        <!-- ================== 开发工具依赖 ================== -->
+        <!-- =================================================== -->
+        
+        <!-- Lombok：编译期代码生成工具，简化实体和服务类开发 -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- =================================================== -->
+        <!-- =================== 测试依赖 =================== -->
+        <!-- =================================================== -->
+
+        <!-- Test Dependencies -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
 </project>
