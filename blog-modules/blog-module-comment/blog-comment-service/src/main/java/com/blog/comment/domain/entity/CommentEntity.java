@@ -35,6 +35,12 @@ public class CommentEntity implements Serializable {
 
     private Integer replyCount;
 
+    private String path;
+
+    private Integer depth;
+
+    private Long rootId;
+
     @Version
     private Integer version;
 

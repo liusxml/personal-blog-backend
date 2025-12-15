@@ -77,6 +77,12 @@ public class GlobalExceptionHandler {
                 getCurrentRequest().getRequestURI(),
                 getCurrentRequest().getMethod(),
                 ex.getErrorCode().getCode());
+
+        // 如果有自定义消息，使用自定义消息；否则使用 errorCode 的默认消息
+        String message = ex.getMessage();
+        if (message != null && !message.equals(ex.getErrorCode().getMessage())) {
+            return Result.error(ex.getErrorCode(), message);
+        }
         return Result.error(ex.getErrorCode());
     }
 

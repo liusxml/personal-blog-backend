@@ -1,6 +1,8 @@
 package com.blog.comment.api.controller;
 
 import com.blog.comment.api.dto.CommentDTO;
+import com.blog.comment.api.enums.CommentTargetType;
+import com.blog.comment.api.vo.CommentTreeVO;
 import com.blog.comment.api.vo.CommentVO;
 import com.blog.comment.service.ICommentService;
 import com.blog.common.exception.BusinessException;
@@ -14,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * 评论管理 Controller
@@ -44,6 +47,18 @@ public class CommentController {
     }
 
     /**
+     * 回复评论
+     *
+     * @param dto 评论DTO
+     * @return 评论ID
+     */
+    @PostMapping("/reply")
+    @Operation(summary = "回复评论")
+    public Result<Long> reply(@Valid @RequestBody CommentDTO dto) {
+        return Result.success(commentService.replyComment(dto));
+    }
+
+    /**
      * 获取评论详情
      *
      * @param id 评论ID
@@ -55,6 +70,21 @@ public class CommentController {
         return commentService.getVoById(id)
                 .map(Result::success)
                 .orElseThrow(() -> new BusinessException(SystemErrorCode.NOT_FOUND));
+    }
+
+    /**
+     * 获取评论树
+     *
+     * @param targetType 目标类型
+     * @param targetId   目标ID
+     * @return 评论树
+     */
+    @GetMapping("/tree")
+    @Operation(summary = "获取评论树")
+    public Result<List<CommentTreeVO>> getTree(
+            @RequestParam CommentTargetType targetType,
+            @RequestParam Long targetId) {
+        return Result.success(commentService.getCommentTree(targetType, targetId));
     }
 
     /**
