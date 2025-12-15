@@ -8,6 +8,6 @@
 
 USE blog_db;
 
--- 添加审核原因字段
-ALTER TABLE `cmt_comment`
-    ADD COLUMN `audit_reason` VARCHAR(500) NULL COMMENT '审核/删除原因' AFTER `root_id`;
+-- -- 添加审核原因字段
+-- ALTER TABLE `cmt_comment`
+--     ADD COLUMN `audit_reason` VARCHAR(500) NULL COMMENT '审核/删除原因' AFTER `root_id`;

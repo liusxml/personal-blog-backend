@@ -7,6 +7,8 @@ import com.blog.comment.api.enums.CommentTargetType;
 import com.blog.comment.api.vo.CommentTreeVO;
 import com.blog.comment.api.vo.CommentVO;
 import com.blog.comment.domain.entity.CommentEntity;
+import com.blog.comment.domain.processor.CommentProcessorChain;
+import com.blog.comment.domain.processor.ProcessContext;
 import com.blog.comment.domain.state.CommentState;
 import com.blog.comment.domain.state.CommentStateFactory;
 import com.blog.comment.infrastructure.converter.CommentConverter;
@@ -26,10 +28,10 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * 评论服务实现（Phase 3 扩展 - 状态模式）
+ * 评论服务实现（Phase 4 扩展 - 责任链模式）
  *
  * @author liusxml
- * @since 1.3.0
+ * @since 1.4.0
  */
 @Slf4j
 @Service
@@ -44,10 +46,14 @@ public class CommentServiceImpl
 
     private final TreeBuilder<CommentTreeVO, Long> treeBuilder;
     private final CommentStateFactory stateFactory;
+    private final CommentProcessorChain processorChain;
 
-    public CommentServiceImpl(CommentConverter converter, CommentStateFactory stateFactory) {
+    public CommentServiceImpl(CommentConverter converter,
+            CommentStateFactory stateFactory,
+            CommentProcessorChain processorChain) {
         super(converter);
         this.stateFactory = stateFactory;
+        this.processorChain = processorChain;
         this.treeBuilder = new TreeBuilder<>(
                 CommentTreeVO::getId,
                 CommentTreeVO::getParentId,
@@ -68,6 +74,18 @@ public class CommentServiceImpl
         if (Objects.isNull(entity.getReplyCount())) {
             entity.setReplyCount(0);
         }
+
+        // ✅ Phase 4: 内容处理链（XSS过滤 → 敏感词过滤 → Markdown渲染）
+        ProcessContext context = processorChain.execute(entity.getContent());
+
+        if (!context.isPassed()) {
+            throw new BusinessException(SystemErrorCode.PARAM_ERROR,
+                    "评论内容不合规: " + context.getFailureReason());
+        }
+
+        // 更新处理后的内容和HTML
+        entity.setContent(context.getProcessedContent());
+        entity.setContentHtml(context.getRenderedHtml());
 
         // 计算树形字段
         if (Objects.isNull(entity.getParentId())) {
@@ -92,7 +110,43 @@ public class CommentServiceImpl
             entity.setRootId(parent.getRootId() != null ? parent.getRootId() : parent.getId());
         }
 
-        log.debug("评论保存前处理: depth={}, rootId={}", entity.getDepth(), entity.getRootId());
+        log.debug("评论保存前处理: depth={}, rootId={}, contentHtml={}",
+                entity.getDepth(), entity.getRootId(),
+                entity.getContentHtml() != null ? "已渲染" : "未渲染");
+    }
+
+    /**
+     * Phase 4: 更新前处理（处理评论编辑场景）
+     */
+    @Override
+    protected void preUpdate(CommentEntity entity) {
+        // ✅ 检测 content 是否变更
+        CommentEntity existing = getById(entity.getId());
+
+        if (existing == null) {
+            log.warn("评论不存在: id={}", entity.getId());
+            return;
+        }
+
+        // 只有内容变更时才重新处理
+        if (!existing.getContent().equals(entity.getContent())) {
+            log.info("评论内容已修改，重新渲染 HTML: id={}", entity.getId());
+
+            // 重新执行责任链
+            ProcessContext context = processorChain.execute(entity.getContent());
+
+            if (!context.isPassed()) {
+                throw new BusinessException(SystemErrorCode.PARAM_ERROR,
+                        "评论内容不合规: " + context.getFailureReason());
+            }
+
+            // 更新处理后的内容和HTML
+            entity.setContent(context.getProcessedContent());
+            entity.setContentHtml(context.getRenderedHtml());
+
+            log.debug("评论内容已重新渲染: contentHtml={}",
+                    entity.getContentHtml() != null ? "已渲染" : "未渲染");
+        }
     }
 
     /**

@@ -29,6 +29,11 @@ public class CommentEntity implements Serializable {
 
     private String content;
 
+    /**
+     * 渲染后的 HTML 内容
+     */
+    private String contentHtml;
+
     private CommentStatus status;
 
     private Integer likeCount;

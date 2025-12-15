@@ -47,6 +47,7 @@
         <commons-collections4.version>4.5.0</commons-collections4.version>
         <commons-io.version>2.20.0</commons-io.version>
         <guava.version>33.5.0-jre</guava.version>
+        <flexmark-all>0.64.8</flexmark-all>
         <!-- Maven 插件 -->
         <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
         <!-- 监控与指标 -->
@@ -232,6 +233,13 @@
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>${guava.version}</version>
+            </dependency>
+
+            <!-- Markdown 解析库：用于将 Markdown 转换为 HTML -->
+            <dependency>
+                <groupId>com.vladsch.flexmark</groupId>
+                <artifactId>flexmark-all</artifactId>
+                <version>${flexmark-all}</version>
             </dependency>
 
             <!-- =================================================== -->
