@@ -7,6 +7,8 @@ import com.blog.comment.api.enums.CommentTargetType;
 import com.blog.comment.api.vo.CommentTreeVO;
 import com.blog.comment.api.vo.CommentVO;
 import com.blog.comment.domain.entity.CommentEntity;
+import com.blog.comment.domain.state.CommentState;
+import com.blog.comment.domain.state.CommentStateFactory;
 import com.blog.comment.infrastructure.converter.CommentConverter;
 import com.blog.comment.infrastructure.mapper.CommentMapper;
 import com.blog.comment.service.ICommentService;
@@ -24,10 +26,10 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * 评论服务实现（Phase 2 扩展）
+ * 评论服务实现（Phase 3 扩展 - 状态模式）
  *
  * @author liusxml
- * @since 1.2.0
+ * @since 1.3.0
  */
 @Slf4j
 @Service
@@ -41,9 +43,11 @@ public class CommentServiceImpl
     private static final int MAX_DEPTH = 5;
 
     private final TreeBuilder<CommentTreeVO, Long> treeBuilder;
+    private final CommentStateFactory stateFactory;
 
-    public CommentServiceImpl(CommentConverter converter) {
+    public CommentServiceImpl(CommentConverter converter, CommentStateFactory stateFactory) {
         super(converter);
+        this.stateFactory = stateFactory;
         this.treeBuilder = new TreeBuilder<>(
                 CommentTreeVO::getId,
                 CommentTreeVO::getParentId,
@@ -52,9 +56,9 @@ public class CommentServiceImpl
 
     @Override
     protected void preSave(CommentEntity entity) {
-        // 设置默认状态
+        // 设置默认状态为待审核
         if (Objects.isNull(entity.getStatus())) {
-            entity.setStatus(CommentStatus.APPROVED);
+            entity.setStatus(CommentStatus.PENDING);
         }
 
         // 初始化统计字段
@@ -184,5 +188,71 @@ public class CommentServiceImpl
         vo.setDepth(entity.getDepth());
         vo.setRootId(entity.getRootId());
         return vo;
+    }
+
+    // ========== 状态模式 - 审核方法 ==========
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void approveComment(Long id) {
+        CommentEntity comment = getById(id);
+        if (comment == null) {
+            throw new BusinessException(SystemErrorCode.NOT_FOUND, "评论不存在");
+        }
+
+        // 获取状态处理器并执行审核通过操作
+        CommentState state = stateFactory.getState(comment.getStatus());
+        state.approve(comment);
+
+        // 更新数据库
+        updateById(comment);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void rejectComment(Long id, String reason) {
+        CommentEntity comment = getById(id);
+        if (comment == null) {
+            throw new BusinessException(SystemErrorCode.NOT_FOUND, "评论不存在");
+        }
+
+        CommentState state = stateFactory.getState(comment.getStatus());
+        state.reject(comment, reason);
+
+        updateById(comment);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteCommentByUser(Long id) {
+        CommentEntity comment = getById(id);
+        if (comment == null) {
+            throw new BusinessException(SystemErrorCode.NOT_FOUND, "评论不存在");
+        }
+
+        // TODO: 验证是否为当前用户的评论（Phase 3 后续实现）
+        // Long currentUserId = SecurityUtils.getCurrentUserId();
+        // if (!comment.getCreateBy().equals(currentUserId)) {
+        // throw new BusinessException(SystemErrorCode.ACCESS_DENIED, "无权删除他人评论");
+        // }
+
+        CommentState state = stateFactory.getState(comment.getStatus());
+        state.deleteByUser(comment);
+
+        updateById(comment);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteCommentByAdmin(Long id, String reason) {
+        CommentEntity comment = getById(id);
+        if (comment == null) {
+            throw new BusinessException(SystemErrorCode.NOT_FOUND, "评论不存在");
+        }
+
+        CommentState state = stateFactory.getState(comment.getStatus());
+        state.deleteByAdmin(comment, reason);
+
+        updateById(comment);
     }
 }

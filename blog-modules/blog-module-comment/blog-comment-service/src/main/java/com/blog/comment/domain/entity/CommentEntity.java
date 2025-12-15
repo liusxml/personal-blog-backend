@@ -41,6 +41,11 @@ public class CommentEntity implements Serializable {
 
     private Long rootId;
 
+    /**
+     * 审核/删除原因
+     */
+    private String auditReason;
+
     @Version
     private Integer version;
 

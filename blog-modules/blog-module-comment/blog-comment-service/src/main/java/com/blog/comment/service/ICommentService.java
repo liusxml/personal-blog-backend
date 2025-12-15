@@ -33,4 +33,34 @@ public interface ICommentService extends IBaseService<CommentEntity, CommentVO, 
      * @return 评论ID
      */
     Long replyComment(CommentDTO dto);
+
+    /**
+     * 审核通过评论
+     *
+     * @param id 评论ID
+     */
+    void approveComment(Long id);
+
+    /**
+     * 审核拒绝评论
+     *
+     * @param id     评论ID
+     * @param reason 拒绝原因
+     */
+    void rejectComment(Long id, String reason);
+
+    /**
+     * 用户删除评论
+     *
+     * @param id 评论ID
+     */
+    void deleteCommentByUser(Long id);
+
+    /**
+     * 管理员删除评论
+     *
+     * @param id     评论ID
+     * @param reason 删除原因
+     */
+    void deleteCommentByAdmin(Long id, String reason);
 }

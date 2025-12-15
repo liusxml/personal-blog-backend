@@ -1,4 +1,4 @@
-package com.blog.comment.api.controller;
+package com.blog.comment.controller;
 
 import com.blog.comment.api.dto.CommentDTO;
 import com.blog.comment.api.enums.CommentTargetType;
@@ -100,14 +100,15 @@ public class CommentController {
     }
 
     /**
-     * 删除评论
+     * 用户删除自己的评论（状态流转）
      *
      * @param id 评论ID
-     * @return 是否成功
+     * @return 成功提示
      */
     @DeleteMapping("/{id}")
     @Operation(summary = "删除评论")
-    public Result<Boolean> delete(@PathVariable Long id) {
-        return Result.success(commentService.removeById(id));
+    public Result<Void> delete(@PathVariable Long id) {
+        commentService.deleteCommentByUser(id);
+        return Result.success();
     }
 }
