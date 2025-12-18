@@ -11,8 +11,11 @@ import com.blog.comment.domain.entity.CommentEntity;
 import com.blog.comment.domain.entity.CommentLikeEntity;
 import com.blog.comment.domain.entity.CommentReportEntity;
 import com.blog.comment.domain.event.CommentLikedEvent;
+import com.blog.comment.domain.event.CommentRepliedEvent;
 import com.blog.comment.domain.event.CommentReportedEvent;
 import com.blog.comment.domain.event.CommentUnlikedEvent;
+import com.blog.comment.domain.event.UserMentionedEvent;
+import com.blog.comment.domain.parser.MentionParser;
 import com.blog.comment.domain.processor.CommentProcessorChain;
 import com.blog.comment.domain.processor.ProcessContext;
 import com.blog.comment.domain.state.CommentState;
@@ -24,14 +27,18 @@ import com.blog.common.base.BaseServiceImpl;
 import com.blog.common.exception.BusinessException;
 import com.blog.common.exception.SystemErrorCode;
 import com.blog.common.utils.SecurityUtils;
-import com.blog.common.util.TreeBuilder;
+import com.blog.common.utils.TreeBuilder;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -57,19 +64,25 @@ public class CommentServiceImpl
     private final com.blog.comment.infrastructure.mapper.CommentLikeMapper commentLikeMapper;
     private final com.blog.comment.infrastructure.mapper.CommentReportMapper commentReportMapper;
     private final org.springframework.context.ApplicationEventPublisher applicationEventPublisher;
+    private final MentionParser mentionParser;
+    private final ObjectMapper objectMapper;
 
     public CommentServiceImpl(CommentConverter converter,
             CommentStateFactory stateFactory,
             CommentProcessorChain processorChain,
             com.blog.comment.infrastructure.mapper.CommentLikeMapper commentLikeMapper,
             com.blog.comment.infrastructure.mapper.CommentReportMapper commentReportMapper,
-            org.springframework.context.ApplicationEventPublisher applicationEventPublisher) {
+            org.springframework.context.ApplicationEventPublisher applicationEventPublisher,
+            MentionParser mentionParser,
+            ObjectMapper objectMapper) {
         super(converter);
         this.stateFactory = stateFactory;
         this.processorChain = processorChain;
         this.commentLikeMapper = commentLikeMapper;
         this.commentReportMapper = commentReportMapper;
         this.applicationEventPublisher = applicationEventPublisher;
+        this.mentionParser = mentionParser;
+        this.objectMapper = objectMapper;
         this.treeBuilder = new TreeBuilder<>(
                 CommentTreeVO::getId,
                 CommentTreeVO::getParentId,
@@ -102,6 +115,18 @@ public class CommentServiceImpl
         // 更新处理后的内容和HTML
         entity.setContent(context.getProcessedContent());
         entity.setContentHtml(context.getRenderedHtml());
+
+        // ✅ Phase 6: 解析 @mention
+        Set<Long> mentionedUserIds = mentionParser.parseMentions(entity.getContent());
+        if (!mentionedUserIds.isEmpty()) {
+            try {
+                entity.setMentionedUserIds(objectMapper.writeValueAsString(mentionedUserIds));
+                log.debug("解析@提及成功: userIds={}", mentionedUserIds);
+            } catch (JsonProcessingException e) {
+                log.warn("序列化@提及用户ID失败", e);
+                entity.setMentionedUserIds(null);
+            }
+        }
 
         // 计算树形字段
         if (Objects.isNull(entity.getParentId())) {
@@ -167,20 +192,49 @@ public class CommentServiceImpl
 
     /**
      * 重写保存方法，处理根评论的 path 和 rootId
+     * Phase 7 优化：在保存前解析 @mention，避免依赖 getById 查询
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Serializable saveByDto(CommentDTO dto) {
+        // ✅ Phase 7: 在保存前解析 @mention（避免缓存问题）
+        Set<Long> mentionedUserIds = mentionParser.parseMentions(dto.getContent());
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+
         // 调用父类保存
         Long commentId = (Long) super.saveByDto(dto);
+        CommentEntity entity = getById(commentId);
 
         // 如果是根评论（parentId 为 null），更新 path 和 rootId
         if (dto.getParentId() == null) {
-            CommentEntity entity = getById(commentId);
             entity.setPath("/" + commentId + "/");
             entity.setRootId(commentId);
             updateById(entity);
             log.debug("根评论后置更新: id={}, path={}, rootId={}", commentId, entity.getPath(), entity.getRootId());
+        }
+
+        // ✅ Phase 7: 发布 @mention 事件（使用预先解析的结果）
+        if (!mentionedUserIds.isEmpty()) {
+            applicationEventPublisher.publishEvent(
+                    new UserMentionedEvent(commentId, mentionedUserIds, currentUserId));
+            log.info("发布@提及事件: commentId={}, mentionedUserIds={}, mentionerId={}",
+                    commentId, mentionedUserIds, currentUserId);
+        }
+
+        // ✅ Phase 7: 如果是回复，发布回复事件
+        if (dto.getParentId() != null) {
+            CommentEntity parent = getById(dto.getParentId());
+            if (parent != null) {
+                applicationEventPublisher.publishEvent(
+                        new CommentRepliedEvent(
+                                commentId,
+                                dto.getParentId(),
+                                parent.getCreateBy(),
+                                currentUserId // replierId
+                        ));
+                log.info("发布回复事件: commentId={}, parentId={}, repliedUserId={}, replierId={}",
+                        commentId, dto.getParentId(), parent.getCreateBy(), currentUserId);
+            }
         }
 
         return commentId;

@@ -5,7 +5,9 @@ import com.blog.system.entity.SysRole;
 import com.blog.system.entity.SysUser;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -64,6 +66,22 @@ public interface UserMapper extends BaseMapper<SysUser> {
      * @return 用户列表
      */
     List<SysUser> selectByIds(@Param("ids") List<Long> ids);
+
+    /**
+     * 批量根据账号查询用户ID
+     *
+     * @param usernames 用户名集合
+     * @return 用户ID列表
+     */
+    @Select("<script>" +
+            "SELECT id FROM sys_user " +
+            "WHERE username IN " +
+            "<foreach collection='usernames' item='name' open='(' separator=',' close=')'>" +
+            "#{name}" +
+            "</foreach>" +
+            " AND is_deleted = 0" +
+            "</script>")
+    List<Long> selectUserIdsByUsernames(@Param("usernames") Collection<String> usernames);
 
     /**
      * 检查用户名是否存在

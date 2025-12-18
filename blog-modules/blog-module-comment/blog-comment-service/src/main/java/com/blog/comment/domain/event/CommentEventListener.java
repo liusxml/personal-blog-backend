@@ -1,6 +1,7 @@
 package com.blog.comment.domain.event;
 
 import com.blog.comment.infrastructure.mapper.CommentMapper;
+import com.blog.system.api.service.INotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CommentEventListener {
 
     private final CommentMapper commentMapper;
+    private final INotificationService notificationService;
 
     /**
      * 处理点赞事件（异步）
@@ -56,6 +58,47 @@ public class CommentEventListener {
         log.warn("评论被举报: commentId={}, reportId={}",
                 event.getCommentId(), event.getReportId());
 
-        // TODO: 发送通知给管理员
+        // TODO: Phase 7 - 发送通知给管理员
+    }
+
+    /**
+     * 处理@提及事件（异步）
+     * <p>
+     * Phase 7: 集成通知服务，为被提及的用户创建通知
+     */
+    @Async
+    @EventListener
+    public void handleUserMentioned(UserMentionedEvent event) {
+        log.info("处理@提及事件: commentId={}, 提及用户数={}, mentionerId={}",
+                event.getCommentId(),
+                event.getMentionedUserIds().size(),
+                event.getMentionerId());
+
+        // ✅ Phase 7: 创建@提及通知
+        notificationService.createMentionNotifications(
+                event.getCommentId(),
+                event.getMentionedUserIds(),
+                event.getMentionerId());
+    }
+
+    /**
+     * 处理评论回复事件（异步）
+     * <p>
+     * Phase 7: 集成通知服务，为被回复用户创建通知
+     */
+    @Async
+    @EventListener
+    public void handleCommentReplied(CommentRepliedEvent event) {
+        log.info("处理回复事件: commentId={}, parentId={}, repliedUserId={}, replierId={}",
+                event.getCommentId(),
+                event.getParentCommentId(),
+                event.getRepliedUserId(),
+                event.getReplierId());
+
+        // ✅ Phase 7: 创建回复通知
+        notificationService.createReplyNotification(
+                event.getCommentId(),
+                event.getRepliedUserId(),
+                event.getReplierId());
     }
 }

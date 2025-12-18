@@ -1,4 +1,4 @@
-package com.blog.common.util;
+package com.blog.common.utils;
 
 import java.util.*;
 import java.util.function.BiConsumer;

@@ -51,6 +51,21 @@ public class CommentEntity implements Serializable {
      */
     private String auditReason;
 
+    /**
+     * 是否已编辑
+     */
+    private Boolean isEdited;
+
+    /**
+     * 最后编辑时间
+     */
+    private LocalDateTime editTime;
+
+    /**
+     * 被@提及的用户ID列表（JSON格式，如"[123,456]"）
+     */
+    private String mentionedUserIds;
+
     @Version
     private Integer version;
 

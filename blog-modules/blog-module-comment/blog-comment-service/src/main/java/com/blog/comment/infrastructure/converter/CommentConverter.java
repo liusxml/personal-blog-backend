@@ -15,9 +15,5 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
  */
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface CommentConverter extends BaseConverter<CommentDTO, CommentEntity, CommentVO> {
-    // MapStruct 自动生成以下方法:
-    // - CommentEntity toEntity(CommentDTO dto);
-    // - CommentVO toVo(CommentEntity entity);
-    // - void updateEntityFromDto(CommentDTO dto, @MappingTarget CommentEntity
-    // entity);
+
 }

@@ -42,6 +42,16 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!--
+         跨模块 API 依赖：用于@提及功能查询用户名。
+         遵循模块化架构，通过 system-api 接口调用。
+        -->
+        <dependency>
+            <groupId>com.blog</groupId>
+            <artifactId>blog-system-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- 依赖公共模块，获取基础服务类和工具 -->
         <dependency>
             <groupId>com.blog</groupId>
