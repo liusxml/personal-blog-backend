@@ -29,15 +29,15 @@ import java.util.concurrent.TimeUnit;
  * </ul>
  * <p>
  * <b>使用示例：</b>
- * 
+ *
  * <pre>{@code
  * // String 操作
  * redisUtils.set("key", "value", 30, TimeUnit.MINUTES);
  * Optional<Object> value = redisUtils.get("key");
- * 
+ *
  * // 批量操作
  * List<Object> values = redisUtils.mGet(Arrays.asList("key1", "key2"));
- * 
+ *
  * // 防雪崩
  * red isUtils.setWithRandomTTL("key", value, 30, TimeUnit.MINUTES, 10);
  * }</pre>
@@ -57,7 +57,7 @@ public final class RedisUtils {
 
     /**
      * 内部方法，校验 key 是否为空白。
-     * 
+     *
      * @param key 待校验的 key
      */
     private void checkKey(final String key) {
@@ -436,8 +436,8 @@ public final class RedisUtils {
      * @param randomPercent 随机百分比（0-100），例如 10 表示 ±10%
      */
     public void setWithRandomTTL(final String key, final Object value,
-            final long baseTimeout, final TimeUnit unit,
-            final int randomPercent) {
+                                 final long baseTimeout, final TimeUnit unit,
+                                 final int randomPercent) {
         checkKey(key);
         Preconditions.checkNotNull(value, "缓存的值不能为空。");
         Preconditions.checkNotNull(unit, "时间单位不能为空。");

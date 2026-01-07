@@ -11,7 +11,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Optional;
 
@@ -89,7 +96,7 @@ public class RoleController {
     @DeleteMapping("/{roleId}/users/{userId}")
     @Operation(summary = "移除角色", description = "移除用户的指定角色")
     public Result<Boolean> removeRoleFromUser(@PathVariable("roleId") Long roleId,
-            @PathVariable("userId") Long userId) {
+                                              @PathVariable("userId") Long userId) {
         boolean success = roleService.removeRoleFromUser(userId, roleId);
         return success ? Result.success() : Result.error(500, "移除角色失败");
     }

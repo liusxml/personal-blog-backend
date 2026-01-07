@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author ArchUnit Team
  * @see ArchitectureTest 所有 ArchUnit 规则所需的 {@link JavaClasses} 都在此进行一次性加载和缓存。
- *      本测试类将直接引用 {@link ArchitectureTest#CLASSES} 以避免重复导入。
+ * 本测试类将直接引用 {@link ArchitectureTest#CLASSES} 以避免重复导入。
  * @see ArchRule ArchUnit 架构规则的基石，定义了代码应遵循的约束。
  * @see BeforeAll 确保在所有测试方法执行前，ArchUnit 所需的类已导入并准备就绪。
  * @since 1.0

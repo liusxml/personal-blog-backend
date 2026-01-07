@@ -61,14 +61,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  *
  * @see SpringBootTest 启动一个完整的、真实的Spring Boot应用上下文，这是进行深度集成测试的基石。
  * @see ActiveProfiles 强制指定使用 "test" 配置文件
- *      (application-test.yml)。这实现了开发、测试、生产环境的完全隔离，是专业测试实践的关键。
+ * (application-test.yml)。这实现了开发、测试、生产环境的完全隔离，是专业测试实践的关键。
  * @see AutoConfigureMockMvc 自动配置 {@link MockMvc}
- *      实例，它是模拟HTTP请求、测试Controller层的核心工具，无需手动搭建。
+ * 实例，它是模拟HTTP请求、测试Controller层的核心工具，无需手动搭建。
  * @see Transactional 这是一个至关重要的注解。它能确保每个测试方法都在一个独立的数据库事务中运行。测试方法执行完毕后，该事务会自动回滚。
- *      这样做的好处是，无论测试中对数据库做了任何增删改操作，都不会污染数据库，保证了每个测试用例的独立性和可重复性。
+ * 这样做的好处是，无论测试中对数据库做了任何增删改操作，都不会污染数据库，保证了每个测试用例的独立性和可重复性。
  * @see TestMethodOrder 通过 {@link MethodOrderer.OrderAnnotation}
- *      控制测试方法的执行顺序。这使得测试流程从基础环境验证到上层业务逻辑验证，
- *      层层递进，更具逻辑性、可读性和问题定位的便捷性。
+ * 控制测试方法的执行顺序。这使得测试流程从基础环境验证到上层业务逻辑验证，
+ * 层层递进，更具逻辑性、可读性和问题定位的便捷性。
  */
 @SpringBootTest(classes = BlogApplication.class)
 @ActiveProfiles("test")
@@ -323,8 +323,8 @@ public class FrameworkIntegrationTest {
         log.info("   - 预期: 捕获 MethodArgumentNotValidException, 即使某字段的错误消息为null, 也应正确处理并返回结构化数据");
         // 3. 执行MockMvc请求并进行断言
         mockMvc.perform(post("/framework-test/validation")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBody))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
                 .andExpect(status().isBadRequest()) // 参数校验失败，返回 400
                 .andExpect(jsonPath("$.code").value(SystemErrorCode.VALIDATION_ERROR.getCode())) // 业务码
                 .andExpect(jsonPath("$.message").value(SystemErrorCode.VALIDATION_ERROR.getMessage())) // 统一消息
@@ -341,7 +341,7 @@ public class FrameworkIntegrationTest {
 
     /**
      * 辅助方法：获取一个Logger上所有挂载的Appender的名称列表。
-     * 
+     *
      * @param logger Logback Logger 实例
      * @return Appender 名称的列表
      */
@@ -354,7 +354,7 @@ public class FrameworkIntegrationTest {
 
     /**
      * 辅助方法：创建一个用于测试的简单日志事件（LoggingEvent）。
-     * 
+     *
      * @param level 日志事件的级别
      * @return 一个模拟的日志事件实例
      */

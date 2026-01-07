@@ -5,13 +5,16 @@ description: 如何添加新的业务模块（如 blog-module-xxx）
 # 添加新业务模块
 
 ## 前置条件
+
 - 确定模块名称，如 `xxx`（小写，如 article, comment, file）
 - 确定表前缀，如 `xxx_`
 
 ## 操作步骤
 
 ### 1. 创建模块目录结构
+
 在 `blog-modules/` 下创建：
+
 ```
 blog-module-xxx/
 ├── pom.xml
@@ -31,7 +34,9 @@ blog-module-xxx/
 ```
 
 // turbo
+
 ### 2. 创建父模块 pom.xml
+
 ```xml
 <project>
     <parent>
@@ -49,7 +54,9 @@ blog-module-xxx/
 ```
 
 ### 3. 更新根 pom.xml
+
 在 `<dependencyManagement>` 中添加：
+
 ```xml
 <dependency>
     <groupId>com.blog</groupId>
@@ -64,13 +71,17 @@ blog-module-xxx/
 ```
 
 ### 4. 更新 blog-modules/pom.xml
+
 在 `<modules>` 中添加：
+
 ```xml
 <module>blog-module-xxx</module>
 ```
 
 ### 5. 更新 blog-application/pom.xml
+
 在 `<dependencies>` 中添加：
+
 ```xml
 <dependency>
     <groupId>com.blog</groupId>
@@ -79,12 +90,15 @@ blog-module-xxx/
 ```
 
 // turbo
+
 ### 6. 验证构建
+
 ```bash
 mvn clean install -DskipTests
 ```
 
 ## 检查清单
+
 - [ ] 模块目录结构正确
 - [ ] 所有 pom.xml 已创建
 - [ ] 根 pom.xml 已更新

@@ -6,7 +6,8 @@
 -- 版本: 1.4.0
 -- ========================================================
 
-USE blog_db;
+USE
+blog_db;
 
 -- -- 添加 content_html 字段
 -- ALTER TABLE `cmt_comment`

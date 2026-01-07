@@ -3,7 +3,7 @@ package com.blog.system.converter;
 import com.blog.common.base.BaseConverter;
 import com.blog.system.api.dto.UserDTO;
 import com.blog.system.api.vo.UserVO;
-import com.blog.system.entity.SysUser;
+import com.blog.system.domain.entity.UserEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 
@@ -14,7 +14,7 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
  * @since 1.0.0
  */
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-public interface UserConverter extends BaseConverter<UserDTO, SysUser, UserVO> {
+public interface UserConverter extends BaseConverter<UserDTO, UserEntity, UserVO> {
 
     /**
      * 将 Entity 转换为 DTO（用于跨模块调用）
@@ -22,5 +22,5 @@ public interface UserConverter extends BaseConverter<UserDTO, SysUser, UserVO> {
      * @param entity Entity 对象
      * @return DTO 对象
      */
-    UserDTO entityToDto(SysUser entity);
+    UserDTO entityToDto(UserEntity entity);
 }

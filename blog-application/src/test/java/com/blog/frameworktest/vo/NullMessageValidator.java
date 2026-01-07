@@ -13,7 +13,7 @@ public class NullMessageValidator implements ConstraintValidator<NullMessage, St
             context.disableDefaultConstraintViolation();
             // 2. 构造一个新的 violation，并把 messageTemplate 设置为 null
             context.buildConstraintViolationWithTemplate("")
-                   .addConstraintViolation();
+                    .addConstraintViolation();
             return false; // 校验失败
         }
         return true; // 其他情况均校验成功

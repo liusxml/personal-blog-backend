@@ -5,6 +5,7 @@ description: 如何添加新的 REST API 端点
 # 添加新 API 端点
 
 ## 前置条件
+
 - 确定所属模块（如 system, article）
 - 确定资源名称（如 User, Article）
 - 确定 API 路径（如 `/api/v1/articles`）
@@ -14,6 +15,7 @@ description: 如何添加新的 REST API 端点
 ### 1. 在 `*-api` 模块创建 DTO/VO
 
 **请求 DTO** (`blog-xxx-api/src/main/java/com/blog/xxx/api/dto/XxxDTO.java`):
+
 ```java
 @Data
 public class XxxDTO implements Serializable, Identifiable<Long> {
@@ -26,6 +28,7 @@ public class XxxDTO implements Serializable, Identifiable<Long> {
 ```
 
 **响应 VO** (`blog-xxx-api/src/main/java/com/blog/xxx/api/vo/XxxVO.java`):
+
 ```java
 @Data
 @Schema(description = "Xxx 响应对象")
@@ -50,6 +53,7 @@ public interface XxxConverter extends BaseConverter<XxxDTO, XxxEntity, XxxVO> {
 ### 3. 创建 Service 接口和实现
 
 **接口** (`IXxxService.java`):
+
 ```java
 public interface IXxxService extends IBaseService<XxxEntity, XxxVO, XxxDTO> {
     // 自定义方法
@@ -57,6 +61,7 @@ public interface IXxxService extends IBaseService<XxxEntity, XxxVO, XxxDTO> {
 ```
 
 **实现** (`XxxServiceImpl.java`):
+
 ```java
 @Slf4j
 @Service
@@ -112,15 +117,19 @@ public class XxxController {
 ```
 
 // turbo
+
 ### 5. 验证
+
 ```bash
 mvn compile -pl blog-modules/blog-module-xxx
 ```
 
 ### 6. 测试 API
+
 启动应用后访问 `http://localhost:8080/swagger-ui.html` 查看新接口
 
 ## 检查清单
+
 - [ ] DTO 实现 `Identifiable<T>`
 - [ ] VO 添加 `@Schema` 注解
 - [ ] Converter 使用正确的 MapStruct 配置

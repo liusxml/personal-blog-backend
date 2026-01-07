@@ -8,7 +8,7 @@ import org.springframework.validation.annotation.Validated;
 
 /**
  * OSS 统一配置属性
- * 
+ *
  * <p>
  * 控制使用哪种 OSS 类型（BITIFUL、ALIYUN、MINIO 等）。
  * 支持运行时切换存储策略。
@@ -25,7 +25,7 @@ public class OssProperties {
 
     /**
      * OSS 类型
-     * 
+     *
      * <p>
      * 可选值：
      * <ul>

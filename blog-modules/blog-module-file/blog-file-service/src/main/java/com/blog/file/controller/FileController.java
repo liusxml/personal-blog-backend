@@ -1,22 +1,30 @@
 package com.blog.file.controller;
 
 import com.blog.common.model.Result;
-import com.blog.dto.PreSignedUrlRequest;
+import com.blog.file.api.dto.PreSignedUrlRequest;
+import com.blog.file.api.vo.FileVO;
+import com.blog.file.api.vo.PreSignedUploadVO;
 import com.blog.file.service.impl.FileServiceImpl;
-import com.blog.vo.FileVO;
-import com.blog.vo.PreSignedUploadVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Optional;
 
 /**
  * 文件控制器
- * 
+ *
  * <p>
  * 遵循项目规范：
  * <ul>
@@ -41,7 +49,7 @@ public class FileController {
 
     /**
      * 生成预签名上传 URL
-     * 
+     *
      * <p>
      * 前端流程：
      * <ol>
@@ -63,7 +71,7 @@ public class FileController {
 
     /**
      * 确认上传完成
-     * 
+     *
      * <p>
      * 前端上传成功后调用此接口，更新文件状态。
      * </p>
@@ -94,7 +102,7 @@ public class FileController {
 
     /**
      * 删除文件
-     * 
+     *
      * <p>
      * 软删除 + 调用存储删除。
      * </p>
@@ -111,7 +119,7 @@ public class FileController {
 
     /**
      * 获取文件访问 URL（动态生成）
-     * 
+     *
      * <p>
      * 不再存储 accessUrl，而是动态生成7天有效的预签名 GET URL。
      * </p>
@@ -119,7 +127,7 @@ public class FileController {
     @GetMapping("/{id}/access-url")
     @Operation(summary = "获取文件访问URL", description = "动态生成预签名GET URL（7天有效）")
     public Result<String> getAccessUrl(@PathVariable Long id,
-            @RequestParam(defaultValue = "60") int expireMinutes) {
+                                       @RequestParam(defaultValue = "60") int expireMinutes) {
         log.info("获取访问URL: id={}, expireMinutes={}", id, expireMinutes);
 
         String accessUrl = fileService.getAccessUrl(id, expireMinutes);

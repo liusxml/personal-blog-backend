@@ -12,6 +12,36 @@ import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.sli
  */
 public final class ModuleRule {
 
+    public static final SliceRule NO_CYCLE_BETWEEN_MODULES = slices()
+            .matching("com.blog.(*)..")
+            .should().beFreeOfCycles()
+            .because("模块间循环依赖会导致微服务拆分失败");
+    public static final ArchRule COMMON_NO_BUSINESS_LOGIC = noClasses()
+            .that().resideInAPackage("com.blog.common..")
+            .should().beAnnotatedWith(org.springframework.stereotype.Service.class)
+            .orShould().beAnnotatedWith(org.springframework.stereotype.Repository.class)
+            .orShould().beAnnotatedWith(org.springframework.web.bind.annotation.RestController.class)
+            .because("common 模块禁止包含业务逻辑");
+    /**
+     * API 模块纯度检查 - 禁止实现类
+     * 确保 API 模块只包含 DTO/Interface/Enum，不包含实现类
+     */
+    public static final ArchRule API_MODULE_NO_IMPLEMENTATION = noClasses()
+            .that().resideInAPackage("..api..")
+            .should().beAnnotatedWith(org.springframework.stereotype.Service.class)
+            .orShould().beAnnotatedWith(org.springframework.stereotype.Repository.class)
+            .orShould().beAnnotatedWith(org.springframework.stereotype.Component.class)
+            .orShould().haveSimpleNameContaining("Impl")
+            .because("API 模块禁止包含实现类（仅 DTO/Interface/Enum）");
+    /**
+     * API 模块纯度检查 - 禁止 Entity
+     * 确保 API 模块不包含数据库实体，只能使用 DTO
+     */
+    public static final ArchRule API_MODULE_NO_ENTITY = noClasses()
+            .that().resideInAPackage("..api..")
+            .should().beAnnotatedWith(com.baomidou.mybatisplus.annotation.TableName.class)
+            .because("API 模块禁止包含 Entity（仅 DTO）");
+
     private ModuleRule() {
     }
 
@@ -30,39 +60,6 @@ public final class ModuleRule {
                     });
         });
     }
-
-    public static final SliceRule NO_CYCLE_BETWEEN_MODULES = slices()
-            .matching("com.blog.(*)..")
-            .should().beFreeOfCycles()
-            .because("模块间循环依赖会导致微服务拆分失败");
-
-    public static final ArchRule COMMON_NO_BUSINESS_LOGIC = noClasses()
-            .that().resideInAPackage("com.blog.common..")
-            .should().beAnnotatedWith(org.springframework.stereotype.Service.class)
-            .orShould().beAnnotatedWith(org.springframework.stereotype.Repository.class)
-            .orShould().beAnnotatedWith(org.springframework.web.bind.annotation.RestController.class)
-            .because("common 模块禁止包含业务逻辑");
-
-    /**
-     * API 模块纯度检查 - 禁止实现类
-     * 确保 API 模块只包含 DTO/Interface/Enum，不包含实现类
-     */
-    public static final ArchRule API_MODULE_NO_IMPLEMENTATION = noClasses()
-            .that().resideInAPackage("..api..")
-            .should().beAnnotatedWith(org.springframework.stereotype.Service.class)
-            .orShould().beAnnotatedWith(org.springframework.stereotype.Repository.class)
-            .orShould().beAnnotatedWith(org.springframework.stereotype.Component.class)
-            .orShould().haveSimpleNameContaining("Impl")
-            .because("API 模块禁止包含实现类（仅 DTO/Interface/Enum）");
-
-    /**
-     * API 模块纯度检查 - 禁止 Entity
-     * 确保 API 模块不包含数据库实体，只能使用 DTO
-     */
-    public static final ArchRule API_MODULE_NO_ENTITY = noClasses()
-            .that().resideInAPackage("..api..")
-            .should().beAnnotatedWith(com.baomidou.mybatisplus.annotation.TableName.class)
-            .because("API 模块禁止包含 Entity（仅 DTO）");
 
     public static void check() {
         checkNoCrossModuleImplDependency();

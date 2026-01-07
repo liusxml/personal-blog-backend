@@ -22,57 +22,59 @@ import static com.tngtech.archunit.library.Architectures.layeredArchitecture;
  */
 public final class LayerRule {
 
-        private LayerRule() {
-        }
+    /**
+     * 严格分层依赖
+     */
+    public static final ArchRule LAYERED_ARCHITECTURE = layeredArchitecture()
+            .consideringAllDependencies()
+            .layer("Controller").definedBy(CONTROLLER_PKG)
+            .layer("Service").definedBy(SERVICE_PKG)
+            .layer("Repository").definedBy(REPOSITORY_PKG)
+            .layer("Entity").definedBy(ENTITY_PKG)
+            .layer("DTO").definedBy(DTO_PKG)
 
-        /** 严格分层依赖 */
-        public static final ArchRule LAYERED_ARCHITECTURE = layeredArchitecture()
-                        .consideringAllDependencies()
-                        .layer("Controller").definedBy(CONTROLLER_PKG)
-                        .layer("Service").definedBy(SERVICE_PKG)
-                        .layer("Repository").definedBy(REPOSITORY_PKG)
-                        .layer("Entity").definedBy(ENTITY_PKG)
-                        .layer("DTO").definedBy(DTO_PKG)
+            .whereLayer("Controller").mayOnlyBeAccessedByLayers("Controller")
+            .whereLayer("Service").mayOnlyBeAccessedByLayers("Controller", "Service")
+            .whereLayer("Repository").mayOnlyBeAccessedByLayers("Service")
+            .whereLayer("Entity").mayOnlyBeAccessedByLayers("Repository", "Service")
+            .whereLayer("DTO").mayOnlyBeAccessedByLayers("Controller", "Service", "Repository", "DTO");
+    /**
+     * 注解位置约束
+     */
+    public static final ArchRule CONTROLLERS_IN_CORRECT_PACKAGE = classes()
+            .that().areAnnotatedWith(RestController.class)
+            .or().areAnnotatedWith(Controller.class)
+            .should().resideInAPackage(CONTROLLER_PKG)
+            .because("控制器必须位于 controller 包");
+    public static final ArchRule SERVICES_IN_IMPL_PACKAGE = classes()
+            .that().areAnnotatedWith(Service.class)
+            .should().resideInAPackage(SERVICE_IMPL_PKG)
+            .because("服务实现类必须位于 impl 子包");
+    public static final ArchRule REPOSITORIES_IN_CORRECT_PACKAGE = classes()
+            .that().areAnnotatedWith(Repository.class)
+            .should().resideInAPackage(REPOSITORY_PKG)
+            .because("仓库类必须位于 repository 或 mapper 包");
+    /**
+     * Controller 禁止位于 blog-application 模块
+     * 架构规则：Controllers 必须位于 *-service 模块，blog-application 仅用于启动类和全局配置
+     */
+    public static final ArchRule NO_CONTROLLERS_IN_APPLICATION = noClasses()
+            .that().areAnnotatedWith(RestController.class)
+            .or().areAnnotatedWith(Controller.class)
+            .should().resideInAPackage("com.blog.application..")
+            .because("Controllers 必须位于 *-service 模块，blog-application 仅用于启动类和全局配置");
 
-                        .whereLayer("Controller").mayOnlyBeAccessedByLayers("Controller")
-                        .whereLayer("Service").mayOnlyBeAccessedByLayers("Controller", "Service")
-                        .whereLayer("Repository").mayOnlyBeAccessedByLayers("Service")
-                        .whereLayer("Entity").mayOnlyBeAccessedByLayers("Repository", "Service")
-                        .whereLayer("DTO").mayOnlyBeAccessedByLayers("Controller", "Service", "Repository", "DTO");
+    private LayerRule() {
+    }
 
-        /** 注解位置约束 */
-        public static final ArchRule CONTROLLERS_IN_CORRECT_PACKAGE = classes()
-                        .that().areAnnotatedWith(RestController.class)
-                        .or().areAnnotatedWith(Controller.class)
-                        .should().resideInAPackage(CONTROLLER_PKG)
-                        .because("控制器必须位于 controller 包");
-
-        public static final ArchRule SERVICES_IN_IMPL_PACKAGE = classes()
-                        .that().areAnnotatedWith(Service.class)
-                        .should().resideInAPackage(SERVICE_IMPL_PKG)
-                        .because("服务实现类必须位于 impl 子包");
-
-        public static final ArchRule REPOSITORIES_IN_CORRECT_PACKAGE = classes()
-                        .that().areAnnotatedWith(Repository.class)
-                        .should().resideInAPackage(REPOSITORY_PKG)
-                        .because("仓库类必须位于 repository 或 mapper 包");
-
-        /**
-         * Controller 禁止位于 blog-application 模块
-         * 架构规则：Controllers 必须位于 *-service 模块，blog-application 仅用于启动类和全局配置
-         */
-        public static final ArchRule NO_CONTROLLERS_IN_APPLICATION = noClasses()
-                        .that().areAnnotatedWith(RestController.class)
-                        .or().areAnnotatedWith(Controller.class)
-                        .should().resideInAPackage("com.blog.application..")
-                        .because("Controllers 必须位于 *-service 模块，blog-application 仅用于启动类和全局配置");
-
-        /** 执行所有规则 */
-        public static void check(JavaClasses classes) {
-                LAYERED_ARCHITECTURE.check(classes);
-                CONTROLLERS_IN_CORRECT_PACKAGE.check(classes);
-                SERVICES_IN_IMPL_PACKAGE.check(classes);
-                REPOSITORIES_IN_CORRECT_PACKAGE.check(classes);
-                NO_CONTROLLERS_IN_APPLICATION.check(classes);
-        }
+    /**
+     * 执行所有规则
+     */
+    public static void check(JavaClasses classes) {
+        LAYERED_ARCHITECTURE.check(classes);
+        CONTROLLERS_IN_CORRECT_PACKAGE.check(classes);
+        SERVICES_IN_IMPL_PACKAGE.check(classes);
+        REPOSITORIES_IN_CORRECT_PACKAGE.check(classes);
+        NO_CONTROLLERS_IN_APPLICATION.check(classes);
+    }
 }

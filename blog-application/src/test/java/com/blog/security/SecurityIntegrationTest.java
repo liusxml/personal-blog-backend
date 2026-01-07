@@ -1,6 +1,7 @@
 package com.blog.security;
 
 import com.blog.BlogApplication;
+import jakarta.annotation.Resource;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -15,8 +16,6 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
-
-import jakarta.annotation.Resource;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -34,7 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * @see WithAnonymousUser 这是一个Spring Security测试注解，它模拟一个“匿名”或“未登录”的用户发出的请求。
  * @see WithMockUser 这是另一个强大的注解，可以轻松模拟一个已经通过认证的用户，并可以指定其用户名和角色。
  * @see org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors#httpBasic(String, String)
- *      这是一个请求后处理器，用于在模拟请求中添加HTTP Basic Authentication头，是测试认证流程的关键。
+ * 这是一个请求后处理器，用于在模拟请求中添加HTTP Basic Authentication头，是测试认证流程的关键。
  */
 @SpringBootTest(classes = BlogApplication.class)
 @ActiveProfiles("test")
@@ -44,17 +43,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class SecurityIntegrationTest {
 
     private static final Logger log = LoggerFactory.getLogger(SecurityIntegrationTest.class);
-
-    @Resource
-    private MockMvc mockMvc;
-
     // 为了测试方便，我们虚构一个业务API路径。
     // 在实际项目中，你应该替换为你真实存在的、且需要被保护的任意一个API路径。
     private static final String PROTECTED_API_URL = "/api/v1/articles"; // 假设这是一个需要登录才能访问的文章接口
-
     // SpringDoc OpenAPI (Swagger) 的路径，这是我们在白名单中配置的。
     private static final String SWAGGER_UI_URL = "/swagger-ui.html";
     private static final String API_DOCS_URL = "/v3/api-docs";
+    @Resource
+    private MockMvc mockMvc;
 
     /**
      * 【第1步】验证白名单URL是否可以被匿名用户公开访问。

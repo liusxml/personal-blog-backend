@@ -14,7 +14,15 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.io.Serializable;
 import java.util.List;
@@ -163,7 +171,7 @@ public class CommentController {
     @PostMapping("/{id}/report")
     @Operation(summary = "举报评论")
     public Result<Long> report(@PathVariable Long id,
-            @Valid @RequestBody com.blog.comment.api.dto.CommentReportDTO dto) {
+                               @Valid @RequestBody com.blog.comment.api.dto.CommentReportDTO dto) {
         dto.setCommentId(id);
         return Result.success(commentService.reportComment(dto));
     }
@@ -179,7 +187,7 @@ public class CommentController {
     @Operation(summary = "审核通过举报", description = "需要管理员权限")
     @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
     public Result<Void> approveReport(@PathVariable Long reportId,
-            @org.springframework.web.bind.annotation.RequestParam(required = false) String remark) {
+                                      @org.springframework.web.bind.annotation.RequestParam(required = false) String remark) {
         commentService.approveReport(reportId, remark);
         return Result.success();
     }
@@ -195,7 +203,7 @@ public class CommentController {
     @Operation(summary = "审核拒绝举报", description = "需要管理员权限")
     @PreAuthorize("hasRole('ADMIN')")
     public Result<Void> rejectReport(@PathVariable Long reportId,
-            @RequestParam(required = false) String remark) {
+                                     @RequestParam(required = false) String remark) {
         commentService.rejectReport(reportId, remark);
         return Result.success();
     }

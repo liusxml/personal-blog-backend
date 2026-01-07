@@ -8,7 +8,7 @@ import com.blog.common.utils.RedisUtils;
 import com.blog.system.api.dto.RoleDTO;
 import com.blog.system.api.vo.RoleVO;
 import com.blog.system.converter.RoleConverter;
-import com.blog.system.entity.SysRole;
+import com.blog.system.domain.entity.RoleEntity;
 import com.blog.system.mapper.RoleMapper;
 import com.blog.system.service.IRoleService;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +26,7 @@ import java.io.Serializable;
  */
 @Slf4j
 @Service
-public class RoleServiceImpl extends BaseServiceImpl<RoleMapper, SysRole, RoleVO, RoleDTO, RoleConverter>
+public class RoleServiceImpl extends BaseServiceImpl<RoleMapper, RoleEntity, RoleVO, RoleDTO, RoleConverter>
         implements IRoleService {
 
     private final RoleMapper roleMapper;
@@ -80,7 +80,7 @@ public class RoleServiceImpl extends BaseServiceImpl<RoleMapper, SysRole, RoleVO
         log.info("开始删除角色: roleId={}", roleId);
 
         // 1. 先查询角色（获取完整实体，包括 version 字段）
-        SysRole role = this.getById(roleId);
+        RoleEntity role = this.getById(roleId);
         if (role == null) {
             log.warn("角色不存在: roleId={}", roleId);
             return false;

@@ -31,7 +31,6 @@ import com.blog.common.utils.TreeBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -68,13 +67,13 @@ public class CommentServiceImpl
     private final ObjectMapper objectMapper;
 
     public CommentServiceImpl(CommentConverter converter,
-            CommentStateFactory stateFactory,
-            CommentProcessorChain processorChain,
-            com.blog.comment.infrastructure.mapper.CommentLikeMapper commentLikeMapper,
-            com.blog.comment.infrastructure.mapper.CommentReportMapper commentReportMapper,
-            org.springframework.context.ApplicationEventPublisher applicationEventPublisher,
-            MentionParser mentionParser,
-            ObjectMapper objectMapper) {
+                              CommentStateFactory stateFactory,
+                              CommentProcessorChain processorChain,
+                              com.blog.comment.infrastructure.mapper.CommentLikeMapper commentLikeMapper,
+                              com.blog.comment.infrastructure.mapper.CommentReportMapper commentReportMapper,
+                              org.springframework.context.ApplicationEventPublisher applicationEventPublisher,
+                              MentionParser mentionParser,
+                              ObjectMapper objectMapper) {
         super(converter);
         this.stateFactory = stateFactory;
         this.processorChain = processorChain;

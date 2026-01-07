@@ -3,19 +3,13 @@ package com.blog.system.controller;
 import com.blog.common.security.JwtAuthenticationDetails;
 import com.blog.system.api.dto.UserDTO;
 import com.blog.system.api.vo.UserVO;
-import com.blog.system.service.IUserService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Arrays;
 import java.util.List;
@@ -23,10 +17,10 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -74,8 +68,8 @@ class UserControllerTest extends BaseControllerTest {
         when(userService.updateByDto(any(UserDTO.class))).thenReturn(true);
 
         mockMvc.perform(put("/api/users/me")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(userDTO)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(userDTO)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0));
     }
@@ -111,8 +105,8 @@ class UserControllerTest extends BaseControllerTest {
         when(userService.updateByDto(any(UserDTO.class))).thenReturn(true);
 
         mockMvc.perform(put("/api/users/2")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(userDTO)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(userDTO)))
                 .andExpect(status().isOk());
     }
 

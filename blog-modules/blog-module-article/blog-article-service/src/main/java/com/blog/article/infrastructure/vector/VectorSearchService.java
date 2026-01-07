@@ -1,9 +1,9 @@
 package com.blog.article.infrastructure.vector;
 
+import com.blog.article.api.vo.ArticleListVO;
 import com.blog.article.domain.entity.ArticleEntity;
 import com.blog.article.infrastructure.converter.ArticleConverter;
 import com.blog.article.infrastructure.mapper.ArticleMapper;
-import com.blog.vo.ArticleListVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

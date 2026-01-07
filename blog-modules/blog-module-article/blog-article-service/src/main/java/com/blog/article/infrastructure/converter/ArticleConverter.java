@@ -1,10 +1,10 @@
 package com.blog.article.infrastructure.converter;
 
+import com.blog.article.api.dto.ArticleDTO;
+import com.blog.article.api.vo.ArticleDetailVO;
+import com.blog.article.api.vo.ArticleListVO;
 import com.blog.article.domain.entity.ArticleEntity;
 import com.blog.common.base.BaseConverter;
-import com.blog.dto.ArticleDTO;
-import com.blog.vo.ArticleDetailVO;
-import com.blog.vo.ArticleListVO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.NullValuePropertyMappingStrategy;

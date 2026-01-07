@@ -2,7 +2,6 @@ package com.blog.config.ddl;
 
 import com.baomidou.mybatisplus.extension.ddl.IDdl;
 import lombok.extern.slf4j.Slf4j;
-
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.ApplicationContext;

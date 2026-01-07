@@ -7,13 +7,15 @@
 -- ========================================================
 
 -- 确保在正确的数据库中执行
-USE blog_db;
+USE
+blog_db;
 
 -- ========================================================
 -- 1. 插入系统角色
 -- ========================================================
 -- 注意：role_sort 值越小，优先级越高
-INSERT IGNORE INTO sys_role (id, role_name, role_key, role_sort, status, version, create_time, update_time, is_deleted, remark)
+INSERT
+IGNORE INTO sys_role (id, role_name, role_key, role_sort, status, version, create_time, update_time, is_deleted, remark)
 VALUES
     (1, '超级管理员', 'ADMIN', 10, 1, 0, NOW(), NOW(), 0, '系统超级管理员，拥有所有权限'),
     (2, '作者', 'AUTHOR', 20, 1, 0, NOW(), NOW(), 0, '可以发布和管理文章、评论'),
@@ -25,7 +27,8 @@ VALUES
 -- 用户名: admin
 -- 密码: Admin@123 (BCrypt 加密后的哈希值)
 -- 说明: 生产环境请务必修改默认密码！
-INSERT IGNORE INTO sys_user (id, username, nickname, password, email, avatar, status, version, create_time, update_time, is_deleted, remark)
+INSERT
+IGNORE INTO sys_user (id, username, nickname, password, email, avatar, status, version, create_time, update_time, is_deleted, remark)
 VALUES
     (1, 'admin', '系统管理员',
      '$2a$10$7qgQFFCT.GmWZhgA6.4ppuZyd.LIpL8v.9k9SGC7Kjxf9DtJEx4/S',
@@ -41,7 +44,8 @@ VALUES
 -- ========================================================
 -- 3. 为管理员分配所有角色
 -- ========================================================
-INSERT IGNORE INTO sys_user_role (user_id, role_id)
+INSERT
+IGNORE INTO sys_user_role (user_id, role_id)
 VALUES
     (1, 1), -- ADMIN (超级管理员)
     (1, 2), -- AUTHOR (作者)

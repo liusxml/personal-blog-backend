@@ -3,6 +3,11 @@ package com.blog.article.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.blog.article.api.dto.ArticleDTO;
+import com.blog.article.api.dto.ArticleQueryDTO;
+import com.blog.article.api.enums.ArticleStatus;
+import com.blog.article.api.vo.ArticleDetailVO;
+import com.blog.article.api.vo.ArticleListVO;
 import com.blog.article.domain.entity.ArticleEntity;
 import com.blog.article.domain.event.ArticlePublishedEvent;
 import com.blog.article.domain.state.ArticleState;
@@ -18,11 +23,6 @@ import com.blog.common.exception.BusinessException;
 import com.blog.common.exception.SystemErrorCode;
 import com.blog.common.model.PageResult;
 import com.blog.common.utils.SecurityUtils;
-import com.blog.dto.ArticleDTO;
-import com.blog.dto.ArticleQueryDTO;
-import com.blog.enums.ArticleStatus;
-import com.blog.vo.ArticleDetailVO;
-import com.blog.vo.ArticleListVO;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.ApplicationEventPublisher;
@@ -73,10 +73,10 @@ public class ArticleServiceImpl
      * 调用父类构造函数注入 converter
      */
     public ArticleServiceImpl(ArticleConverter converter,
-            ArticleStateFactory stateFactory,
-            ContentProcessor contentProcessorChain,
-            ApplicationEventPublisher eventPublisher,
-            VectorSearchService vectorSearchService) {
+                              ArticleStateFactory stateFactory,
+                              ContentProcessor contentProcessorChain,
+                              ApplicationEventPublisher eventPublisher,
+                              VectorSearchService vectorSearchService) {
         super(converter);
         this.converter = converter;
         this.stateFactory = stateFactory;

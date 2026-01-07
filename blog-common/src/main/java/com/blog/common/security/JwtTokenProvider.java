@@ -1,5 +1,6 @@
 package com.blog.common.security;
 
+import com.blog.common.config.SecurityProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -8,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
-import com.blog.common.config.SecurityProperties;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 
 /**
  * JWT Token 生成与验证工具类
- * 
+ *
  * @author liusxml
  * @since 1.0.0
  */

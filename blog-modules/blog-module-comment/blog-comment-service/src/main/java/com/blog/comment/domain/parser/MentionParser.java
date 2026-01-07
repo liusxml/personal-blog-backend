@@ -6,15 +6,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * @提及解析器
- *        解析评论中的 @username，返回用户ID列表
- *
  * @author liusxml
+ * @提及解析器 解析评论中的 @username，返回用户ID列表
  * @since 1.6.0
  */
 @Slf4j

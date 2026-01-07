@@ -1,7 +1,7 @@
 package com.blog.article.domain.state;
 
+import com.blog.article.api.enums.ArticleStatus;
 import com.blog.article.domain.entity.ArticleEntity;
-import com.blog.enums.ArticleStatus;
 import lombok.extern.slf4j.Slf4j;
 
 /**

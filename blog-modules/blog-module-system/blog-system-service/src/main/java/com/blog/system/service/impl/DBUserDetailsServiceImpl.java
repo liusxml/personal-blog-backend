@@ -1,8 +1,8 @@
 package com.blog.system.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.blog.system.entity.SysRole;
-import com.blog.system.entity.SysUser;
+import com.blog.system.domain.entity.RoleEntity;
+import com.blog.system.domain.entity.UserEntity;
 import com.blog.system.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,11 +37,11 @@ public class DBUserDetailsServiceImpl implements UserDetailsService {
         log.debug("加载用户: {}", username);
 
         // 查询用户
-        SysUser user = userMapper.selectOne(
-                new LambdaQueryWrapper<SysUser>()
-                        .eq(SysUser::getUsername, username)
+        UserEntity user = userMapper.selectOne(
+                new LambdaQueryWrapper<UserEntity>()
+                        .eq(UserEntity::getUsername, username)
                         .or()
-                        .eq(SysUser::getEmail, username) // 支持邮箱登录
+                        .eq(UserEntity::getEmail, username) // 支持邮箱登录
         );
 
         if (user == null) {
@@ -50,7 +50,7 @@ public class DBUserDetailsServiceImpl implements UserDetailsService {
         }
 
         // 查询用户角色
-        List<SysRole> roles = userMapper.selectRolesByUserId(user.getId());
+        List<RoleEntity> roles = userMapper.selectRolesByUserId(user.getId());
 
         // 构造权限列表 (添加 ROLE_ 前缀)
         List<GrantedAuthority> authorities = roles.stream()

@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
  * 全局异常处理器
  * <p>
  * 负责捕获和处理应用中所有未被捕获的异常，统一返回格式化的错误响应。
- * 
+ *
  * <h3>异常处理优先级（按 HTTP 状态码分组）：</h3>
  * <ul>
  * <li><b>200 OK</b> - 业务异常（BusinessException）</li>
@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
  * <li><b>500 Internal Server Error</b> -
  * 操作失败（OperationFailedException）、未知异常（Exception）</li>
  * </ul>
- * 
+ *
  * <h3>日志级别规范：</h3>
  * <ul>
  * <li><b>WARN</b> - 业务异常、参数错误、权限错误（可预期的异常）</li>
@@ -45,10 +45,10 @@ import java.util.stream.Collectors;
  *
  * @author liusxml
  * @version 2.0
- * @since 1.0.0
  * @see BusinessException
  * @see SystemErrorCode
  * @see Result
+ * @since 1.0.0
  */
 @Slf4j
 @RestControllerAdvice

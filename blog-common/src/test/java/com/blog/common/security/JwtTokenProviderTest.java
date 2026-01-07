@@ -17,13 +17,16 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 /**
  * JwtTokenProvider 单元测试
- * 
+ *
  * @author liusxml
  * @since 1.0.0
  */
@@ -31,14 +34,12 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class JwtTokenProviderTest {
 
-    @Mock
-    private SecurityProperties securityProperties;
-
-    @InjectMocks
-    private JwtTokenProvider jwtTokenProvider;
-
     private static final String SECRET_KEY = "test-secret-key-must-be-at-least-256-bits-long-for-hmac-sha-256";
     private static final Long EXPIRATION_TIME = 3600000L; // 1小时
+    @Mock
+    private SecurityProperties securityProperties;
+    @InjectMocks
+    private JwtTokenProvider jwtTokenProvider;
 
     @BeforeEach
     void setUp() {
