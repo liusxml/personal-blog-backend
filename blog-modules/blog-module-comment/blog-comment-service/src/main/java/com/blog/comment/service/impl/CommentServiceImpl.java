@@ -22,6 +22,7 @@ import com.blog.comment.domain.state.CommentState;
 import com.blog.comment.domain.state.CommentStateFactory;
 import com.blog.comment.infrastructure.converter.CommentConverter;
 import com.blog.comment.infrastructure.mapper.CommentMapper;
+import com.blog.comment.metrics.CommentMetrics;
 import com.blog.comment.service.ICommentService;
 import com.blog.common.base.BaseServiceImpl;
 import com.blog.common.exception.BusinessException;
@@ -65,15 +66,17 @@ public class CommentServiceImpl
     private final org.springframework.context.ApplicationEventPublisher applicationEventPublisher;
     private final MentionParser mentionParser;
     private final ObjectMapper objectMapper;
+    private final CommentMetrics commentMetrics;
 
     public CommentServiceImpl(CommentConverter converter,
-                              CommentStateFactory stateFactory,
-                              CommentProcessorChain processorChain,
-                              com.blog.comment.infrastructure.mapper.CommentLikeMapper commentLikeMapper,
-                              com.blog.comment.infrastructure.mapper.CommentReportMapper commentReportMapper,
-                              org.springframework.context.ApplicationEventPublisher applicationEventPublisher,
-                              MentionParser mentionParser,
-                              ObjectMapper objectMapper) {
+            CommentStateFactory stateFactory,
+            CommentProcessorChain processorChain,
+            com.blog.comment.infrastructure.mapper.CommentLikeMapper commentLikeMapper,
+            com.blog.comment.infrastructure.mapper.CommentReportMapper commentReportMapper,
+            org.springframework.context.ApplicationEventPublisher applicationEventPublisher,
+            MentionParser mentionParser,
+            ObjectMapper objectMapper,
+            CommentMetrics commentMetrics) {
         super(converter);
         this.stateFactory = stateFactory;
         this.processorChain = processorChain;
@@ -82,6 +85,7 @@ public class CommentServiceImpl
         this.applicationEventPublisher = applicationEventPublisher;
         this.mentionParser = mentionParser;
         this.objectMapper = objectMapper;
+        this.commentMetrics = commentMetrics;
         this.treeBuilder = new TreeBuilder<>(
                 CommentTreeVO::getId,
                 CommentTreeVO::getParentId,
@@ -236,6 +240,9 @@ public class CommentServiceImpl
             }
         }
 
+        // 记录 Micrometer 指标
+        commentMetrics.recordCreate();
+
         return commentId;
     }
 
@@ -329,6 +336,9 @@ public class CommentServiceImpl
 
         // 更新数据库
         updateById(comment);
+
+        // 记录 Micrometer 指标
+        commentMetrics.recordApprove();
     }
 
     @Override
@@ -493,5 +503,23 @@ public class CommentServiceImpl
 
         log.info("管理员审核拒绝举报: reportId={}, commentId={}, remark={}",
                 reportId, report.getCommentId(), remark);
+    }
+
+    // ========== Micrometer 指标查询方法 ==========
+
+    /**
+     * 获取评论总数（供 CommentMetrics 使用）
+     */
+    public long getMetricTotalCount() {
+        return baseMapper.selectCount(null);
+    }
+
+    /**
+     * 获取待审核评论数（供 CommentMetrics 使用）
+     */
+    public long getMetricPendingCount() {
+        return baseMapper.selectCount(
+                new LambdaQueryWrapper<CommentEntity>()
+                        .eq(CommentEntity::getStatus, CommentStatus.PENDING));
     }
 }

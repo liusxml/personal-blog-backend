@@ -18,6 +18,7 @@ import com.blog.article.infrastructure.vector.VectorSearchService;
 import com.blog.article.service.IArticleService;
 import com.blog.article.service.chain.ContentProcessor;
 import com.blog.article.service.chain.ProcessResult;
+import com.blog.article.metrics.ArticleMetrics;
 import com.blog.common.base.BaseServiceImpl;
 import com.blog.common.exception.BusinessException;
 import com.blog.common.exception.SystemErrorCode;
@@ -68,23 +69,25 @@ public class ArticleServiceImpl
     private final ContentProcessor contentProcessorChain;
     private final ApplicationEventPublisher eventPublisher;
     private final VectorSearchService vectorSearchService;
+    private final ArticleMetrics articleMetrics;
 
     /**
      * 调用父类构造函数注入 converter
      */
     public ArticleServiceImpl(ArticleConverter converter,
-                              ArticleStateFactory stateFactory,
-                              ContentProcessor contentProcessorChain,
-                              ApplicationEventPublisher eventPublisher,
-                              VectorSearchService vectorSearchService) {
+            ArticleStateFactory stateFactory,
+            ContentProcessor contentProcessorChain,
+            ApplicationEventPublisher eventPublisher,
+            VectorSearchService vectorSearchService,
+            ArticleMetrics articleMetrics) {
         super(converter);
         this.converter = converter;
         this.stateFactory = stateFactory;
         this.contentProcessorChain = contentProcessorChain;
         this.eventPublisher = eventPublisher;
         this.vectorSearchService = vectorSearchService;
+        this.articleMetrics = articleMetrics;
     }
-
 
     /**
      * 保存前钩子：设置默认值 + 内容处理
@@ -207,6 +210,9 @@ public class ArticleServiceImpl
                 article.getTitle());
         eventPublisher.publishEvent(event);
 
+        // 记录 Micrometer 指标
+        articleMetrics.recordPublish();
+
         log.info("文章发布成功: id={}, 事件已发布", articleId);
     }
 
@@ -303,7 +309,11 @@ public class ArticleServiceImpl
     @Override
     public void incrementViewCount(Long articleId) {
         log.debug("增加浏览量: articleId={}", articleId);
-        // 待实现: 异步更新 art_article_stats
+
+        // 记录 Micrometer 指标
+        articleMetrics.recordView();
+
+        // TODO: 异步更新 art_article_stats
     }
 
     /**
@@ -419,5 +429,27 @@ public class ArticleServiceImpl
         wrapper.orderByDesc(ArticleEntity::getIsTop, ArticleEntity::getPublishTime);
 
         return wrapper;
+    }
+
+    // ========== Micrometer 指标查询方法 ==========
+
+    /**
+     * 获取文章总数（供 ArticleMetrics 使用）
+     * 
+     * @return 文章总数
+     */
+    public long getMetricTotalCount() {
+        return baseMapper.selectCount(null);
+    }
+
+    /**
+     * 获取已发布文章数（供 ArticleMetrics 使用）
+     * 
+     * @return 已发布文章数
+     */
+    public long getMetricPublishedCount() {
+        return baseMapper.selectCount(
+                new LambdaQueryWrapper<ArticleEntity>()
+                        .eq(ArticleEntity::getStatus, ArticleStatus.PUBLISHED.getCode()));
     }
 }
