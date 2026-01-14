@@ -1,9 +1,12 @@
 package com.blog.article.controller;
 
 import com.blog.article.api.dto.ArticleDTO;
+import com.blog.article.api.dto.ArticleQueryDTO;
 import com.blog.article.api.vo.ArticleDetailVO;
+import com.blog.article.api.vo.ArticleListVO;
 import com.blog.article.service.impl.ArticleServiceImpl;
 import com.blog.common.exception.SystemErrorCode;
+import com.blog.common.model.PageResult;
 import com.blog.common.model.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -60,6 +63,32 @@ import java.util.Optional;
 public class ArticleAdminController {
 
     private final ArticleServiceImpl articleService;
+
+    /**
+     * 分页查询文章列表（管理端）
+     *
+     * <p>
+     * 与用户端接口的区别：
+     * </p>
+     * <ul>
+     * <li>支持查询所有状态的文章（status=null 时）</li>
+     * <li>包括草稿、已发布、已归档</li>
+     * </ul>
+     *
+     * @param query 查询参数
+     * @return 分页结果
+     */
+    @GetMapping
+    @Operation(summary = "分页查询文章列表", description = "管理端查询文章列表，支持所有状态")
+    public Result<PageResult<ArticleListVO>> listArticles(ArticleQueryDTO query) {
+        log.info("管理端查询文章列表: current={}, size={}, status={}, keyword={}",
+                query.getCurrent(), query.getSize(), query.getStatus(), query.getKeyword());
+
+        // 调用管理端专用的查询方法
+        PageResult<ArticleListVO> pageResult = articleService.pageListForAdmin(query);
+
+        return Result.success(pageResult);
+    }
 
     /**
      * 创建文章（草稿状态）

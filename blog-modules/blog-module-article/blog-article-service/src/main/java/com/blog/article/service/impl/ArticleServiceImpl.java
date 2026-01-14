@@ -384,6 +384,37 @@ public class ArticleServiceImpl
     }
 
     /**
+     * 分页查询文章列表（管理端）
+     *
+     * <p>
+     * 与用户端 {@link #pageList(ArticleQueryDTO)} 的区别：
+     * </p>
+     * <ul>
+     * <li>status=null 时查询所有状态的文章（草稿、已发布、已归档）</li>
+     * <li>用于管理后台，需要查看所有文章</li>
+     * </ul>
+     *
+     * @param query 查询参数
+     * @return 分页结果
+     */
+    public PageResult<ArticleListVO> pageListForAdmin(ArticleQueryDTO query) {
+        log.info("管理端分页查询文章: current={}, size={}, status={}, keyword={}",
+                query.getCurrent(), query.getSize(), query.getStatus(), query.getKeyword());
+
+        // 构造分页对象
+        Page<ArticleEntity> page = new Page<>(query.getCurrent(), query.getSize());
+
+        // 构建查询条件（管理端版本）
+        LambdaQueryWrapper<ArticleEntity> wrapper = buildQueryWrapperForAdmin(query);
+
+        // 使用 BaseServiceImpl 的 pageWithConverter（直接 Entity -> ListVO）
+        IPage<ArticleListVO> listVoPage = this.pageWithConverter(page, wrapper, converter::entityToListVo);
+
+        // 转换为 PageResult
+        return PageResult.of(listVoPage);
+    }
+
+    /**
      * 构建查询条件（抽取为私有方法，提高可维护性）
      */
     private LambdaQueryWrapper<ArticleEntity> buildQueryWrapper(ArticleQueryDTO query) {
@@ -399,6 +430,56 @@ public class ArticleServiceImpl
             // 用户端默认只查询已发布
             wrapper.eq(ArticleEntity::getStatus, ArticleStatus.PUBLISHED.getCode());
         }
+
+        // 分类筛选
+        if (query.getCategoryId() != null) {
+            wrapper.eq(ArticleEntity::getCategoryId, query.getCategoryId());
+        }
+
+        // 作者筛选
+        if (query.getAuthorId() != null) {
+            wrapper.eq(ArticleEntity::getAuthorId, query.getAuthorId());
+        }
+
+        // 关键词搜索（标题 + 摘要）
+        if (StringUtils.isNotBlank(query.getKeyword())) {
+            wrapper.and(w -> w
+                    .like(ArticleEntity::getTitle, query.getKeyword())
+                    .or()
+                    .like(ArticleEntity::getSummary, query.getKeyword()));
+        }
+
+        // 标签筛选（需要子查询）
+        if (query.getTagId() != null) {
+            wrapper.inSql(ArticleEntity::getId,
+                    "SELECT article_id FROM art_article_tag WHERE tag_id = " + query.getTagId()
+                            + " AND is_deleted = 0");
+        }
+
+        // 排序：置顶优先，然后按发布时间倒序
+        wrapper.orderByDesc(ArticleEntity::getIsTop, ArticleEntity::getPublishTime);
+
+        return wrapper;
+    }
+
+    /**
+     * 构建查询条件（管理端版本）
+     *
+     * <p>
+     * 与用户端版本的区别：status=null 时不添加状态过滤，查询所有状态。
+     * </p>
+     */
+    private LambdaQueryWrapper<ArticleEntity> buildQueryWrapperForAdmin(ArticleQueryDTO query) {
+        LambdaQueryWrapper<ArticleEntity> wrapper = new LambdaQueryWrapper<>();
+
+        // 基础条件：未删除
+        wrapper.eq(ArticleEntity::getIsDeleted, 0);
+
+        // 状态筛选（管理端：status=null 时不过滤）
+        if (query.getStatus() != null) {
+            wrapper.eq(ArticleEntity::getStatus, query.getStatus());
+        }
+        // else: 不添加状态条件，查询所有状态
 
         // 分类筛选
         if (query.getCategoryId() != null) {

@@ -47,6 +47,9 @@ public class ArticleListVO implements Serializable {
     @Schema(description = "标签列表")
     private List<String> tags;
 
+    @Schema(description = "文章状态：DRAFT-草稿，PUBLISHED-已发布，ARCHIVED-已归档")
+    private String status;
+
     @Schema(description = "文章类型：1-原创，2-转载，3-翻译")
     private Integer type;
 
@@ -64,6 +67,9 @@ public class ArticleListVO implements Serializable {
 
     @Schema(description = "评论数")
     private Integer commentCount;
+
+    @Schema(description = "创建时间")
+    private LocalDateTime createdAt;
 
     @Schema(description = "发布时间")
     private LocalDateTime publishTime;
