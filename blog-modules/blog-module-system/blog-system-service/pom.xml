@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
@@ -20,7 +20,7 @@
         <!-- =================================================== -->
         <!-- ================ 项目内部模块依赖 ================ -->
         <!-- =================================================== -->
-        
+
         <!--
          依赖本模块的 API 层，这是 Service 层的契约定义。
          Service 模块必须依赖自己的 API 模块来实现接口。
@@ -30,7 +30,7 @@
             <artifactId>blog-system-api</artifactId>
             <version>${project.version}</version>
         </dependency>
-        
+
         <!-- 依赖公共模块，获取基础服务类和工具 -->
         <dependency>
             <groupId>com.blog</groupId>
@@ -40,7 +40,7 @@
         <!-- =================================================== -->
         <!-- ================= 安全框架依赖 ================= -->
         <!-- =================================================== -->
-        
+
         <!--
          Spring Security：系统模块负责用户认证和授权功能。
          需要 Spring Security 来实现密码加密、用户认证等安全功能。
@@ -53,14 +53,14 @@
         <!-- =================================================== -->
         <!-- ================== 开发工具依赖 ================== -->
         <!-- =================================================== -->
-        
+
         <!-- Lombok：编译期代码生成工具，简化实体和服务类开发 -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
         </dependency>
-        
+
         <!--
          Jakarta Servlet API：用于 Web 相关功能（如获取请求上下文）。
          scope 为 provided，由容器提供。
@@ -90,5 +90,33 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                        <path>
+                            <groupId>org.mapstruct</groupId>
+                            <artifactId>mapstruct-processor</artifactId>
+                            <version>${mapstruct.version}</version>
+                        </path>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok-mapstruct-binding</artifactId>
+                            <version>${lombok-mapstruct-binding.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

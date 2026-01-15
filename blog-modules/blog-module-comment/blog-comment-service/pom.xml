@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
@@ -20,7 +20,7 @@
         <!-- =================================================== -->
         <!-- ================ 项目内部模块依赖 ================ -->
         <!-- =================================================== -->
-        
+
         <!--
          依赖本模块的 API 层，这是实现契约的前提。
          Service 层必须依赖并实现 API 中定义的接口。
@@ -42,11 +42,91 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!--
+         跨模块 API 依赖：用于@提及功能查询用户名。
+         遵循模块化架构，通过 system-api 接口调用。
+        -->
+        <dependency>
+            <groupId>com.blog</groupId>
+            <artifactId>blog-system-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- 依赖公共模块，获取基础服务类和工具 -->
         <dependency>
             <groupId>com.blog</groupId>
             <artifactId>blog-common</artifactId>
         </dependency>
+
+        <!-- ===================================================== -->
+        <!-- ================== 业务功能依赖 =================== -->
+        <!-- ===================================================== -->
+
+        <!-- Markdown 解析库：用于将 Markdown 转换为 HTML -->
+        <dependency>
+            <groupId>com.vladsch.flexmark</groupId>
+            <artifactId>flexmark-all</artifactId>
+        </dependency>
+
+        <!-- =================================================== -->
+        <!-- ================== 开发工具依赖 ================== -->
+        <!-- =================================================== -->
+
+        <!-- Lombok：编译期代码生成工具，简化实体和服务类开发 -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- =================================================== -->
+        <!-- ================== 监控相关依赖 ================== -->
+        <!-- =================================================== -->
+
+        <!-- Micrometer：指标采集库 -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+        </dependency>
+
+        <!-- =================================================== -->
+        <!-- =================== 测试依赖 =================== -->
+        <!-- =================================================== -->
+
+        <!-- Test Dependencies -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                        <path>
+                            <groupId>org.mapstruct</groupId>
+                            <artifactId>mapstruct-processor</artifactId>
+                            <version>${mapstruct.version}</version>
+                        </path>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok-mapstruct-binding</artifactId>
+                            <version>${lombok-mapstruct-binding.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

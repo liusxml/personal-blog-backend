@@ -1,11 +1,13 @@
 package com.blog.system.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.blog.system.entity.SysRole;
-import com.blog.system.entity.SysUser;
+import com.blog.system.domain.entity.RoleEntity;
+import com.blog.system.domain.entity.UserEntity;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -17,7 +19,7 @@ import java.util.List;
  * @since 1.0.0
  */
 @Mapper
-public interface UserMapper extends BaseMapper<SysUser> {
+public interface UserMapper extends BaseMapper<UserEntity> {
 
     /**
      * 根据用户ID查询用户的角色列表
@@ -33,7 +35,7 @@ public interface UserMapper extends BaseMapper<SysUser> {
      * @param userId 用户ID
      * @return 角色列表
      */
-    List<SysRole> selectRolesByUserId(@Param("userId") Long userId);
+    List<RoleEntity> selectRolesByUserId(@Param("userId") Long userId);
 
     /**
      * 根据用户名查询用户
@@ -43,7 +45,7 @@ public interface UserMapper extends BaseMapper<SysUser> {
      * @param username 用户名
      * @return 用户实体，不存在返回 null
      */
-    SysUser selectByUsername(@Param("username") String username);
+    UserEntity selectByUsername(@Param("username") String username);
 
     /**
      * 根据邮箱查询用户
@@ -53,7 +55,7 @@ public interface UserMapper extends BaseMapper<SysUser> {
      * @param email 邮箱
      * @return 用户实体，不存在返回 null
      */
-    SysUser selectByEmail(@Param("email") String email);
+    UserEntity selectByEmail(@Param("email") String email);
 
     /**
      * 批量查询用户（用于 RemoteUserService）
@@ -63,7 +65,23 @@ public interface UserMapper extends BaseMapper<SysUser> {
      * @param ids 用户ID列表
      * @return 用户列表
      */
-    List<SysUser> selectByIds(@Param("ids") List<Long> ids);
+    List<UserEntity> selectByIds(@Param("ids") List<Long> ids);
+
+    /**
+     * 批量根据账号查询用户ID
+     *
+     * @param usernames 用户名集合
+     * @return 用户ID列表
+     */
+    @Select("<script>" +
+            "SELECT id FROM sys_user " +
+            "WHERE username IN " +
+            "<foreach collection='usernames' item='name' open='(' separator=',' close=')'>" +
+            "#{name}" +
+            "</foreach>" +
+            " AND is_deleted = 0" +
+            "</script>")
+    List<Long> selectUserIdsByUsernames(@Param("usernames") Collection<String> usernames);
 
     /**
      * 检查用户名是否存在

@@ -3,7 +3,7 @@ package com.blog.system.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.blog.system.api.dto.UserDTO;
 import com.blog.system.converter.UserConverter;
-import com.blog.system.entity.SysUser;
+import com.blog.system.domain.entity.UserEntity;
 import com.blog.system.mapper.UserMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,7 +17,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -62,15 +61,15 @@ class RemoteUserServiceImplTest {
         // Given
         List<Long> userIds = Arrays.asList(1L, 2L);
 
-        SysUser user1 = new SysUser();
+        UserEntity user1 = new UserEntity();
         user1.setId(1L);
         user1.setUsername("user1");
 
-        SysUser user2 = new SysUser();
+        UserEntity user2 = new UserEntity();
         user2.setId(2L);
         user2.setUsername("user2");
 
-        List<SysUser> users = Arrays.asList(user1, user2);
+        List<UserEntity> users = Arrays.asList(user1, user2);
 
         UserDTO dto1 = new UserDTO();
         dto1.setId(1L);
@@ -119,7 +118,7 @@ class RemoteUserServiceImplTest {
     @Test
     void should_get_user_by_id_success() {
         // Given
-        SysUser user = new SysUser();
+        UserEntity user = new UserEntity();
         user.setId(1L);
         user.setUsername("testuser");
 

@@ -1,7 +1,7 @@
 package com.blog.system.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.blog.system.entity.SysRole;
+import com.blog.system.domain.entity.RoleEntity;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -16,7 +16,7 @@ import java.util.List;
  * @since 1.0.0
  */
 @Mapper
-public interface RoleMapper extends BaseMapper<SysRole> {
+public interface RoleMapper extends BaseMapper<RoleEntity> {
 
     /**
      * 为用户分配角色
@@ -46,7 +46,7 @@ public interface RoleMapper extends BaseMapper<SysRole> {
      * @param roleKey 角色KEY（如 "USER", "ADMIN"）
      * @return 角色实体，不存在返回 null
      */
-    SysRole selectByRoleKey(@Param("roleKey") String roleKey);
+    RoleEntity selectByRoleKey(@Param("roleKey") String roleKey);
 
     /**
      * 查询所有启用的角色
@@ -55,7 +55,7 @@ public interface RoleMapper extends BaseMapper<SysRole> {
      *
      * @return 启用的角色列表
      */
-    List<SysRole> selectAllActive();
+    List<RoleEntity> selectAllActive();
 
     /**
      * 检查角色KEY是否存在
@@ -93,5 +93,5 @@ public interface RoleMapper extends BaseMapper<SysRole> {
      * @param ids 角色ID列表
      * @return 角色列表
      */
-    List<SysRole> selectByIds(@Param("ids") List<Long> ids);
+    List<RoleEntity> selectByIds(@Param("ids") List<Long> ids);
 }

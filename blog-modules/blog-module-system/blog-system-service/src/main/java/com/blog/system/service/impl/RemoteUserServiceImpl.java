@@ -5,7 +5,7 @@ import com.blog.common.utils.RedisUtils;
 import com.blog.system.api.RemoteUserService;
 import com.blog.system.api.dto.UserDTO;
 import com.blog.system.converter.UserConverter;
-import com.blog.system.entity.SysUser;
+import com.blog.system.domain.entity.UserEntity;
 import com.blog.system.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,12 +30,11 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class RemoteUserServiceImpl implements RemoteUserService {
 
+    private static final String USER_CACHE_KEY_PREFIX = "user:detail:";
+    private static final long USER_CACHE_TTL_MINUTES = 30;
     private final UserMapper userMapper;
     private final UserConverter userConverter;
     private final RedisUtils redisUtils;
-
-    private static final String USER_CACHE_KEY_PREFIX = "user:detail:";
-    private static final long USER_CACHE_TTL_MINUTES = 30;
 
     @Override
     public UserDTO getUserById(Long userId) {
@@ -52,7 +51,7 @@ public class RemoteUserServiceImpl implements RemoteUserService {
         }
 
         // 2. 从数据库查询
-        SysUser user = userMapper.selectById(userId);
+        UserEntity user = userMapper.selectById(userId);
         if (user == null) {
             return null;
         }
@@ -101,12 +100,12 @@ public class RemoteUserServiceImpl implements RemoteUserService {
         if (!missedUserIds.isEmpty()) {
             log.debug("缓存未命中用户数: {}", missedUserIds.size());
 
-            List<SysUser> users = userMapper.selectList(
-                    new LambdaQueryWrapper<SysUser>()
-                            .in(SysUser::getId, missedUserIds));
+            List<UserEntity> users = userMapper.selectList(
+                    new LambdaQueryWrapper<UserEntity>()
+                            .in(UserEntity::getId, missedUserIds));
 
             // 5. 转换并准备批量写入缓存
-            for (SysUser user : users) {
+            for (UserEntity user : users) {
                 UserDTO userDTO = userConverter.entityToDto(user);
                 result.add(userDTO);
 

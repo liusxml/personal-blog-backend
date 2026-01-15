@@ -1,6 +1,6 @@
 package com.blog.config;
 
-import com.blog.system.entity.SysRole;
+import com.blog.system.domain.entity.RoleEntity;
 import com.blog.system.mapper.RoleMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -60,7 +60,7 @@ public class CacheWarmup {
      */
     private void warmupRoles() {
         try {
-            List<SysRole> roles = roleMapper.selectAllActive();
+            List<RoleEntity> roles = roleMapper.selectAllActive();
 
             if (CollectionUtils.isEmpty(roles)) {
                 log.warn("⚠️  没有找到启用的角色数据，跳过角色缓存预热");
@@ -68,7 +68,7 @@ public class CacheWarmup {
             }
 
             // 存入 Redis，过期时间 1 小时
-            for (SysRole role : roles) {
+            for (RoleEntity role : roles) {
                 String key = "role:detail:" + role.getId();
                 redisTemplate.opsForValue().set(key, role, 1, TimeUnit.HOURS);
             }

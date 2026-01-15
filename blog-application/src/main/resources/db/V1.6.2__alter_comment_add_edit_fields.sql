@@ -1,0 +1,8 @@
+-- -- Phase 6: 为 cmt_comment 表添加编辑相关字段
+--
+-- USE blog_db;
+--
+-- ALTER TABLE `cmt_comment`
+--     ADD COLUMN `is_edited` TINYINT NOT NULL DEFAULT 0 COMMENT '是否已编辑：0-未编辑，1-已编辑' AFTER `content_html`,
+--     ADD COLUMN `edit_time` DATETIME NULL COMMENT '最后编辑时间' AFTER `is_edited`,
+--     ADD COLUMN `mentioned_user_ids` VARCHAR(500) NULL COMMENT '被@提及的用户ID列表(JSON格式，如"[123,456]")' AFTER `edit_time`;

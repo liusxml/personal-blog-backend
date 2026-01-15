@@ -2,22 +2,20 @@ package com.blog.file.service.impl;
 
 import com.blog.common.base.BaseServiceImpl;
 import com.blog.common.exception.BusinessException;
-import com.blog.dto.FileDTO;
-import com.blog.dto.PreSignedUrlRequest;
-import com.blog.enums.FileErrorCode;
+import com.blog.file.api.dto.FileDTO;
+import com.blog.file.api.dto.PreSignedUrlRequest;
+import com.blog.file.api.enums.FileErrorCode;
+import com.blog.file.api.service.IFileService;
+import com.blog.file.api.vo.FileVO;
+import com.blog.file.api.vo.PreSignedUploadVO;
 import com.blog.file.converter.FileConverter;
-import com.blog.file.entity.FileFile;
+import com.blog.file.entity.FileEntity;
+import com.blog.file.infrastructure.storage.FileStorageStrategy;
+import com.blog.file.infrastructure.storage.StorageContext;
 import com.blog.file.mapper.FileMapper;
-import com.blog.infrastructure.storage.FileStorageStrategy;
-import com.blog.infrastructure.storage.StorageContext;
-import com.blog.service.IFileService;
-import com.blog.vo.FileVO;
-import com.blog.vo.PreSignedUploadVO;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
@@ -52,7 +50,7 @@ import java.util.UUID;
 @Slf4j
 @Service
 public class FileServiceImpl
-        extends BaseServiceImpl<FileMapper, FileFile, FileVO, FileDTO, FileConverter>
+        extends BaseServiceImpl<FileMapper, FileEntity, FileVO, FileDTO, FileConverter>
         implements IFileService {
 
     private final StorageContext storageContext;
@@ -95,7 +93,7 @@ public class FileServiceImpl
 
         // 秒传检测：如果提供了MD5，检查是否已存在相同文件
         if (request.getMd5() != null && !request.getMd5().isBlank()) {
-            Optional<FileFile> existingFile = checkInstantUpload(request.getMd5(), request.getFileSize());
+            Optional<FileEntity> existingFile = checkInstantUpload(request.getMd5(), request.getFileSize());
             if (existingFile.isPresent()) {
                 log.info("秒传命中: md5={}, fileId={}", request.getMd5(), existingFile.get().getId());
                 return createInstantUploadResponse(existingFile.get());
@@ -110,7 +108,7 @@ public class FileServiceImpl
         String fileCategory = detectFileCategory(request.getContentType());
 
         // 3. 预创建文件记录
-        FileFile file = new FileFile();
+        FileEntity file = new FileEntity();
         file.setFileKey(fileKey);
         file.setStorageType("BITIFUL"); // 当前使用 BITIFUL
         file.setOriginalName(request.getFileName());
@@ -162,7 +160,7 @@ public class FileServiceImpl
         log.info("确认上传: fileId={}", fileId);
 
         // 使用 BaseServiceImpl 的 getById
-        FileFile file = getById(fileId);
+        FileEntity file = getById(fileId);
         if (file == null) {
             throw new BusinessException(FileErrorCode.FILE_NOT_FOUND);
         }
@@ -195,7 +193,7 @@ public class FileServiceImpl
      * @return 访问 URL
      */
     public String getAccessUrl(Long fileId, int expireMinutes) {
-        FileFile file = getById(fileId);
+        FileEntity file = getById(fileId);
         if (file == null) {
             throw new BusinessException(FileErrorCode.FILE_NOT_FOUND);
         }
@@ -229,7 +227,7 @@ public class FileServiceImpl
      */
     @Override
     public boolean deleteById(Long id) {
-        FileFile file = getById(id);
+        FileEntity file = getById(id);
         if (file == null) {
             return false;
         }
@@ -306,13 +304,13 @@ public class FileServiceImpl
      * @param fileSize 文件大小
      * @return 已存在的文件（Optional）
      */
-    private Optional<FileFile> checkInstantUpload(String md5, Long fileSize) {
+    private Optional<FileEntity> checkInstantUpload(String md5, Long fileSize) {
         return Optional.ofNullable(
                 baseMapper.selectOne(
-                        new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<FileFile>()
-                                .eq(FileFile::getMd5, md5)
-                                .eq(FileFile::getFileSize, fileSize)
-                                .eq(FileFile::getUploadStatus, 1) // 只匹配已完成的文件
+                        new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<FileEntity>()
+                                .eq(FileEntity::getMd5, md5)
+                                .eq(FileEntity::getFileSize, fileSize)
+                                .eq(FileEntity::getUploadStatus, 1) // 只匹配已完成的文件
                                 .last("LIMIT 1")));
     }
 
@@ -322,7 +320,7 @@ public class FileServiceImpl
      * @param existingFile 已存在的文件
      * @return 预签名上传 VO（标记为秒传）
      */
-    private PreSignedUploadVO createInstantUploadResponse(FileFile existingFile) {
+    private PreSignedUploadVO createInstantUploadResponse(FileEntity existingFile) {
         PreSignedUploadVO vo = new PreSignedUploadVO();
         vo.setUploadUrl(null); // 秒传不需要上传URL
         vo.setFileKey(existingFile.getFileKey());

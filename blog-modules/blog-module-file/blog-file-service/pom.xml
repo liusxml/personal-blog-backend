@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
@@ -20,7 +20,7 @@
         <!-- =================================================== -->
         <!-- ================ 项目内部模块依赖 ================ -->
         <!-- =================================================== -->
-        
+
         <!--
          依赖本模块的 API 层，Service 实现必须依赖并实现 API 中定义的接口。
          这是分层架构的关键：API 层定义契约，Service 层提供实现。
@@ -29,7 +29,7 @@
             <groupId>com.blog</groupId>
             <artifactId>blog-file-api</artifactId>
         </dependency>
-        
+
         <!-- 依赖公共模块，获取 BaseService、工具类等基础设施 -->
         <dependency>
             <groupId>com.blog</groupId>
@@ -39,7 +39,7 @@
         <!-- =================================================== -->
         <!-- ================= 云存储服务依赖 ================= -->
         <!-- =================================================== -->
-        
+
         <!--
          AWS S3 SDK：用于对接云存储服务（AWS S3 或兼容协议的对象存储）。
          文件模块支持本地存储和云存储两种策略，S3 是云存储的实现。
@@ -52,13 +52,13 @@
         <!-- =================================================== -->
         <!-- =============== Spring 框架相关依赖 =============== -->
         <!-- =================================================== -->
-        
+
         <!-- Spring Boot：提供配置属性绑定等基础功能 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot</artifactId>
         </dependency>
-        
+
         <!-- Spring Web：文件上传处理需要 MultipartFile 等 Web 功能 -->
         <dependency>
             <groupId>org.springframework</groupId>
@@ -68,13 +68,13 @@
         <!-- =================================================== -->
         <!-- ================== 工具类库依赖 ================== -->
         <!-- =================================================== -->
-        
+
         <!-- Commons IO：文件操作工具，如文件大小格式化、流处理等 -->
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
         </dependency>
-        
+
         <!-- Lombok：编译期代码生成工具，简化实体和服务类开发 -->
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -84,7 +84,7 @@
         <!-- =================================================== -->
         <!-- ================= 验证和注解依赖 ================= -->
         <!-- =================================================== -->
-        
+
         <!-- Jakarta Validation API：JSR-303 Bean 验证 -->
         <dependency>
             <groupId>jakarta.validation</groupId>
@@ -94,7 +94,7 @@
         <!-- =================================================== -->
         <!-- ================== 监控指标依赖 ================== -->
         <!-- =================================================== -->
-        
+
         <!--
          Micrometer Core：用于记录文件上传下载的监控指标。
          可以统计上传次数、文件大小、处理耗时等关键业务指标。
@@ -107,7 +107,7 @@
         <!-- =================================================== -->
         <!-- =================== 测试依赖 =================== -->
         <!-- =================================================== -->
-        
+
         <!-- Spring Boot Test：测试框架，用于集成测试 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -123,5 +123,33 @@
         </dependency>
 
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                        <path>
+                            <groupId>org.mapstruct</groupId>
+                            <artifactId>mapstruct-processor</artifactId>
+                            <version>${mapstruct.version}</version>
+                        </path>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok-mapstruct-binding</artifactId>
+                            <version>${lombok-mapstruct-binding.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

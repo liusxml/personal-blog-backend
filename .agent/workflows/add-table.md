@@ -5,6 +5,7 @@ description: 如何添加新的数据库表（Flyway + Entity + Mapper）
 # 添加新数据库表
 
 ## 前置条件
+
 - 确定表名（使用正确前缀：`sys_`, `art_`, `cmt_`, `file_`）
 - 确定所属模块
 - 设计表结构
@@ -14,6 +15,7 @@ description: 如何添加新的数据库表（Flyway + Entity + Mapper）
 ### 1. 创建 Flyway 迁移脚本
 
 在 `blog-application/src/main/resources/db/` 下创建：
+
 - 文件名格式：`V{major}.{minor}.{patch}__{description}.sql`
 - 示例：`V1.0.3__create_art_article.sql`
 
@@ -93,6 +95,7 @@ public class ArtArticle {
 ### 3. 创建 Mapper
 
 **接口** (`mapper/ArticleMapper.java`):
+
 ```java
 @Mapper
 public interface ArticleMapper extends BaseMapper<ArtArticle> {
@@ -100,28 +103,33 @@ public interface ArticleMapper extends BaseMapper<ArtArticle> {
 ```
 
 **XML** (可选，`resources/mapper/ArticleMapper.xml`):
+
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
-    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.blog.article.mapper.ArticleMapper">
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.blog.file.mapper.ArticleMapper">
 </mapper>
 ```
 
 // turbo
+
 ### 4. 验证数据库迁移
+
 ```bash
 # 启动应用，Flyway 会自动执行迁移
 mvn spring-boot:run -pl blog-application
 ```
 
 ### 5. 验证表结构
+
 ```sql
 DESCRIBE art_article;
 SELECT * FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1;
 ```
 
 ## 检查清单
+
 - [ ] SQL 脚本版本号正确递增
 - [ ] 表名使用正确前缀
 - [ ] 包含所有审计字段

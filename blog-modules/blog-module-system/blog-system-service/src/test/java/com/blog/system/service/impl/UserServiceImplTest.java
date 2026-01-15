@@ -6,28 +6,36 @@ import com.blog.system.api.dto.RegisterDTO;
 import com.blog.system.api.vo.UserVO;
 import com.blog.system.constant.RoleConstants;
 import com.blog.system.converter.UserConverter;
-import com.blog.system.entity.SysRole;
-import com.blog.system.entity.SysUser;
+import com.blog.system.domain.entity.RoleEntity;
+import com.blog.system.domain.entity.UserEntity;
 import com.blog.system.mapper.RoleMapper;
 import com.blog.system.mapper.UserMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * UserServiceImpl 单元测试
@@ -95,14 +103,14 @@ class UserServiceImplTest {
         when(passwordEncoder.encode(registerDTO.getPassword())).thenReturn("encodedPassword");
 
         // Mock: 默认角色查询 (SysRole)
-        SysRole defaultRole = new SysRole();
+        RoleEntity defaultRole = new RoleEntity();
         defaultRole.setId(1L);
         defaultRole.setRoleKey(RoleConstants.DEFAULT_USER_ROLE);
         when(roleMapper.selectOne(any())).thenReturn(defaultRole);
 
         // Mock: 插入用户 (返回1表示成功)
-        when(userMapper.insert(any(SysUser.class))).thenAnswer(invocation -> {
-            SysUser user = invocation.getArgument(0);
+        when(userMapper.insert(any(UserEntity.class))).thenAnswer(invocation -> {
+            UserEntity user = invocation.getArgument(0);
             user.setId(100L); // 模拟落库生成ID
             return 1;
         });
@@ -112,7 +120,7 @@ class UserServiceImplTest {
         UserVO expectedVo = new UserVO();
         expectedVo.setId(100L);
         expectedVo.setUsername("newuser");
-        when(userConverter.entityToVo(any(SysUser.class))).thenReturn(expectedVo);
+        when(userConverter.entityToVo(any(UserEntity.class))).thenReturn(expectedVo);
 
         // When: 执行注册
         UserVO result = userService.register(registerDTO);
@@ -127,7 +135,7 @@ class UserServiceImplTest {
         // Verify: 验证关键方法调用次数
         verify(userMapper, times(2)).selectOne(any()); // 检查用户名 + 邮箱
         verify(passwordEncoder).encode("password123"); // 密码加密
-        verify(userMapper).insert(any(SysUser.class)); // 插入用户
+        verify(userMapper).insert(any(UserEntity.class)); // 插入用户
         verify(roleMapper).assignRoleToUser(100L, 1L); // 分配角色
 
         log.info("Then: Registration flow verified successfully.");
@@ -143,7 +151,7 @@ class UserServiceImplTest {
         registerDTO.setUsername("existingUser");
 
         // Mock: 模拟数据库中已存在该用户
-        SysUser existingUser = new SysUser();
+        UserEntity existingUser = new UserEntity();
         existingUser.setId(99L);
         existingUser.setUsername("existingUser");
 
@@ -160,7 +168,7 @@ class UserServiceImplTest {
 
         // 验证异常类型或错误码 (假设 SystemErrorCode 这里未直接暴露，验证消息或Code即可)
         // 这里简单验证不需要 insert 操作
-        verify(userMapper, never()).insert(any(SysUser.class));
+        verify(userMapper, never()).insert(any(UserEntity.class));
     }
 
     @Test
@@ -173,7 +181,7 @@ class UserServiceImplTest {
         loginDTO.setUsername("testuser");
         loginDTO.setPassword("password");
 
-        SysUser mockUser = new SysUser();
+        UserEntity mockUser = new UserEntity();
         mockUser.setId(100L);
         mockUser.setUsername("testuser");
         mockUser.setPassword("encodedPassword");
@@ -186,7 +194,7 @@ class UserServiceImplTest {
         when(passwordEncoder.matches("password", "encodedPassword")).thenReturn(true);
 
         // Mock: 角色查询 (用于 getUserRoleKeys)
-        SysRole role = new SysRole();
+        RoleEntity role = new RoleEntity();
         role.setRoleKey("USER");
         when(userMapper.selectRolesByUserId(100L)).thenReturn(List.of(role));
 
@@ -221,7 +229,7 @@ class UserServiceImplTest {
         loginDTO.setUsername("testuser");
         loginDTO.setPassword("wrongPassword");
 
-        SysUser mockUser = new SysUser();
+        UserEntity mockUser = new UserEntity();
         mockUser.setId(100L);
         mockUser.setPassword("encodedPassword");
 
@@ -244,7 +252,7 @@ class UserServiceImplTest {
         userDTO.setId(100L);
         userDTO.setNickname("Updated Nickname");
 
-        SysUser mockUser = new SysUser();
+        UserEntity mockUser = new UserEntity();
         mockUser.setId(100L);
         lenient().when(userMapper.selectById(100L)).thenReturn(mockUser);
 

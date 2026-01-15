@@ -17,13 +17,6 @@ package com.blog.common.constants;
  */
 public final class CacheKeys {
 
-    private CacheKeys() {
-        throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
-    }
-
-    // ============================= User Module (用户模块)
-    // =============================
-
     /**
      * 用户角色列表缓存键前缀
      * <p>
@@ -33,9 +26,8 @@ public final class CacheKeys {
      */
     public static final String USER_ROLES_PREFIX = "user:roles:";
 
-    // ============================= Role Module (角色模块)
+    // ============================= User Module (用户模块)
     // =============================
-
     /**
      * 角色详情缓存键前缀
      * <p>
@@ -44,6 +36,13 @@ public final class CacheKeys {
      * 存储内容：角色的详细信息（SysRole 实体）
      */
     public static final String ROLE_DETAIL_PREFIX = "role:detail:";
+
+    // ============================= Role Module (角色模块)
+    // =============================
+
+    private CacheKeys() {
+        throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
+    }
 
     // ============================= Helper Methods (辅助方法)
     // =============================

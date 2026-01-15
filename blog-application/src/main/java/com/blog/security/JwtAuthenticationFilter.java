@@ -1,5 +1,7 @@
 package com.blog.security;
 
+import com.blog.common.security.JwtAuthenticationDetails;
+import com.blog.common.security.JwtTokenProvider;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,9 +22,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import com.blog.common.security.JwtAuthenticationDetails;
-import com.blog.common.security.JwtTokenProvider;
 
 /**
  * JWT 认证过滤器

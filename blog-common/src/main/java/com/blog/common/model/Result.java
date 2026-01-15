@@ -36,7 +36,7 @@ public record Result<T>(int code, String message, @Nullable T data) {
     public static <T> Result<T> error(ErrorCode errorCode) {
         return new Result<>(errorCode.getCode(), errorCode.getMessage(), null);
     }
-    
+
     /**
      * 失败，使用预定义错误码和自定义消息
      * (覆盖默认消息，用于更具体的场景)

@@ -1,12 +1,12 @@
 package com.blog.article.service;
 
+import com.blog.article.api.dto.ArticleDTO;
+import com.blog.article.api.dto.ArticleQueryDTO;
+import com.blog.article.api.vo.ArticleDetailVO;
+import com.blog.article.api.vo.ArticleListVO;
 import com.blog.article.domain.entity.ArticleEntity;
 import com.blog.common.base.IBaseService;
 import com.blog.common.model.PageResult;
-import com.blog.dto.ArticleDTO;
-import com.blog.dto.ArticleQueryDTO;
-import com.blog.vo.ArticleDetailVO;
-import com.blog.vo.ArticleListVO;
 
 import java.util.List;
 

@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
  * MyBatis-Plus元数据自动填充处理器
  * <p>
  * 实现审计字段的自动填充，无需在业务代码中手动设置。
- * 
+ *
  * <h3>自动填充字段</h3>
  * <ul>
  * <li><b>createTime</b> - 创建时间（INSERT时填充）</li>
@@ -19,14 +19,14 @@ import java.time.LocalDateTime;
  * <li><b>createBy</b> - 创建者ID（INSERT时填充，从Security上下文获取）</li>
  * <li><b>updateBy</b> - 更新者ID（INSERT和UPDATE时填充，从Security上下文获取）</li>
  * </ul>
- * 
+ *
  * <h3>使用方法</h3>
  * 在Entity字段上添加注解：
- * 
+ *
  * <pre>
  * &#64;TableField(fill = FieldFill.INSERT)
  * private LocalDateTime createTime;
- * 
+ *
  * &#64;TableField(fill = FieldFill.INSERT_UPDATE)
  * private LocalDateTime updateTime;
  * </pre>
@@ -41,16 +41,24 @@ public class MyMetaObjectHandler implements MetaObjectHandler {
     // 字段名常量 - 避免硬编码，便于维护
     // ========================================================================
 
-    /** 创建时间字段名 */
+    /**
+     * 创建时间字段名
+     */
     private static final String FIELD_CREATE_TIME = "createTime";
 
-    /** 更新时间字段名 */
+    /**
+     * 更新时间字段名
+     */
     private static final String FIELD_UPDATE_TIME = "updateTime";
 
-    /** 创建者ID字段名 */
+    /**
+     * 创建者ID字段名
+     */
     private static final String FIELD_CREATE_BY = "createBy";
 
-    /** 更新者ID字段名 */
+    /**
+     * 更新者ID字段名
+     */
     private static final String FIELD_UPDATE_BY = "updateBy";
 
     // ========================================================================

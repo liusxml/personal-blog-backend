@@ -3,7 +3,7 @@ package com.blog.system.service;
 import com.blog.common.base.IBaseService;
 import com.blog.system.api.dto.RoleDTO;
 import com.blog.system.api.vo.RoleVO;
-import com.blog.system.entity.SysRole;
+import com.blog.system.domain.entity.RoleEntity;
 
 /**
  * 角色服务接口
@@ -11,7 +11,7 @@ import com.blog.system.entity.SysRole;
  * @author liusxml
  * @since 1.0.0
  */
-public interface IRoleService extends IBaseService<SysRole, RoleVO, RoleDTO> {
+public interface IRoleService extends IBaseService<RoleEntity, RoleVO, RoleDTO> {
 
     /**
      * 为用户分配角色

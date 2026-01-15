@@ -110,7 +110,7 @@ mybatis-plus:
       logic-delete-field: isDeleted             # 逻辑删除字段
       logic-delete-value: 1                     # 删除值
       logic-not-delete-value: 0                 # 未删除值
-      
+
   configuration:
     map-underscore-to-camel-case: true          # 开启驼峰命名转换
     call-setters-on-nulls: true                 # NULL值也调用Setter
@@ -140,13 +140,13 @@ app:
 # ==============================================================================
 management:
   #server:
-    # port: 8081                                  # 独立的管理端口，增强安全性 (已禁用，以解决SBA权限问题)
-    
+  # port: 8081                                  # 独立的管理端口，增强安全性 (已禁用，以解决SBA权限问题)
+
   endpoints:
     web:
       base-path: /actuator
       exposure:
-        include:                                # 暴露的端点
+        include: # 暴露的端点
           - health
           - info
           - logfile
@@ -158,7 +158,7 @@ management:
           - threaddump
           - auditevents
           - prometheus
-          
+
   endpoint:
     health:
       show-details: always                      # 显示详细健康信息

@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @see ActiveProfiles 指定 "test" 环境，使用专为测试配置的 Redis 实例，实现环境隔离。
  * @see TestMethodOrder 通过 {@link MethodOrderer.OrderAnnotation} 控制测试方法的执行顺序，使测试流程更具逻辑性。
  * @see AfterEach 这是确保测试用例独立性的关键。每个测试方法执行后，此钩子会自动清理该方法在 Redis 中创建的所有测试键，
- *              防止测试间的状态污染。
+ * 防止测试间的状态污染。
  */
 @SpringBootTest(classes = BlogApplication.class)
 @ActiveProfiles("test")
@@ -50,19 +50,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class RedisUtilsTest {
 
     private static final Logger log = LoggerFactory.getLogger(RedisUtilsTest.class);
-
-    @Resource
-    private RedisUtils redisUtils;
-
-    @Resource
-    private ObjectMapper objectMapper;
-
     // 用于记录本测试方法中创建的所有 Redis key，以便在测试结束后统一清理。
     private final List<String> keysToDelete = new ArrayList<>();
-
-    // 定义一个可序列化的内部记录(Record)，用于测试对象缓存。
-    private record TestUser(Long id, String username) implements Serializable {
-    }
+    @Resource
+    private RedisUtils redisUtils;
+    @Resource
+    private ObjectMapper objectMapper;
 
     /**
      * 在每个测试方法执行【之后】运行。
@@ -83,6 +76,7 @@ public class RedisUtilsTest {
 
     /**
      * 辅助方法：注册一个键，以便在测试结束后自动删除。
+     *
      * @param key 要追踪的 Redis 键
      * @return 传入的键，方便链式调用
      */
@@ -132,7 +126,7 @@ public class RedisUtilsTest {
         assertEquals(1L, redisUtils.increment(counterKey), "调用 increment 后值应为 1");
         assertEquals(2L, redisUtils.increment(counterKey), "再次调用 increment 后值应为 2");
         assertEquals(1L, redisUtils.decrement(counterKey), "调用 decrement 后值应为 1");
-        
+
         log.info("   - 步骤5: [SETNX] 测试 'setIfAbsent'");
         final String nxKey = track("test:string:nx");
         assertTrue(redisUtils.setIfAbsent(nxKey, "first-set", 10, TimeUnit.SECONDS), "第一次设置 (key不存在时) 应成功");
@@ -257,9 +251,9 @@ public class RedisUtilsTest {
 
         log.info("   - 步骤1: 测试 key 为 null 或空白字符串");
         assertAll("Key 参数校验",
-            () -> assertThrows(IllegalArgumentException.class, () -> redisUtils.set(null, "value"), "key 为 null 时应抛出 IllegalArgumentException"),
-            () -> assertThrows(IllegalArgumentException.class, () -> redisUtils.set("   ", "value"), "key 为空白字符串时应抛出 IllegalArgumentException"),
-            () -> assertThrows(IllegalArgumentException.class, () -> redisUtils.get(null), "key 为 null 时应抛出 IllegalArgumentException")
+                () -> assertThrows(IllegalArgumentException.class, () -> redisUtils.set(null, "value"), "key 为 null 时应抛出 IllegalArgumentException"),
+                () -> assertThrows(IllegalArgumentException.class, () -> redisUtils.set("   ", "value"), "key 为空白字符串时应抛出 IllegalArgumentException"),
+                () -> assertThrows(IllegalArgumentException.class, () -> redisUtils.get(null), "key 为 null 时应抛出 IllegalArgumentException")
         );
 
         log.info("   - 步骤2: 测试 value 为 null");
@@ -267,7 +261,11 @@ public class RedisUtilsTest {
 
         log.info("   - 步骤3: 测试过期时间为负数");
         assertThrows(IllegalArgumentException.class, () -> redisUtils.expire("some-key", -1, TimeUnit.SECONDS), "过期时间为负数时应抛出 IllegalArgumentException");
-        
+
         log.info("✅ 测试通过 (7/7): 参数校验机制工作正常，工具类健壮性得到验证。");
+    }
+
+    // 定义一个可序列化的内部记录(Record)，用于测试对象缓存。
+    private record TestUser(Long id, String username) implements Serializable {
     }
 }

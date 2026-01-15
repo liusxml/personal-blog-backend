@@ -1,10 +1,10 @@
 package com.blog.article.infrastructure.converter;
 
+import com.blog.article.api.dto.ArticleDTO;
+import com.blog.article.api.vo.ArticleDetailVO;
+import com.blog.article.api.vo.ArticleListVO;
 import com.blog.article.domain.entity.ArticleEntity;
 import com.blog.common.base.BaseConverter;
-import com.blog.dto.ArticleDTO;
-import com.blog.vo.ArticleDetailVO;
-import com.blog.vo.ArticleListVO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.NullValuePropertyMappingStrategy;
@@ -66,8 +66,9 @@ public interface ArticleConverter extends BaseConverter<ArticleDTO, ArticleEntit
     @Mapping(target = "tags", ignore = true) // 需业务层填充
     @Mapping(target = "viewCount", ignore = true) // 需业务层填充
     @Mapping(target = "likeCount", ignore = true) // 需业务层填充
-    @Mapping(target = "commentCount", ignore = true)
-    // 需业务层填充
+    @Mapping(target = "commentCount", ignore = true) // 需业务层填充
+    @Mapping(target = "status", expression = "java(mapStatus(entity.getStatus()))") // Integer -> String
+    @Mapping(target = "createdAt", source = "createTime") // createTime -> createdAt
     ArticleListVO entityToListVo(ArticleEntity entity);
 
     /**
@@ -84,5 +85,30 @@ public interface ArticleConverter extends BaseConverter<ArticleDTO, ArticleEntit
             return false;
         }
         return value != 0;
+    }
+
+    /**
+     * 状态码转状态字符串
+     * <p>
+     * 0-DRAFT, 2-PUBLISHED, 3-ARCHIVED
+     * </p>
+     *
+     * @param statusCode 状态码
+     * @return状态字符串
+     */
+    default String mapStatus(Integer statusCode) {
+        if (statusCode == null) {
+            return "DRAFT";
+        }
+        switch (statusCode) {
+            case 0:
+                return "DRAFT";
+            case 2:
+                return "PUBLISHED";
+            case 3:
+                return "ARCHIVED";
+            default:
+                return "DRAFT";
+        }
     }
 }

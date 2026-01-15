@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
@@ -24,19 +24,19 @@
          common 模块不引入 spring-boot-starter，因为它不应该成为可执行应用。
          只引入必要的 Spring 核心依赖，保持模块轻量和职责单一。
         -->
-        
+
         <!-- Spring Context：提供核心的 IoC 容器和基础注解支持 -->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
         </dependency>
-        
+
         <!-- Spring Boot：为支持 @ConfigurationProperties 等配置注解 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot</artifactId>
         </dependency>
-        
+
         <!-- Spring Transaction：为声明式事务管理提供支持 -->
         <dependency>
             <groupId>org.springframework</groupId>
@@ -69,19 +69,19 @@
         <!-- =================================================== -->
         <!-- ============== 安全认证相关依赖 ============== -->
         <!-- =================================================== -->
-        
+
         <!-- Spring Security Core：核心安全框架，用于认证和授权 -->
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-core</artifactId>
         </dependency>
-        
+
         <!-- Spring Security Web：Web 应用安全支持 -->
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-web</artifactId>
         </dependency>
-        
+
         <!-- JWT (JSON Web Token) 相关依赖 -->
         <!-- jjwt-api：JWT API 接口（编译时需要）-->
         <dependency>
@@ -104,7 +104,7 @@
         <!-- =================================================== -->
         <!-- ================ 缓存相关依赖 ================ -->
         <!-- =================================================== -->
-        
+
         <!-- Spring Data Redis：Redis 客户端和 Spring 集成 -->
         <dependency>
             <groupId>org.springframework.data</groupId>
@@ -114,7 +114,7 @@
         <!-- =================================================== -->
         <!-- ================ 开发工具依赖 ================ -->
         <!-- =================================================== -->
-        
+
         <!--
          Lombok：编译期代码生成工具，简化 POJO 类开发。
          scope 设置为 provided，只在编译和测试阶段需要，最终打包不包含。
@@ -124,7 +124,7 @@
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
         </dependency>
-        
+
         <!-- MapStruct：高性能的 Bean 映射框架，用于 Entity、DTO、VO 之间的转换 -->
         <dependency>
             <groupId>org.mapstruct</groupId>
@@ -137,19 +137,19 @@
         <!--
          项目级别的基础工具库，定义在 common 模块中供所有其他模块复用。
         -->
-        
+
         <!-- Apache Commons Lang3：字符串、数字、日期等常用工具 -->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
         </dependency>
-        
+
         <!-- Apache Commons Collections4：集合工具库 -->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-collections4</artifactId>
         </dependency>
-        
+
         <!-- Google Guava：Google 核心 Java 库（集合、缓存、并发工具等）-->
         <dependency>
             <groupId>com.google.guava</groupId>
@@ -159,7 +159,7 @@
         <!-- =================================================== -->
         <!-- ================ Jakarta 标准 API ================ -->
         <!-- =================================================== -->
-        
+
         <!--
          Jakarta Servlet API：用于认证过滤器等 Web 组件。
          scope 为 provided，由应用服务器或容器提供。
@@ -169,7 +169,7 @@
             <artifactId>jakarta.servlet-api</artifactId>
             <scope>provided</scope>
         </dependency>
-        
+
         <!-- Jakarta Validation API：JSR-303 Bean 验证标准 API -->
         <dependency>
             <groupId>jakarta.validation</groupId>
@@ -179,7 +179,7 @@
         <!-- =================================================== -->
         <!-- ================ API 文档相关依赖 ================ -->
         <!-- =================================================== -->
-        
+
         <!-- SpringDoc OpenAPI：用于 @Schema 等 API 文档注解 -->
         <dependency>
             <groupId>org.springdoc</groupId>

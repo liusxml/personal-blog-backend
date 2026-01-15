@@ -42,7 +42,7 @@ public class MybatisPlusConfig {
      * <li>PaginationInnerInterceptor - 分页查询</li>
      * <li>OptimisticLockerInnerInterceptor - 乐观锁</li>
      * </ol>
-     * 
+     *
      * <p>
      * 注意：插件顺序会影响执行逻辑，请勿随意调整
      *

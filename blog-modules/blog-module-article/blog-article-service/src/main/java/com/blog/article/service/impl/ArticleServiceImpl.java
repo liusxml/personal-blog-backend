@@ -3,6 +3,11 @@ package com.blog.article.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.blog.article.api.dto.ArticleDTO;
+import com.blog.article.api.dto.ArticleQueryDTO;
+import com.blog.article.api.enums.ArticleStatus;
+import com.blog.article.api.vo.ArticleDetailVO;
+import com.blog.article.api.vo.ArticleListVO;
 import com.blog.article.domain.entity.ArticleEntity;
 import com.blog.article.domain.event.ArticlePublishedEvent;
 import com.blog.article.domain.state.ArticleState;
@@ -13,16 +18,12 @@ import com.blog.article.infrastructure.vector.VectorSearchService;
 import com.blog.article.service.IArticleService;
 import com.blog.article.service.chain.ContentProcessor;
 import com.blog.article.service.chain.ProcessResult;
+import com.blog.article.metrics.ArticleMetrics;
 import com.blog.common.base.BaseServiceImpl;
 import com.blog.common.exception.BusinessException;
 import com.blog.common.exception.SystemErrorCode;
 import com.blog.common.model.PageResult;
 import com.blog.common.utils.SecurityUtils;
-import com.blog.dto.ArticleDTO;
-import com.blog.dto.ArticleQueryDTO;
-import com.blog.enums.ArticleStatus;
-import com.blog.vo.ArticleDetailVO;
-import com.blog.vo.ArticleListVO;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.ApplicationEventPublisher;
@@ -68,6 +69,7 @@ public class ArticleServiceImpl
     private final ContentProcessor contentProcessorChain;
     private final ApplicationEventPublisher eventPublisher;
     private final VectorSearchService vectorSearchService;
+    private final ArticleMetrics articleMetrics;
 
     /**
      * 调用父类构造函数注入 converter
@@ -76,15 +78,16 @@ public class ArticleServiceImpl
             ArticleStateFactory stateFactory,
             ContentProcessor contentProcessorChain,
             ApplicationEventPublisher eventPublisher,
-            VectorSearchService vectorSearchService) {
+            VectorSearchService vectorSearchService,
+            ArticleMetrics articleMetrics) {
         super(converter);
         this.converter = converter;
         this.stateFactory = stateFactory;
         this.contentProcessorChain = contentProcessorChain;
         this.eventPublisher = eventPublisher;
         this.vectorSearchService = vectorSearchService;
+        this.articleMetrics = articleMetrics;
     }
-
 
     /**
      * 保存前钩子：设置默认值 + 内容处理
@@ -207,6 +210,9 @@ public class ArticleServiceImpl
                 article.getTitle());
         eventPublisher.publishEvent(event);
 
+        // 记录 Micrometer 指标
+        articleMetrics.recordPublish();
+
         log.info("文章发布成功: id={}, 事件已发布", articleId);
     }
 
@@ -303,7 +309,11 @@ public class ArticleServiceImpl
     @Override
     public void incrementViewCount(Long articleId) {
         log.debug("增加浏览量: articleId={}", articleId);
-        // 待实现: 异步更新 art_article_stats
+
+        // 记录 Micrometer 指标
+        articleMetrics.recordView();
+
+        // TODO: 异步更新 art_article_stats
     }
 
     /**
@@ -374,6 +384,37 @@ public class ArticleServiceImpl
     }
 
     /**
+     * 分页查询文章列表（管理端）
+     *
+     * <p>
+     * 与用户端 {@link #pageList(ArticleQueryDTO)} 的区别：
+     * </p>
+     * <ul>
+     * <li>status=null 时查询所有状态的文章（草稿、已发布、已归档）</li>
+     * <li>用于管理后台，需要查看所有文章</li>
+     * </ul>
+     *
+     * @param query 查询参数
+     * @return 分页结果
+     */
+    public PageResult<ArticleListVO> pageListForAdmin(ArticleQueryDTO query) {
+        log.info("管理端分页查询文章: current={}, size={}, status={}, keyword={}",
+                query.getCurrent(), query.getSize(), query.getStatus(), query.getKeyword());
+
+        // 构造分页对象
+        Page<ArticleEntity> page = new Page<>(query.getCurrent(), query.getSize());
+
+        // 构建查询条件（管理端版本）
+        LambdaQueryWrapper<ArticleEntity> wrapper = buildQueryWrapperForAdmin(query);
+
+        // 使用 BaseServiceImpl 的 pageWithConverter（直接 Entity -> ListVO）
+        IPage<ArticleListVO> listVoPage = this.pageWithConverter(page, wrapper, converter::entityToListVo);
+
+        // 转换为 PageResult
+        return PageResult.of(listVoPage);
+    }
+
+    /**
      * 构建查询条件（抽取为私有方法，提高可维护性）
      */
     private LambdaQueryWrapper<ArticleEntity> buildQueryWrapper(ArticleQueryDTO query) {
@@ -419,5 +460,77 @@ public class ArticleServiceImpl
         wrapper.orderByDesc(ArticleEntity::getIsTop, ArticleEntity::getPublishTime);
 
         return wrapper;
+    }
+
+    /**
+     * 构建查询条件（管理端版本）
+     *
+     * <p>
+     * 与用户端版本的区别：status=null 时不添加状态过滤，查询所有状态。
+     * </p>
+     */
+    private LambdaQueryWrapper<ArticleEntity> buildQueryWrapperForAdmin(ArticleQueryDTO query) {
+        LambdaQueryWrapper<ArticleEntity> wrapper = new LambdaQueryWrapper<>();
+
+        // 基础条件：未删除
+        wrapper.eq(ArticleEntity::getIsDeleted, 0);
+
+        // 状态筛选（管理端：status=null 时不过滤）
+        if (query.getStatus() != null) {
+            wrapper.eq(ArticleEntity::getStatus, query.getStatus());
+        }
+        // else: 不添加状态条件，查询所有状态
+
+        // 分类筛选
+        if (query.getCategoryId() != null) {
+            wrapper.eq(ArticleEntity::getCategoryId, query.getCategoryId());
+        }
+
+        // 作者筛选
+        if (query.getAuthorId() != null) {
+            wrapper.eq(ArticleEntity::getAuthorId, query.getAuthorId());
+        }
+
+        // 关键词搜索（标题 + 摘要）
+        if (StringUtils.isNotBlank(query.getKeyword())) {
+            wrapper.and(w -> w
+                    .like(ArticleEntity::getTitle, query.getKeyword())
+                    .or()
+                    .like(ArticleEntity::getSummary, query.getKeyword()));
+        }
+
+        // 标签筛选（需要子查询）
+        if (query.getTagId() != null) {
+            wrapper.inSql(ArticleEntity::getId,
+                    "SELECT article_id FROM art_article_tag WHERE tag_id = " + query.getTagId()
+                            + " AND is_deleted = 0");
+        }
+
+        // 排序：置顶优先，然后按发布时间倒序
+        wrapper.orderByDesc(ArticleEntity::getIsTop, ArticleEntity::getPublishTime);
+
+        return wrapper;
+    }
+
+    // ========== Micrometer 指标查询方法 ==========
+
+    /**
+     * 获取文章总数（供 ArticleMetrics 使用）
+     * 
+     * @return 文章总数
+     */
+    public long getMetricTotalCount() {
+        return baseMapper.selectCount(null);
+    }
+
+    /**
+     * 获取已发布文章数（供 ArticleMetrics 使用）
+     * 
+     * @return 已发布文章数
+     */
+    public long getMetricPublishedCount() {
+        return baseMapper.selectCount(
+                new LambdaQueryWrapper<ArticleEntity>()
+                        .eq(ArticleEntity::getStatus, ArticleStatus.PUBLISHED.getCode()));
     }
 }

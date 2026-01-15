@@ -7,12 +7,14 @@
 -- ============================================================================
 
 -- Create database with UTF8MB4 character set
-CREATE DATABASE IF NOT EXISTS blog_db
+CREATE
+DATABASE IF NOT EXISTS blog_db
     DEFAULT CHARACTER SET utf8mb4
     DEFAULT COLLATE utf8mb4_unicode_ci;
 
 -- Use the database
-USE blog_db;
+USE
+blog_db;
 
 -- Display confirmation message
 SELECT 'Database blog_db created successfully!' AS status;

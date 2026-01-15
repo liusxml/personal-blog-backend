@@ -6,7 +6,7 @@ import com.blog.system.api.dto.RegisterDTO;
 import com.blog.system.api.dto.UserDTO;
 import com.blog.system.api.vo.LoginVO;
 import com.blog.system.api.vo.UserVO;
-import com.blog.system.entity.SysUser;
+import com.blog.system.domain.entity.UserEntity;
 
 /**
  * 用户服务接口
@@ -14,7 +14,7 @@ import com.blog.system.entity.SysUser;
  * @author liusxml
  * @since 1.0.0
  */
-public interface IUserService extends IBaseService<SysUser, UserVO, UserDTO> {
+public interface IUserService extends IBaseService<UserEntity, UserVO, UserDTO> {
 
     /**
      * 用户注册
@@ -38,5 +38,5 @@ public interface IUserService extends IBaseService<SysUser, UserVO, UserDTO> {
      * @param username 用户名
      * @return 用户实体
      */
-    SysUser getUserByUsername(String username);
+    UserEntity getUserByUsername(String username);
 }

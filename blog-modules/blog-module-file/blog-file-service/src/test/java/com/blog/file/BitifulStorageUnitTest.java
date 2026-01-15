@@ -2,8 +2,8 @@ package com.blog.file;
 
 import com.blog.common.config.BitifulProperties;
 import com.blog.common.exception.BusinessException;
-import com.blog.enums.FileErrorCode;
-import com.blog.infrastructure.oss.BitifulStorage;
+import com.blog.file.api.enums.FileErrorCode;
+import com.blog.file.infrastructure.oss.BitifulStorage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,7 +31,11 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 /**
  * BitifulStorage 单元测试
@@ -67,264 +71,264 @@ import static org.mockito.Mockito.*;
 @DisplayName("BitifulStorage 单元测试")
 class BitifulStorageUnitTest {
 
-        @Mock
-        private S3Client s3Client; // Mock S3 客户端
+    @Mock
+    private S3Client s3Client; // Mock S3 客户端
 
-        @Mock
-        private S3Presigner s3Presigner; // Mock 预签名生成器
+    @Mock
+    private S3Presigner s3Presigner; // Mock 预签名生成器
 
-        @Mock
-        private BitifulProperties properties; // Mock 配置属性
+    @Mock
+    private BitifulProperties properties; // Mock 配置属性
 
-        @InjectMocks
-        private BitifulStorage bitifulStorage; // 自动注入上述 Mock
+    @InjectMocks
+    private BitifulStorage bitifulStorage; // 自动注入上述 Mock
 
-        @BeforeEach
-        void setUp() {
-                // 配置 Mock 的默认行为（使用 lenient 避免 UnnecessaryStubbingException）
-                lenient().when(properties.getBucket()).thenReturn("test-bucket");
-                lenient().when(properties.getMaxFileSize()).thenReturn(10 * 1024 * 1024L); // 10MB
-                lenient().when(properties.getAllowedExtensions()).thenReturn(Set.of("jpg", "jpeg", "png", "pdf"));
-        }
+    @BeforeEach
+    void setUp() {
+        // 配置 Mock 的默认行为（使用 lenient 避免 UnnecessaryStubbingException）
+        lenient().when(properties.getBucket()).thenReturn("test-bucket");
+        lenient().when(properties.getMaxFileSize()).thenReturn(10 * 1024 * 1024L); // 10MB
+        lenient().when(properties.getAllowedExtensions()).thenReturn(Set.of("jpg", "jpeg", "png", "pdf"));
+    }
 
-        // ==================== 文件上传测试 ====================
+    // ==================== 文件上传测试 ====================
 
-        @Test
-        @DisplayName("测试文件上传成功")
-        void testUploadSuccess() throws Exception {
-                // Given: 准备测试数据
-                MockMultipartFile file = new MockMultipartFile(
-                                "file", "test.jpg", "image/jpeg", "test data".getBytes());
-                String fileKey = "uploads/2025/11/25/test.jpg";
+    @Test
+    @DisplayName("测试文件上传成功")
+    void testUploadSuccess() throws Exception {
+        // Given: 准备测试数据
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "test.jpg", "image/jpeg", "test data".getBytes());
+        String fileKey = "uploads/2025/11/25/test.jpg";
 
-                // Mock S3 客户端行为
-                when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
-                                .thenReturn(PutObjectResponse.builder().build());
+        // Mock S3 客户端行为
+        when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
+                .thenReturn(PutObjectResponse.builder().build());
 
-                // Mock 预签名 URL 生成
-                PresignedGetObjectRequest mockPresigned = mock(PresignedGetObjectRequest.class);
-                when(mockPresigned.url()).thenReturn(URI.create("https://test.url/file.jpg").toURL());
-                when(s3Presigner.presignGetObject(any(GetObjectPresignRequest.class)))
-                                .thenReturn(mockPresigned);
+        // Mock 预签名 URL 生成
+        PresignedGetObjectRequest mockPresigned = mock(PresignedGetObjectRequest.class);
+        when(mockPresigned.url()).thenReturn(URI.create("https://test.url/file.jpg").toURL());
+        when(s3Presigner.presignGetObject(any(GetObjectPresignRequest.class)))
+                .thenReturn(mockPresigned);
 
-                // When: 执行上传
-                String resultUrl = bitifulStorage.upload(file, fileKey);
+        // When: 执行上传
+        String resultUrl = bitifulStorage.upload(file, fileKey);
 
-                // Then: 验证结果
-                assertThat(resultUrl).isEqualTo("https://test.url/file.jpg");
+        // Then: 验证结果
+        assertThat(resultUrl).isEqualTo("https://test.url/file.jpg");
 
-                // 验证 S3 客户端被正确调用
-                ArgumentCaptor<PutObjectRequest> requestCaptor = ArgumentCaptor.forClass(PutObjectRequest.class);
-                verify(s3Client).putObject(requestCaptor.capture(), any(RequestBody.class));
+        // 验证 S3 客户端被正确调用
+        ArgumentCaptor<PutObjectRequest> requestCaptor = ArgumentCaptor.forClass(PutObjectRequest.class);
+        verify(s3Client).putObject(requestCaptor.capture(), any(RequestBody.class));
 
-                PutObjectRequest capturedRequest = requestCaptor.getValue();
-                assertThat(capturedRequest.bucket()).isEqualTo("test-bucket");
-                assertThat(capturedRequest.key()).isEqualTo(fileKey);
-                assertThat(capturedRequest.contentType()).isEqualTo("image/jpeg");
-        }
+        PutObjectRequest capturedRequest = requestCaptor.getValue();
+        assertThat(capturedRequest.bucket()).isEqualTo("test-bucket");
+        assertThat(capturedRequest.key()).isEqualTo(fileKey);
+        assertThat(capturedRequest.contentType()).isEqualTo("image/jpeg");
+    }
 
-        @Test
-        @DisplayName("测试文件上传 - fileKey 为空抛出异常")
-        void testUploadWithBlankFileKey() {
-                // Given
-                MockMultipartFile file = new MockMultipartFile(
-                                "file", "test.jpg", "image/jpeg", "data".getBytes());
+    @Test
+    @DisplayName("测试文件上传 - fileKey 为空抛出异常")
+    void testUploadWithBlankFileKey() {
+        // Given
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "test.jpg", "image/jpeg", "data".getBytes());
 
-                // When & Then
-                assertThatThrownBy(() -> bitifulStorage.upload(file, ""))
-                                .isInstanceOf(BusinessException.class)
-                                .hasMessageContaining("fileKey 不能为空");
+        // When & Then
+        assertThatThrownBy(() -> bitifulStorage.upload(file, ""))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("fileKey 不能为空");
 
-                // 验证没有调用 S3 客户端
-                verifyNoInteractions(s3Client);
-        }
+        // 验证没有调用 S3 客户端
+        verifyNoInteractions(s3Client);
+    }
 
-        @Test
-        @DisplayName("测试文件上传 - 文件大小超限")
-        void testUploadWithFileSizeExceeded() {
-                // Given: 创建 11MB 文件（超过 10MB 限制）
-                byte[] largeData = new byte[11 * 1024 * 1024];
-                MockMultipartFile file = new MockMultipartFile(
-                                "file", "large.jpg", "image/jpeg", largeData);
+    @Test
+    @DisplayName("测试文件上传 - 文件大小超限")
+    void testUploadWithFileSizeExceeded() {
+        // Given: 创建 11MB 文件（超过 10MB 限制）
+        byte[] largeData = new byte[11 * 1024 * 1024];
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "large.jpg", "image/jpeg", largeData);
 
-                // When & Then
-                assertThatThrownBy(() -> bitifulStorage.upload(file, "uploads/large.jpg"))
-                                .isInstanceOf(BusinessException.class)
-                                .extracting("errorCode.code")
-                                .isEqualTo(FileErrorCode.FILE_EXCEED_MAX_SIZE.getCode());
+        // When & Then
+        assertThatThrownBy(() -> bitifulStorage.upload(file, "uploads/large.jpg"))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode.code")
+                .isEqualTo(FileErrorCode.FILE_EXCEED_MAX_SIZE.getCode());
 
-                // 验证没有调用 S3 客户端
-                verifyNoInteractions(s3Client);
-        }
+        // 验证没有调用 S3 客户端
+        verifyNoInteractions(s3Client);
+    }
 
-        @Test
-        @DisplayName("测试文件上传 - 无效文件类型")
-        void testUploadWithInvalidFileType() {
-                // Given
-                MockMultipartFile file = new MockMultipartFile(
-                                "file", "malware.exe", "application/exe", "data".getBytes());
+    @Test
+    @DisplayName("测试文件上传 - 无效文件类型")
+    void testUploadWithInvalidFileType() {
+        // Given
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "malware.exe", "application/exe", "data".getBytes());
 
-                // When & Then
-                assertThatThrownBy(() -> bitifulStorage.upload(file, "uploads/test.exe"))
-                                .isInstanceOf(BusinessException.class)
-                                .hasMessageContaining("不支持的文件类型");
+        // When & Then
+        assertThatThrownBy(() -> bitifulStorage.upload(file, "uploads/test.exe"))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("不支持的文件类型");
 
-                // 验证没有调用 S3 客户端
-                verifyNoInteractions(s3Client);
-        }
+        // 验证没有调用 S3 客户端
+        verifyNoInteractions(s3Client);
+    }
 
-        @Test
-        @DisplayName("测试文件上传 - S3 异常处理")
-        void testUploadWithS3Exception() {
-                // Given
-                MockMultipartFile file = new MockMultipartFile(
-                                "file", "test.jpg", "image/jpeg", "data".getBytes());
+    @Test
+    @DisplayName("测试文件上传 - S3 异常处理")
+    void testUploadWithS3Exception() {
+        // Given
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "test.jpg", "image/jpeg", "data".getBytes());
 
-                // Mock S3 抛出异常（S3Exception 需要特殊处理）
-                when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
-                                .thenThrow(S3Exception.builder()
-                                                .message("Access Denied")
-                                                .statusCode(403)
-                                                .build());
+        // Mock S3 抛出异常（S3Exception 需要特殊处理）
+        when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
+                .thenThrow(S3Exception.builder()
+                        .message("Access Denied")
+                        .statusCode(403)
+                        .build());
 
-                // When & Then
-                assertThatThrownBy(() -> bitifulStorage.upload(file, "uploads/test.jpg"))
-                                .isInstanceOf(BusinessException.class)
-                                .hasMessageContaining("Bitiful 上传失败");
-        }
+        // When & Then
+        assertThatThrownBy(() -> bitifulStorage.upload(file, "uploads/test.jpg"))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("Bitiful 上传失败");
+    }
 
-        // ==================== 预签名 URL 测试 ====================
+    // ==================== 预签名 URL 测试 ====================
 
-        @Test
-        @DisplayName("测试预签名 URL 生成成功")
-        void testGeneratePresignedUrlSuccess() throws Exception {
-                // Given
-                String fileKey = "uploads/test.jpg";
-                int expireMinutes = 30;
+    @Test
+    @DisplayName("测试预签名 URL 生成成功")
+    void testGeneratePresignedUrlSuccess() throws Exception {
+        // Given
+        String fileKey = "uploads/test.jpg";
+        int expireMinutes = 30;
 
-                // Mock 预签名生成
-                PresignedPutObjectRequest mockPresigned = mock(PresignedPutObjectRequest.class);
-                when(mockPresigned.url()).thenReturn(URI.create("https://presigned.url").toURL());
-                when(s3Presigner.presignPutObject(any(PutObjectPresignRequest.class)))
-                                .thenReturn(mockPresigned);
+        // Mock 预签名生成
+        PresignedPutObjectRequest mockPresigned = mock(PresignedPutObjectRequest.class);
+        when(mockPresigned.url()).thenReturn(URI.create("https://presigned.url").toURL());
+        when(s3Presigner.presignPutObject(any(PutObjectPresignRequest.class)))
+                .thenReturn(mockPresigned);
 
-                // When
-                String url = bitifulStorage.generatePresignedUrl(fileKey, expireMinutes);
+        // When
+        String url = bitifulStorage.generatePresignedUrl(fileKey, expireMinutes);
 
-                // Then
-                assertThat(url).isEqualTo("https://presigned.url");
-                verify(s3Presigner).presignPutObject(any(PutObjectPresignRequest.class));
-        }
+        // Then
+        assertThat(url).isEqualTo("https://presigned.url");
+        verify(s3Presigner).presignPutObject(any(PutObjectPresignRequest.class));
+    }
 
-        @Test
-        @DisplayName("测试预签名 URL - fileKey 为空")
-        void testGeneratePresignedUrlWithBlankFileKey() {
-                // When & Then
-                assertThatThrownBy(() -> bitifulStorage.generatePresignedUrl("", 30))
-                                .isInstanceOf(BusinessException.class)
-                                .hasMessageContaining("fileKey 不能为空");
-        }
+    @Test
+    @DisplayName("测试预签名 URL - fileKey 为空")
+    void testGeneratePresignedUrlWithBlankFileKey() {
+        // When & Then
+        assertThatThrownBy(() -> bitifulStorage.generatePresignedUrl("", 30))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("fileKey 不能为空");
+    }
 
-        @Test
-        @DisplayName("测试预签名 URL - 过期时间无效（小于最小值）")
-        void testGeneratePresignedUrlWithInvalidExpireTime() {
-                // When & Then: 过期时间为 0（小于 1 分钟）
-                assertThatThrownBy(() -> bitifulStorage.generatePresignedUrl("test.jpg", 0))
-                                .isInstanceOf(BusinessException.class)
-                                .hasMessageContaining("过期时间应在");
-        }
+    @Test
+    @DisplayName("测试预签名 URL - 过期时间无效（小于最小值）")
+    void testGeneratePresignedUrlWithInvalidExpireTime() {
+        // When & Then: 过期时间为 0（小于 1 分钟）
+        assertThatThrownBy(() -> bitifulStorage.generatePresignedUrl("test.jpg", 0))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("过期时间应在");
+    }
 
-        @Test
-        @DisplayName("测试预签名 URL - 过期时间无效（大于最大值）")
-        void testGeneratePresignedUrlWithExpireTimeTooLarge() {
-                // When & Then: 过期时间为 61 分钟（大于 60 分钟）
-                assertThatThrownBy(() -> bitifulStorage.generatePresignedUrl("test.jpg", 61))
-                                .isInstanceOf(BusinessException.class)
-                                .hasMessageContaining("过期时间应在");
-        }
+    @Test
+    @DisplayName("测试预签名 URL - 过期时间无效（大于最大值）")
+    void testGeneratePresignedUrlWithExpireTimeTooLarge() {
+        // When & Then: 过期时间为 61 分钟（大于 60 分钟）
+        assertThatThrownBy(() -> bitifulStorage.generatePresignedUrl("test.jpg", 61))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("过期时间应在");
+    }
 
-        // ==================== 文件删除测试 ====================
+    // ==================== 文件删除测试 ====================
 
-        @Test
-        @DisplayName("测试文件删除成功")
-        void testDeleteSuccess() {
-                // Given
-                String fileKey = "uploads/test.jpg";
+    @Test
+    @DisplayName("测试文件删除成功")
+    void testDeleteSuccess() {
+        // Given
+        String fileKey = "uploads/test.jpg";
 
-                // When
-                bitifulStorage.delete(fileKey);
+        // When
+        bitifulStorage.delete(fileKey);
 
-                // Then: 验证删除请求被调用
-                ArgumentCaptor<DeleteObjectRequest> captor = ArgumentCaptor.forClass(DeleteObjectRequest.class);
-                verify(s3Client).deleteObject(captor.capture());
+        // Then: 验证删除请求被调用
+        ArgumentCaptor<DeleteObjectRequest> captor = ArgumentCaptor.forClass(DeleteObjectRequest.class);
+        verify(s3Client).deleteObject(captor.capture());
 
-                DeleteObjectRequest request = captor.getValue();
-                assertThat(request.bucket()).isEqualTo("test-bucket");
-                assertThat(request.key()).isEqualTo(fileKey);
-        }
+        DeleteObjectRequest request = captor.getValue();
+        assertThat(request.bucket()).isEqualTo("test-bucket");
+        assertThat(request.key()).isEqualTo(fileKey);
+    }
 
-        @Test
-        @DisplayName("测试文件删除 - fileKey 为空不抛异常")
-        void testDeleteWithBlankFileKey() {
-                // Given & When
-                bitifulStorage.delete("");
-                bitifulStorage.delete(null);
+    @Test
+    @DisplayName("测试文件删除 - fileKey 为空不抛异常")
+    void testDeleteWithBlankFileKey() {
+        // Given & When
+        bitifulStorage.delete("");
+        bitifulStorage.delete(null);
 
-                // Then: 不应该调用 S3 客户端
-                verifyNoInteractions(s3Client);
-        }
+        // Then: 不应该调用 S3 客户端
+        verifyNoInteractions(s3Client);
+    }
 
-        @Test
-        @DisplayName("测试文件删除 - S3 异常不影响流程")
-        void testDeleteWithS3Exception() {
-                // Given
-                when(s3Client.deleteObject(any(DeleteObjectRequest.class)))
-                                .thenThrow(S3Exception.builder().message("Not Found").build());
+    @Test
+    @DisplayName("测试文件删除 - S3 异常不影响流程")
+    void testDeleteWithS3Exception() {
+        // Given
+        when(s3Client.deleteObject(any(DeleteObjectRequest.class)))
+                .thenThrow(S3Exception.builder().message("Not Found").build());
 
-                // When & Then: 删除失败不应抛出异常（只记录日志）
-                bitifulStorage.delete("uploads/test.jpg");
+        // When & Then: 删除失败不应抛出异常（只记录日志）
+        bitifulStorage.delete("uploads/test.jpg");
 
-                // 验证仍然调用了删除
-                verify(s3Client).deleteObject(any(DeleteObjectRequest.class));
-        }
+        // 验证仍然调用了删除
+        verify(s3Client).deleteObject(any(DeleteObjectRequest.class));
+    }
 
-        // ==================== getBucketName 测试 ====================
+    // ==================== getBucketName 测试 ====================
 
-        @Test
-        @DisplayName("测试获取 Bucket 名称")
-        void testGetBucketName() {
-                // When
-                String bucketName = bitifulStorage.getBucketName();
+    @Test
+    @DisplayName("测试获取 Bucket 名称")
+    void testGetBucketName() {
+        // When
+        String bucketName = bitifulStorage.getBucketName();
 
-                // Then
-                assertThat(bucketName).isEqualTo("test-bucket");
-        }
+        // Then
+        assertThat(bucketName).isEqualTo("test-bucket");
+    }
 
-        // ==================== generateFileKey 静态方法测试 ====================
+    // ==================== generateFileKey 静态方法测试 ====================
 
-        @Test
-        @DisplayName("测试 generateFileKey - 正常生成")
-        void testGenerateFileKey() {
-                // When
-                String fileKey = BitifulStorage.generateFileKey("test.jpg");
+    @Test
+    @DisplayName("测试 generateFileKey - 正常生成")
+    void testGenerateFileKey() {
+        // When
+        String fileKey = BitifulStorage.generateFileKey("test.jpg");
 
-                // Then
-                assertThat(fileKey)
-                                .startsWith("uploads/")
-                                .contains("/")
-                                .endsWith(".jpg");
-        }
+        // Then
+        assertThat(fileKey)
+                .startsWith("uploads/")
+                .contains("/")
+                .endsWith(".jpg");
+    }
 
-        @Test
-        @DisplayName("测试 generateFileKey - 文件名为空抛异常")
-        void testGenerateFileKeyWithBlankFilename() {
-                // When & Then
-                assertThatThrownBy(() -> BitifulStorage.generateFileKey(""))
-                                .isInstanceOf(IllegalArgumentException.class)
-                                .hasMessageContaining("原始文件名不能为空");
+    @Test
+    @DisplayName("测试 generateFileKey - 文件名为空抛异常")
+    void testGenerateFileKeyWithBlankFilename() {
+        // When & Then
+        assertThatThrownBy(() -> BitifulStorage.generateFileKey(""))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("原始文件名不能为空");
 
-                assertThatThrownBy(() -> BitifulStorage.generateFileKey(null))
-                                .isInstanceOf(IllegalArgumentException.class)
-                                .hasMessageContaining("原始文件名不能为空");
-        }
+        assertThatThrownBy(() -> BitifulStorage.generateFileKey(null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("原始文件名不能为空");
+    }
 }

@@ -22,10 +22,6 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods;
  */
 public final class ApiRule {
 
-    /** 私有构造器，防止实例化（工具类） */
-    private ApiRule() {
-    }
-
     /*
      * --------------------------------------------------------------------- *
      * 1. Controller 方法必须返回 Result<T>（特殊场景豁免）
@@ -65,7 +61,6 @@ public final class ApiRule {
                 }
             })
             .because("所有 Controller 方法必须返回统一的 Result<T>，特殊场景除外（文件下载、SSE等）");
-
     /*
      * --------------------------------------------------------------------- *
      * 2. Controller 禁止直接返回 Entity
@@ -98,6 +93,12 @@ public final class ApiRule {
                 }
             })
             .because("Controller 禁止直接返回 Entity，必须映射为 DTO 以避免暴露内部结构");
+
+    /**
+     * 私有构造器，防止实例化（工具类）
+     */
+    private ApiRule() {
+    }
 
     /*
      * --------------------------------------------------------------------- *

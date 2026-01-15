@@ -1,10 +1,10 @@
 package com.blog.config;
 
 import com.blog.common.config.SecurityProperties;
+import com.blog.security.JwtAuthenticationFilter;
 import com.google.common.collect.ImmutableList;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import com.blog.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -12,12 +12,12 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import java.util.List;
 import java.util.Objects;
@@ -75,7 +75,7 @@ public class SecurityConfig {
      * @param jwtAuthenticationFilter JWT 认证过滤器
      */
     public SecurityConfig(SecurityProperties securityProperties,
-            JwtAuthenticationFilter jwtAuthenticationFilter) {
+                          JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.securityProperties = securityProperties;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
@@ -151,9 +151,18 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login").permitAll() // 注册和登录公开
-                        .anyRequest().authenticated() // 其他 /api/** 需要认证
-                )
+                        // 认证相关接口 - 公开访问
+                        .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login").permitAll()
+
+                        // 文章相关接口 - 公开访问（只读）
+                        .requestMatchers("/api/v1/articles", "/api/v1/articles/*", "/api/v1/articles/*/related")
+                        .permitAll()
+
+                        // 评论查询接口 - 公开访问
+                        .requestMatchers("/api/v1/comments/tree").permitAll()
+
+                        // 其他 /api/** 需要认证
+                        .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class); // 添加 JWT 过滤器
         return http.build();
     }

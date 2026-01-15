@@ -10,13 +10,13 @@ import com.blog.system.api.dto.RegisterDTO;
 import com.blog.system.api.dto.UserDTO;
 import com.blog.system.api.vo.LoginVO;
 import com.blog.system.api.vo.UserVO;
+import com.blog.system.constant.RoleConstants;
 import com.blog.system.converter.UserConverter;
-import com.blog.system.entity.SysRole;
-import com.blog.system.entity.SysUser;
+import com.blog.system.domain.entity.RoleEntity;
+import com.blog.system.domain.entity.UserEntity;
 import com.blog.system.mapper.RoleMapper;
 import com.blog.system.mapper.UserMapper;
 import com.blog.system.service.IUserService;
-import com.blog.system.constant.RoleConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
@@ -40,16 +40,18 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
-public class UserServiceImpl extends BaseServiceImpl<UserMapper, SysUser, UserVO, UserDTO, UserConverter>
+public class UserServiceImpl extends BaseServiceImpl<UserMapper, UserEntity, UserVO, UserDTO, UserConverter>
         implements IUserService {
 
     private final UserMapper userMapper;
     private final RoleMapper roleMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    @Value("${app.security.jwt-expiration:7200000}")
+    private Long jwtExpiration;
 
     public UserServiceImpl(UserConverter userConverter, UserMapper userMapper, RoleMapper roleMapper,
-            PasswordEncoder passwordEncoder, JwtTokenProvider jwtTokenProvider) {
+                           PasswordEncoder passwordEncoder, JwtTokenProvider jwtTokenProvider) {
         super(userConverter);
         this.userMapper = userMapper;
         this.roleMapper = roleMapper;
@@ -57,32 +59,29 @@ public class UserServiceImpl extends BaseServiceImpl<UserMapper, SysUser, UserVO
         this.jwtTokenProvider = jwtTokenProvider;
     }
 
-    @Value("${app.security.jwt-expiration:7200000}")
-    private Long jwtExpiration;
-
     @Override
     @Transactional(rollbackFor = Exception.class)
     public UserVO register(RegisterDTO registerDTO) {
         log.info("用户注册: username={}, email={}", registerDTO.getUsername(), registerDTO.getEmail());
 
         // 检查用户名是否已存在
-        SysUser existingUser = userMapper.selectOne(
-                new LambdaQueryWrapper<SysUser>()
-                        .eq(SysUser::getUsername, registerDTO.getUsername()));
+        UserEntity existingUser = userMapper.selectOne(
+                new LambdaQueryWrapper<UserEntity>()
+                        .eq(UserEntity::getUsername, registerDTO.getUsername()));
         if (existingUser != null) {
             throw new BusinessException(SystemErrorCode.USERNAME_ALREADY_EXISTS);
         }
 
         // 检查邮箱是否已存在
         existingUser = userMapper.selectOne(
-                new LambdaQueryWrapper<SysUser>()
-                        .eq(SysUser::getEmail, registerDTO.getEmail()));
+                new LambdaQueryWrapper<UserEntity>()
+                        .eq(UserEntity::getEmail, registerDTO.getEmail()));
         if (existingUser != null) {
             throw new BusinessException(SystemErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
         // 创建用户实体
-        SysUser user = new SysUser();
+        UserEntity user = new UserEntity();
         user.setUsername(registerDTO.getUsername());
         user.setPassword(passwordEncoder.encode(registerDTO.getPassword()));
         user.setEmail(registerDTO.getEmail());
@@ -93,9 +92,9 @@ public class UserServiceImpl extends BaseServiceImpl<UserMapper, SysUser, UserVO
         userMapper.insert(user);
 
         // 分配默认角色 (USER)
-        SysRole userRole = roleMapper.selectOne(
-                new LambdaQueryWrapper<SysRole>()
-                        .eq(SysRole::getRoleKey, RoleConstants.DEFAULT_USER_ROLE));
+        RoleEntity userRole = roleMapper.selectOne(
+                new LambdaQueryWrapper<RoleEntity>()
+                        .eq(RoleEntity::getRoleKey, RoleConstants.DEFAULT_USER_ROLE));
         if (userRole != null) {
             roleMapper.assignRoleToUser(user.getId(), userRole.getId());
         }
@@ -113,11 +112,11 @@ public class UserServiceImpl extends BaseServiceImpl<UserMapper, SysUser, UserVO
         log.info("用户登录: username={}", loginDTO.getUsername());
 
         // 查询用户
-        SysUser user = userMapper.selectOne(
-                new LambdaQueryWrapper<SysUser>()
-                        .eq(SysUser::getUsername, loginDTO.getUsername())
+        UserEntity user = userMapper.selectOne(
+                new LambdaQueryWrapper<UserEntity>()
+                        .eq(UserEntity::getUsername, loginDTO.getUsername())
                         .or()
-                        .eq(SysUser::getEmail, loginDTO.getUsername()) // 支持邮箱登录
+                        .eq(UserEntity::getEmail, loginDTO.getUsername()) // 支持邮箱登录
         );
 
         if (user == null) {
@@ -185,10 +184,10 @@ public class UserServiceImpl extends BaseServiceImpl<UserMapper, SysUser, UserVO
     }
 
     @Override
-    public SysUser getUserByUsername(String username) {
+    public UserEntity getUserByUsername(String username) {
         return userMapper.selectOne(
-                new LambdaQueryWrapper<SysUser>()
-                        .eq(SysUser::getUsername, username));
+                new LambdaQueryWrapper<UserEntity>()
+                        .eq(UserEntity::getUsername, username));
     }
 
     /**
@@ -207,7 +206,7 @@ public class UserServiceImpl extends BaseServiceImpl<UserMapper, SysUser, UserVO
     @Cacheable(value = "user:roles", key = "#userId")
     public List<String> getUserRoleKeys(Long userId) {
         log.debug("从数据库查询用户角色: userId={}", userId);
-        List<SysRole> roles = userMapper.selectRolesByUserId(userId);
+        List<RoleEntity> roles = userMapper.selectRolesByUserId(userId);
         return roles.stream()
                 .map(role -> "ROLE_" + role.getRoleKey())
                 .collect(Collectors.toList());

@@ -79,6 +79,16 @@
         </dependency>
 
         <!-- =================================================== -->
+        <!-- ================== 监控相关依赖 ================== -->
+        <!-- =================================================== -->
+
+        <!-- Micrometer：指标采集库 -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+        </dependency>
+
+        <!-- =================================================== -->
         <!-- =================== 测试依赖 =================== -->
         <!-- =================================================== -->
 
@@ -114,7 +124,6 @@
 
     <build>
         <plugins>
-            <!-- MapStruct 编译器插件 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -129,6 +138,11 @@
                             <groupId>org.mapstruct</groupId>
                             <artifactId>mapstruct-processor</artifactId>
                             <version>${mapstruct.version}</version>
+                        </path>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok-mapstruct-binding</artifactId>
+                            <version>${lombok-mapstruct-binding.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
