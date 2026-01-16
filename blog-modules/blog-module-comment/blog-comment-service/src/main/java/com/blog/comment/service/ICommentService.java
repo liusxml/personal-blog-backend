@@ -110,4 +110,12 @@ public interface ICommentService extends IBaseService<CommentEntity, CommentVO, 
      * @param remark   管理员备注
      */
     void rejectReport(Long reportId, String remark);
+
+    /**
+     * 分页查询评论列表（管理端）
+     *
+     * @param query 查询参数
+     * @return 分页结果
+     */
+    com.blog.common.model.PageResult<CommentVO> pageListForAdmin(com.blog.comment.api.dto.CommentQueryDTO query);
 }
