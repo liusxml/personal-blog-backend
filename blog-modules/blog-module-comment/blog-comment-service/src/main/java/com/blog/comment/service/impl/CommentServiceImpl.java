@@ -1,7 +1,10 @@
 package com.blog.comment.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.blog.comment.api.dto.CommentDTO;
+import com.blog.comment.api.dto.CommentQueryDTO;
 import com.blog.comment.api.enums.CommentStatus;
 import com.blog.comment.api.enums.CommentTargetType;
 import com.blog.comment.api.enums.ReportStatus;
@@ -27,6 +30,7 @@ import com.blog.comment.service.ICommentService;
 import com.blog.common.base.BaseServiceImpl;
 import com.blog.common.exception.BusinessException;
 import com.blog.common.exception.SystemErrorCode;
+import com.blog.common.model.PageResult;
 import com.blog.common.utils.SecurityUtils;
 import com.blog.common.utils.TreeBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -521,5 +525,78 @@ public class CommentServiceImpl
         return baseMapper.selectCount(
                 new LambdaQueryWrapper<CommentEntity>()
                         .eq(CommentEntity::getStatus, CommentStatus.PENDING));
+    }
+
+    // ==================== 管理端接口 ====================
+
+    /**
+     * 分页查询评论列表（管理端）
+     *
+     * <p>
+     * 与用户端接口的区别：
+     * </p>
+     * <ul>
+     * <li>status=null 时查询所有状态的评论（待审核、已通过、已拒绝、已删除）</li>
+     * <li>用于管理后台，需要查看所有评论</li>
+     * </ul>
+     *
+     * @param query 查询参数
+     * @return 分页结果
+     */
+    public PageResult<CommentVO> pageListForAdmin(CommentQueryDTO query) {
+        log.info("管理端分页查询评论: pageNum={}, pageSize={}, status={}, targetType={}",
+                query.getPageNum(), query.getPageSize(), query.getStatus(), query.getTargetType());
+
+        // 构造分页对象
+        Page<CommentEntity> page = new Page<>(query.getPageNum(), query.getPageSize());
+
+        // 构建查询条件（管理端版本）
+        LambdaQueryWrapper<CommentEntity> wrapper = buildQueryWrapperForAdmin(query);
+
+        // 使用 BaseServiceImpl 的 pageWithConverter（直接 Entity -> VO）
+        IPage<CommentVO> voPage = this.pageWithConverter(page, wrapper, converter::entityToVo);
+
+        // 转换为 PageResult
+        return PageResult.of(voPage);
+    }
+
+    /**
+     * 构建查询条件（管理端版本）
+     *
+     * <p>
+     * 与用户端版本的区别：status=null 时不添加状态过滤，查询所有状态。
+     * </p>
+     */
+    private LambdaQueryWrapper<CommentEntity> buildQueryWrapperForAdmin(CommentQueryDTO query) {
+        LambdaQueryWrapper<CommentEntity> wrapper = new LambdaQueryWrapper<>();
+
+        // 基础条件：未删除
+        wrapper.eq(CommentEntity::getIsDeleted, 0);
+
+        // 状态筛选（管理端：status=null 时不过滤）
+        if (query.getStatus() != null && !query.getStatus().isEmpty()) {
+            wrapper.eq(CommentEntity::getStatus, CommentStatus.valueOf(query.getStatus()));
+        }
+        // else: 不添加状态条件，查询所有状态
+
+        // 目标类型筛选
+        if (query.getTargetType() != null) {
+            wrapper.eq(CommentEntity::getTargetType, query.getTargetType());
+        }
+
+        // 目标ID筛选
+        if (query.getTargetId() != null) {
+            wrapper.eq(CommentEntity::getTargetId, query.getTargetId());
+        }
+
+        // 创建者筛选
+        if (query.getCreateBy() != null) {
+            wrapper.eq(CommentEntity::getCreateBy, query.getCreateBy());
+        }
+
+        // 排序：按创建时间倒序
+        wrapper.orderByDesc(CommentEntity::getCreateTime);
+
+        return wrapper;
     }
 }

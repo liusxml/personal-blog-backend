@@ -25,6 +25,9 @@ public class CommentQueryDTO implements Serializable {
     @Schema(description = "评论者ID")
     private Long createBy;
 
+    @Schema(description = "评论状态")
+    private String status;
+
     @Schema(description = "页码", example = "1")
     private Integer pageNum = 1;
 
