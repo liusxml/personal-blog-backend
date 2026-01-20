@@ -18,7 +18,7 @@ import java.util.List;
 public class UserVO implements Serializable {
 
     @Schema(description = "用户ID")
-    private Long id;
+    private String id; // Long序列化为String，避免精度丢失
 
     @Schema(description = "用户名")
     private String username;

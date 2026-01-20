@@ -22,7 +22,7 @@ public class CategoryVO implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "分类ID")
-    private Long id;
+    private String id; // Long序列化为String，避免精度丢失
 
     @Schema(description = "分类名称")
     private String name;
@@ -37,7 +37,7 @@ public class CategoryVO implements Serializable {
     private String description;
 
     @Schema(description = "父分类ID")
-    private Long parentId;
+    private String parentId; // Long序列化为String，避免精度丢失
 
     @Schema(description = "分类路径")
     private String path;
