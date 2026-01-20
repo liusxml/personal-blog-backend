@@ -22,7 +22,7 @@ public class TagVO implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "标签ID")
-    private Long id;
+    private String id; // Long序列化为String，避免精度丢失
 
     @Schema(description = "标签名称")
     private String name;

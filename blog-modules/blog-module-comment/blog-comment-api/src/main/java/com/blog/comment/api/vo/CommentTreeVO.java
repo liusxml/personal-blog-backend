@@ -26,16 +26,16 @@ import java.util.List;
 public class CommentTreeVO implements Serializable {
 
     @Schema(description = "评论ID")
-    private Long id;
+    private String id; // Long序列化为String，避免精度丢失
 
     @Schema(description = "目标类型")
     private CommentTargetType targetType;
 
     @Schema(description = "目标ID")
-    private Long targetId;
+    private String targetId; // Long序列化为String，避免精度丢失
 
     @Schema(description = "父评论ID")
-    private Long parentId;
+    private String parentId; // Long序列化为String，避免精度丢失
 
     @Schema(description = "评论内容")
     private String content;
@@ -50,7 +50,7 @@ public class CommentTreeVO implements Serializable {
     private Integer replyCount;
 
     @Schema(description = "评论者ID")
-    private Long createBy;
+    private String createBy; // Long序列化为String，避免精度丢失
 
     @Schema(description = "评论时间", example = "2025-12-15 12:00:00")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
@@ -69,7 +69,7 @@ public class CommentTreeVO implements Serializable {
     private Integer depth;
 
     @Schema(description = "根评论ID")
-    private Long rootId;
+    private String rootId; // Long序列化为String，避免精度丢失
 
     @Schema(description = "子评论列表")
     private List<CommentTreeVO> children = new ArrayList<>();

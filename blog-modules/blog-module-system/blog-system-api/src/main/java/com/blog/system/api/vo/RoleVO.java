@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 public class RoleVO implements Serializable {
 
     @Schema(description = "角色ID")
-    private Long id;
+    private String id; // Long序列化为String，避免精度丢失
 
     @Schema(description = "角色名称")
     private String roleName;
