@@ -1,15 +1,22 @@
 package com.blog.file.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.blog.common.exception.SystemErrorCode;
+import com.blog.common.model.PageResult;
 import com.blog.common.model.Result;
 import com.blog.file.api.dto.PreSignedUrlRequest;
 import com.blog.file.api.vo.FileVO;
 import com.blog.file.api.vo.PreSignedUploadVO;
+import com.blog.file.entity.FileEntity;
 import com.blog.file.service.impl.FileServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -87,17 +94,43 @@ public class FileController {
     }
 
     /**
-     * 根据 ID 获取文件信息
+     * 分页查询文件列表
+     *
+     * <p>
+     * 管理端使用，支持按文件分类和存储类型筛选。
+     * </p>
      */
-    @GetMapping("/{id}")
-    @Operation(summary = "获取文件信息", description = "根据ID查询文件详细信息")
-    public Result<FileVO> getById(@PathVariable Long id) {
-        log.info("查询文件: id={}", id);
+    @GetMapping
+    @Operation(summary = "分页查询文件列表", description = "管理端文件列表，支持筛选")
+    public Result<PageResult<FileVO>> pageList(
+            @RequestParam(defaultValue = "1") int pageNum,
+            @RequestParam(defaultValue = "20") int pageSize,
+            @RequestParam(required = false) String fileCategory,
+            @RequestParam(required = false) String storageType) {
+        log.info("查询文件列表: pageNum={}, pageSize={}, fileCategory={}, storageType={}",
+                pageNum, pageSize, fileCategory, storageType);
 
-        Optional<FileVO> vo = fileService.getVoById(id);
+        Page<FileEntity> page = new Page<>(pageNum, pageSize);
+        LambdaQueryWrapper<FileEntity> wrapper = new LambdaQueryWrapper<>();
 
-        return vo.map(Result::success)
-                .orElseGet(() -> Result.error(com.blog.common.exception.SystemErrorCode.NOT_FOUND));
+        // 筛选条件
+        if (StringUtils.isNotBlank(fileCategory)) {
+            wrapper.eq(FileEntity::getFileCategory, fileCategory);
+        }
+        if (StringUtils.isNotBlank(storageType)) {
+            wrapper.eq(FileEntity::getStorageType, storageType);
+        }
+
+        // 按创建时间倒序
+        wrapper.orderByDesc(FileEntity::getCreateTime);
+
+        // 使用 BaseServiceImpl 的 pageVo 方法
+        IPage<FileVO> voPage = fileService.pageVo(page, wrapper);
+
+        // 转换为 PageResult
+        PageResult<FileVO> result = PageResult.of(voPage);
+
+        return Result.success(result);
     }
 
     /**
@@ -114,7 +147,21 @@ public class FileController {
 
         boolean success = fileService.deleteById(id);
 
-        return success ? Result.success() : Result.error(com.blog.common.exception.SystemErrorCode.SYSTEM_ERROR);
+        return success ? Result.success() : Result.error(SystemErrorCode.SYSTEM_ERROR);
+    }
+
+    /**
+     * 根据 ID 获取文件信息
+     */
+    @GetMapping("/{id}")
+    @Operation(summary = "获取文件信息", description = "根据ID查询文件详细信息")
+    public Result<FileVO> getById(@PathVariable Long id) {
+        log.info("查询文件: id={}", id);
+
+        Optional<FileVO> vo = fileService.getVoById(id);
+
+        return vo.map(Result::success)
+                .orElseGet(() -> Result.error(SystemErrorCode.NOT_FOUND));
     }
 
     /**
@@ -127,7 +174,7 @@ public class FileController {
     @GetMapping("/{id}/access-url")
     @Operation(summary = "获取文件访问URL", description = "动态生成预签名GET URL（7天有效）")
     public Result<String> getAccessUrl(@PathVariable Long id,
-                                       @RequestParam(defaultValue = "60") int expireMinutes) {
+            @RequestParam(defaultValue = "60") int expireMinutes) {
         log.info("获取访问URL: id={}, expireMinutes={}", id, expireMinutes);
 
         String accessUrl = fileService.getAccessUrl(id, expireMinutes);
