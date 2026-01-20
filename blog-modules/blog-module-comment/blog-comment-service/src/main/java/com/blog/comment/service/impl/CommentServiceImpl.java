@@ -62,7 +62,7 @@ public class CommentServiceImpl
      */
     private static final int MAX_DEPTH = 5;
 
-    private final TreeBuilder<CommentTreeVO, Long> treeBuilder;
+    private final TreeBuilder<CommentTreeVO, String> treeBuilder;
     private final CommentStateFactory stateFactory;
     private final CommentProcessorChain processorChain;
     private final com.blog.comment.infrastructure.mapper.CommentLikeMapper commentLikeMapper;
@@ -307,20 +307,20 @@ public class CommentServiceImpl
      */
     private CommentTreeVO entityToTreeVO(CommentEntity entity) {
         CommentTreeVO vo = new CommentTreeVO();
-        vo.setId(entity.getId());
+        vo.setId(entity.getId() != null ? entity.getId().toString() : null);
         vo.setTargetType(entity.getTargetType());
-        vo.setTargetId(entity.getTargetId());
-        vo.setParentId(entity.getParentId());
+        vo.setTargetId(entity.getTargetId() != null ? entity.getTargetId().toString() : null);
+        vo.setParentId(entity.getParentId() != null ? entity.getParentId().toString() : null);
         vo.setContent(entity.getContent());
         vo.setStatus(entity.getStatus());
         vo.setLikeCount(entity.getLikeCount());
         vo.setReplyCount(entity.getReplyCount());
-        vo.setCreateBy(entity.getCreateBy());
+        vo.setCreateBy(entity.getCreateBy() != null ? entity.getCreateBy().toString() : null);
         vo.setCreateTime(entity.getCreateTime());
         vo.setUpdateTime(entity.getUpdateTime());
         vo.setPath(entity.getPath());
         vo.setDepth(entity.getDepth());
-        vo.setRootId(entity.getRootId());
+        vo.setRootId(entity.getRootId() != null ? entity.getRootId().toString() : null);
         return vo;
     }
 

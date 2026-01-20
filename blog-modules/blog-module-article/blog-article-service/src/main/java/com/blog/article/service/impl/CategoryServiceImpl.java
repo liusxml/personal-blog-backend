@@ -75,7 +75,7 @@ public class CategoryServiceImpl
      * @param parentId 父节点ID
      * @return 树形结构
      */
-    private List<CategoryTreeVO> buildTree(List<CategoryTreeVO> all, Long parentId) {
+    private List<CategoryTreeVO> buildTree(List<CategoryTreeVO> all, String parentId) {
         return all.stream()
                 .filter(node -> Objects.equals(node.getParentId(), parentId))
                 .peek(node -> node.setChildren(buildTree(all, node.getId())))

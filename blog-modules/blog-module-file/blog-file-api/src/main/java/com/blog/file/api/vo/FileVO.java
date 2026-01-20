@@ -24,7 +24,7 @@ public class FileVO implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "文件ID")
-    private Long id;
+    private String id; // Long序列化为String，避免精度丢失
 
     @Schema(description = "存储键")
     private String fileKey;
