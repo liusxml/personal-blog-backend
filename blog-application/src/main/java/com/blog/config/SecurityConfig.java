@@ -155,8 +155,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login").permitAll()
 
                         // 文章相关接口 - 公开访问（只读）
-                        .requestMatchers("/api/v1/articles", "/api/v1/articles/*", "/api/v1/articles/*/related")
-                        .permitAll()
+                        //.requestMatchers("/api/v1/articles", "/api/v1/articles/*", "/api/v1/articles/*/related")
+                        //.permitAll()
 
                         // 评论查询接口 - 公开访问
                         .requestMatchers("/api/v1/comments/tree").permitAll()
