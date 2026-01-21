@@ -53,7 +53,7 @@ class RoleControllerTest extends BaseControllerTest {
     @WithMockUser(roles = "ADMIN")
     void should_get_role_success() throws Exception {
         RoleVO roleVO = new RoleVO();
-        roleVO.setId(1L);
+        roleVO.setId(String.valueOf(1L));
         roleVO.setRoleName("ROLE_ADMIN");
 
         when(roleService.getVoById(1L)).thenReturn(Optional.of(roleVO));
