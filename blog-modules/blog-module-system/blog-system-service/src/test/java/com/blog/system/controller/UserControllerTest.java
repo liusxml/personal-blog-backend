@@ -46,7 +46,7 @@ class UserControllerTest extends BaseControllerTest {
         mockSecurityContext(1L, "USER");
 
         UserVO userVO = new UserVO();
-        userVO.setId(1L);
+        userVO.setId(String.valueOf(1L));
         userVO.setUsername("testuser");
 
         when(userService.getVoById(1L)).thenReturn(Optional.of(userVO));
@@ -78,7 +78,7 @@ class UserControllerTest extends BaseControllerTest {
     @WithMockUser(roles = "ADMIN")
     void should_get_user_by_id_success_admin() throws Exception {
         UserVO userVO = new UserVO();
-        userVO.setId(2L);
+        userVO.setId(String.valueOf(2L));
         userVO.setUsername("other");
 
         when(userService.getVoById(2L)).thenReturn(Optional.of(userVO));

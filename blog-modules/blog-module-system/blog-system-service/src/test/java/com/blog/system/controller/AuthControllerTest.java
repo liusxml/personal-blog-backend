@@ -24,7 +24,7 @@ class AuthControllerTest extends BaseControllerTest {
         registerDTO.setNickname("testnick");
 
         UserVO userVO = new UserVO();
-        userVO.setId(1L);
+        userVO.setId(String.valueOf(1L));
         userVO.setUsername("testuser");
         userVO.setEmail("test@example.com");
 

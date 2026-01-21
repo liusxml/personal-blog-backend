@@ -118,7 +118,7 @@ class UserServiceImplTest {
         // Mock: 角色分配逻辑 (void方法，不做操作)
         // Mock: Converter 转换
         UserVO expectedVo = new UserVO();
-        expectedVo.setId(100L);
+        expectedVo.setId(String.valueOf(100L));
         expectedVo.setUsername("newuser");
         when(userConverter.entityToVo(any(UserEntity.class))).thenReturn(expectedVo);
 
@@ -203,7 +203,7 @@ class UserServiceImplTest {
 
         // Mock: Converter
         UserVO mockUserVO = new UserVO();
-        mockUserVO.setId(100L);
+        mockUserVO.setId(String.valueOf(100L));
         mockUserVO.setUsername("testuser");
         when(userConverter.entityToVo(mockUser)).thenReturn(mockUserVO);
 
