@@ -7,6 +7,7 @@ import com.blog.article.vo.CategoryVO;
 import com.blog.common.base.IBaseService;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * 分类服务接口
@@ -31,4 +32,19 @@ public interface ICategoryService extends IBaseService<ArticleCategoryEntity, Ca
      * @param newSortOrder 新排序权重
      */
     void moveCategory(Long id, Long newParentId, Integer newSortOrder);
+
+    /**
+     * 获取所有分类（扁平列表）
+     *
+     * @return 所有分类列表
+     */
+    List<CategoryVO> getAllCategories();
+
+    /**
+     * 根据 slug 获取分类
+     *
+     * @param slug 分类 slug
+     * @return 分类VO
+     */
+    Optional<CategoryVO> getBySlug(String slug);
 }

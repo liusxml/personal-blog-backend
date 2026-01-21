@@ -159,6 +159,56 @@ public class TagServiceImpl
         }
     }
 
+    @Override
+    public List<TagVO> listTags(String orderBy, Integer limit) {
+        log.debug("获取标签列表: orderBy={}, limit={}", orderBy, limit);
+
+        var queryWrapper = Wrappers.lambdaQuery(ArticleTagEntity.class);
+
+        // 排序
+        switch (StringUtils.defaultIfBlank(orderBy, "article_count")) {
+            case "create_time":
+                queryWrapper.orderByDesc(ArticleTagEntity::getCreateTime);
+                break;
+            case "name":
+                queryWrapper.orderByAsc(ArticleTagEntity::getName);
+                break;
+            case "article_count":
+            default:
+                queryWrapper.orderByDesc(ArticleTagEntity::getArticleCount);
+                break;
+        }
+
+        // 限制数量
+        if (limit != null && limit > 0) {
+            queryWrapper.last("LIMIT " + limit);
+        }
+
+        List<ArticleTagEntity> tags = tagMapper.selectList(queryWrapper);
+        return tags.stream()
+                .map(converter::entityToVo)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public java.util.Optional<TagVO> getBySlug(String slug) {
+        log.debug("根据 slug 获取标签: slug={}", slug);
+
+        if (StringUtils.isBlank(slug)) {
+            return java.util.Optional.empty();
+        }
+
+        ArticleTagEntity entity = tagMapper.selectOne(
+                Wrappers.lambdaQuery(ArticleTagEntity.class)
+                        .eq(ArticleTagEntity::getSlug, slug));
+
+        if (entity == null) {
+            return java.util.Optional.empty();
+        }
+
+        return java.util.Optional.of(converter.entityToVo(entity));
+    }
+
     /**
      * 生成URL友好的slug
      */

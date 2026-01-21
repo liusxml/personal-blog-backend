@@ -6,6 +6,7 @@ import com.blog.article.vo.TagVO;
 import com.blog.common.base.IBaseService;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * 标签服务接口
@@ -37,4 +38,21 @@ public interface ITagService extends IBaseService<ArticleTagEntity, TagVO, TagDT
      * @param tagId 标签ID
      */
     void updateArticleCount(Long tagId);
+
+    /**
+     * 获取标签列表
+     *
+     * @param orderBy 排序方式 (article_count, create_time, name)
+     * @param limit   限制数量（可选）
+     * @return 标签列表
+     */
+    List<TagVO> listTags(String orderBy, Integer limit);
+
+    /**
+     * 根据 slug 获取标签
+     *
+     * @param slug 标签 slug
+     * @return 标签VO
+     */
+    Optional<TagVO> getBySlug(String slug);
 }
