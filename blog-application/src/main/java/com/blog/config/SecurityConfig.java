@@ -75,7 +75,7 @@ public class SecurityConfig {
      * @param jwtAuthenticationFilter JWT 认证过滤器
      */
     public SecurityConfig(SecurityProperties securityProperties,
-                          JwtAuthenticationFilter jwtAuthenticationFilter) {
+            JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.securityProperties = securityProperties;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
@@ -155,11 +155,13 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login").permitAll()
 
                         // 文章相关接口 - 公开访问（只读）
-                        //.requestMatchers("/api/v1/articles", "/api/v1/articles/*", "/api/v1/articles/*/related")
-                        //.permitAll()
+                        .requestMatchers("/api/v1/articles", "/api/v1/articles/**").permitAll()
+
+                        // 分类和标签接口 - 公开访问（只读）
+                        .requestMatchers("/api/v1/categories/**", "/api/v1/tags/**").permitAll()
 
                         // 评论查询接口 - 公开访问
-                        .requestMatchers("/api/v1/comments/tree").permitAll()
+                        .requestMatchers("/api/v1/comments/tree", "/api/v1/comments").permitAll()
 
                         // 其他 /api/** 需要认证
                         .anyRequest().authenticated())

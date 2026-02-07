@@ -195,6 +195,38 @@ public class CategoryServiceImpl
                 .replaceAll("^-+|-+$", "");
     }
 
+    @Override
+    public List<CategoryVO> getAllCategories() {
+        log.debug("获取所有分类（扁平列表）");
+        List<ArticleCategoryEntity> categories = categoryMapper.selectList(
+                Wrappers.lambdaQuery(ArticleCategoryEntity.class)
+                        .orderByAsc(ArticleCategoryEntity::getSortOrder));
+
+        return categories.stream()
+                .map(converter::entityToVo)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public java.util.Optional<CategoryVO> getBySlug(String slug) {
+        log.debug("根据 slug 获取分类: slug={}", slug);
+
+        if (StringUtils.isBlank(slug)) {
+            return java.util.Optional.empty();
+        }
+
+        ArticleCategoryEntity entity = categoryMapper.selectOne(
+                Wrappers.lambdaQuery(ArticleCategoryEntity.class)
+                        .eq(ArticleCategoryEntity::getSlug, slug));
+
+        if (entity == null) {
+            return java.util.Optional.empty();
+        }
+
+        return java.util.Optional.of(converter.entityToVo(entity));
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean removeById(Serializable id) {
         // 检查是否有子分类
