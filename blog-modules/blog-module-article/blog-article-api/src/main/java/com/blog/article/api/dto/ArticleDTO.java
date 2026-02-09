@@ -51,6 +51,10 @@ public class ArticleDTO implements Serializable, Identifiable<Long> {
     @Schema(description = "文章正文（Markdown格式）", example = "# 引言\\n\\n本文将介绍...")
     private String content;
 
+    @Schema(description = "封面图URL")
+    @Size(max = 500, message = "封面图URL长度不能超过500字符")
+    private String coverImage;
+
     @Schema(description = "封面图文件ID（关联 file_file 表）")
     private Long coverImageId;
 
