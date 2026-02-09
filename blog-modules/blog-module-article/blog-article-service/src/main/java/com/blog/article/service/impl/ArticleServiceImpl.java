@@ -15,6 +15,7 @@ import com.blog.article.domain.state.ArticleStateFactory;
 import com.blog.article.infrastructure.converter.ArticleConverter;
 import com.blog.article.infrastructure.mapper.ArticleMapper;
 import com.blog.article.infrastructure.vector.VectorSearchService;
+import com.blog.article.service.BingWallpaperService;
 import com.blog.article.service.IArticleService;
 import com.blog.article.service.chain.ContentProcessor;
 import com.blog.article.service.chain.ProcessResult;
@@ -70,6 +71,7 @@ public class ArticleServiceImpl
     private final ApplicationEventPublisher eventPublisher;
     private final VectorSearchService vectorSearchService;
     private final ArticleMetrics articleMetrics;
+    private final BingWallpaperService bingWallpaperService;
 
     /**
      * 调用父类构造函数注入 converter
@@ -79,7 +81,8 @@ public class ArticleServiceImpl
             ContentProcessor contentProcessorChain,
             ApplicationEventPublisher eventPublisher,
             VectorSearchService vectorSearchService,
-            ArticleMetrics articleMetrics) {
+            ArticleMetrics articleMetrics,
+            BingWallpaperService bingWallpaperService) {
         super(converter);
         this.converter = converter;
         this.stateFactory = stateFactory;
@@ -87,6 +90,7 @@ public class ArticleServiceImpl
         this.eventPublisher = eventPublisher;
         this.vectorSearchService = vectorSearchService;
         this.articleMetrics = articleMetrics;
+        this.bingWallpaperService = bingWallpaperService;
     }
 
     /**
@@ -107,6 +111,15 @@ public class ArticleServiceImpl
     @Override
     protected void preSave(ArticleEntity entity) {
         log.info("创建文章: title={}", entity.getTitle());
+
+        // 如果没有封面图，从近7天壁纸中随机选择一张
+        if (StringUtils.isBlank(entity.getCoverImage())) {
+            String bingWallpaper = bingWallpaperService.getRandomWallpaper();
+            if (StringUtils.isNotBlank(bingWallpaper)) {
+                entity.setCoverImage(bingWallpaper);
+                log.info("文章无封面图，已自动填充必应壁纸: {}", bingWallpaper);
+            }
+        }
 
         // 设置默认状态为草稿
         if (entity.getStatus() == null) {
