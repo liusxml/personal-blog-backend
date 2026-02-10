@@ -24,7 +24,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- 核心框架 -->
         <spring-boot.version>3.5.7</spring-boot.version>
-        <spring-boot-admin.version>3.5.5</spring-boot-admin.version>
+        <spring-boot-admin.version>3.5.7</spring-boot-admin.version>
         <!-- 持久化与数据库 -->
         <mybatis-plus.version>3.5.14</mybatis-plus.version>
         <p6spy.version>3.9.1</p6spy.version>
