@@ -1,0 +1,56 @@
+# 工作流名称（在 GitHub Actions 页面显示的名称）
+name: Build and Push Backend Image
+
+# 触发条件：当代码被推送到 main 分支时，自动触发这个工作流
+on:
+  push:
+    branches: [ "main" ]
+
+# 工作流包含的任务（jobs）
+jobs:
+  build-and-push:
+    # 指定运行环境：使用 GitHub 提供的免费 Ubuntu 云服务器
+    runs-on: ubuntu-latest
+
+    # 任务的具体步骤，按顺序执行
+    steps:
+      # 步骤 1：把仓库代码克隆到云服务器
+      # 官方文档（Path context）推荐使用 actions/checkout@v5
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      # 步骤 2：登录到 Docker Hub
+      # username: 从 GitHub Variables（vars.*）读取，非敏感配置推荐用 vars 而非 secrets
+      # password: 从 GitHub Secrets 读取 Token（不会暴露在日志里）
+      # 登录步骤放在 Buildx 之前，是官方推荐的标准顺序
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # 步骤 3：安装 Docker Buildx（高级构建工具）
+      # Buildx 支持更好的多层缓存机制，是 docker/build-push-action 的依赖
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 步骤 4：构建镜像并推送到 Docker Hub
+      # docker/build-push-action 是 Docker 官方提供的核心动作
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          # context: 使用 Path context 模式（配合 actions/checkout 使用）
+          # 这样 .dockerignore 文件才能被正确处理
+          context: .
+          # push: true 表示构建完成后直接推送到 Docker Hub
+          push: true
+          # tags: 推送的镜像标签，同时打两个标签：
+          #   latest         → 始终指向最新构建，方便直接使用
+          #   sha-xxxxxxx    → 当前 commit 的唯一标识，方便回滚到特定版本
+          tags: |
+            ${{ vars.DOCKERHUB_USERNAME }}/personal-blog-backend:latest
+            ${{ vars.DOCKERHUB_USERNAME }}/personal-blog-backend:sha-${{ github.sha }}
+          # cache-from/cache-to: 启用 GitHub Actions 的构建缓存（GHA Cache）
+          # 第一次构建后，后续构建会复用缓存，显著加快速度（Maven 依赖不用重复下载）
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -50,7 +51,7 @@ public class WallpaperAdminController {
 
         String wallpaperUrl = bingWallpaperService.getRandomWallpaper();
 
-        if (org.apache.commons.lang3.StringUtils.isBlank(wallpaperUrl)) {
+        if (StringUtils.isBlank(wallpaperUrl)) {
             log.error("获取必应壁纸失败：返回URL为空");
             return Result.error(SystemErrorCode.SYSTEM_ERROR, "获取壁纸失败");
         }

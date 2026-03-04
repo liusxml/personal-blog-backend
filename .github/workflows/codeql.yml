@@ -20,7 +20,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # 关键第一步：设置项目所需的 Java 版本
       # CodeQL 需要使用与您项目相同的 JDK 版本来构建代码
