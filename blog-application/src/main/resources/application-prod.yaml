@@ -1,10 +1,34 @@
-# 生产环境配置
+# ==============================================================================
+#  生产环境配置 (Production Profile)
+#  覆盖 application.yaml 中的 dev 连接地址，指向 Docker Compose 服务名
+# ==============================================================================
 spring:
   config:
     activate:
       on-profile: prod
 
+  # 生产环境禁用热重载
+  devtools:
+    restart:
+      enabled: false
+
+  # 数据库：指向 Docker Compose 中的 mysql 服务名
+  datasource:
+    url: "jdbc:mysql://mysql:3306/blog_db?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false"
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  # Redis：指向 Docker Compose 中的 redis 服务名
+  data:
+    redis:
+      host: redis
+      port: 6379
+      password: ${REDIS_PASSWORD:}
+
 # MyBatis-Plus Auto DDL 配置
 mybatis-plus:
   auto-ddl:
     enabled: false  # 生产环境禁用自动DDL（安全考虑）
+
+# Spring Boot Admin：生产环境禁用客户端注册（可选）
+spring.boot.admin.client.enabled: false

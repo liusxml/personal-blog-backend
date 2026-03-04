@@ -1,0 +1,34 @@
+# Git
+.git
+.gitignore
+.github
+
+# IDE / Editor
+.idea
+*.iml
+*.iws
+*.ipr
+.vscode
+
+# macOS
+.DS_Store
+
+# Maven build output (will be built inside Docker)
+**/target/
+!**/target/*.jar
+
+# Test reports
+**/surefire-reports/
+**/failsafe-reports/
+
+# Logs
+logs/
+*.log
+
+# Documentation
+*.md
+docs/
+
+# Docker files (not needed inside the image)
+Dockerfile
+.dockerignore
