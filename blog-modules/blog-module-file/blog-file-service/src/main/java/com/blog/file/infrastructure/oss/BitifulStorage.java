@@ -247,7 +247,15 @@ public class BitifulStorage implements FileStorageStrategy {
     @Override
     public String generateDownloadUrl(String fileKey, int expireMinutes) {
         validateFileKey(fileKey);
-        validateExpireMinutes(expireMinutes);
+        // GET URL 允许更长的有效期（最长7天），与 PUT 上传 URL 的60分钟上限分开校验
+        if (expireMinutes < FileStorageConstants.MIN_PRESIGNED_URL_EXPIRY_MINUTES
+                || expireMinutes > FileStorageConstants.MAX_PRESIGNED_GET_URL_EXPIRY_MINUTES) {
+            throw new BusinessException(
+                    FileErrorCode.FILE_PRESIGNED_URL_FAILED,
+                    String.format("访问URL过期时间应在 %d-%d 分钟之间",
+                            FileStorageConstants.MIN_PRESIGNED_URL_EXPIRY_MINUTES,
+                            FileStorageConstants.MAX_PRESIGNED_GET_URL_EXPIRY_MINUTES));
+        }
 
         try {
             GetObjectRequest getObjectRequest = GetObjectRequest.builder()
