@@ -37,9 +37,15 @@ public final class FileStorageConstants {
      */
     public static final int MIN_PRESIGNED_URL_EXPIRY_MINUTES = 1;
     /**
-     * 最大预签名 URL 过期时间：60 分钟
+     * 最大预签名 PUT（上传）URL 过期时间：60 分钟
+     * <p>上传链接短有效期，防止滥用</p>
      */
     public static final int MAX_PRESIGNED_URL_EXPIRY_MINUTES = 60;
+    /**
+     * 最大预签名 GET（访问/下载）URL 过期时间：7 天（10080 分钟）
+     * <p>封面图、文章图片等需要较长访问有效期</p>
+     */
+    public static final int MAX_PRESIGNED_GET_URL_EXPIRY_MINUTES = 10080;
     /**
      * 上传文件路径前缀
      */
