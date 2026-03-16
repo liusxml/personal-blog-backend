@@ -95,6 +95,7 @@ spring:
           min-idle: 5                           # 最小空闲连接数（保持连接池预热）
           max-wait: 3000ms                      # 连接池阻塞最大等待时间
         shutdown-timeout: 100ms                 # 关闭超时
+        keepalive: true                         # TCP Keepalive：防止NAT/防火墙因空闲超时切断连接（日志每5分钟Reconnecting的根因）
 
 # ==============================================================================
 #  3. 持久层配置 (MyBatis-Plus)
