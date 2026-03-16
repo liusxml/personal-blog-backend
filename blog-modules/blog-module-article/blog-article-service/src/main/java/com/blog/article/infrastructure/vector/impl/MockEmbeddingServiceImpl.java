@@ -92,15 +92,16 @@ public class MockEmbeddingServiceImpl implements EmbeddingService {
             // 3. 生成向量
             float[] vector = generateEmbedding(text);
 
-            // 4. 转换为MySQL VECTOR格式
+            // 4. 转换为MySQL VECTOR格式字符串
             String vectorString = vectorToString(vector);
 
-            // 5. 更新到数据库
-            article.setEmbedding(vectorString);
-            articleMapper.updateById(article);
+            // 5. 通过专用方法写入 VECTOR 列
+            // 注意：不能用 updateById()，MyBatis-Plus 会把值当普通字符串写入，
+            // MySQL 9 的 VECTOR 列要求通过 STRING_TO_VECTOR() 函数转换。
+            articleMapper.updateEmbedding(articleId, vectorString);
 
-            log.info("文章向量生成并保存成功: articleId={}, 向量长度={}",
-                    articleId, vectorString.length());
+            log.info("文章向量生成并保存成功: articleId={}, 向量维度={}",
+                    articleId, vector.length);
 
         } catch (Exception e) {
             log.error("文章向量生成失败: articleId={}", articleId, e);

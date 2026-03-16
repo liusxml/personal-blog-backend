@@ -5,6 +5,7 @@ import com.blog.article.domain.entity.ArticleEntity;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
 
@@ -109,4 +110,19 @@ public interface ArticleMapper extends BaseMapper<ArticleEntity> {
     List<ArticleEntity> findLatestArticlesExcluding(
             @Param("excludeId") Long excludeId,
             @Param("limit") Integer limit);
+
+    /**
+     * 更新文章向量（使用 MySQL 9 STRING_TO_VECTOR 函数）
+     *
+     * <p>
+     * 注意：MyBatis-Plus 的 updateById() 会把 VECTOR 列当作普通字符串写入，
+     * 导致 "Value of type 'string' cannot be converted to 'vector' type" 错误。
+     * 必须使用此方法，通过 STRING_TO_VECTOR() 函数完成类型转换。
+     * </p>
+     *
+     * @param articleId    文章ID
+     * @param vectorString 向量字符串，格式 '[0.1, 0.2, ...]'
+     */
+    @Update("UPDATE art_article SET embedding = STRING_TO_VECTOR(#{vectorString}) WHERE id = #{articleId}")
+    void updateEmbedding(@Param("articleId") Long articleId, @Param("vectorString") String vectorString);
 }
