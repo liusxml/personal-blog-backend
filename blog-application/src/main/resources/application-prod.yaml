@@ -36,9 +36,10 @@ spring.boot.admin.client:
   url: http://monitor:9000
   username: ${ADMIN_SERVER_USERNAME:admin}
   password: ${ADMIN_SERVER_PASSWORD:admin}
-  # Docker 容器内 localhost 指向自身，必须用服务名告知 SBA Server 如何回连
+  # 三个 URL 均使用公网域名，SBA UI 图标可在浏览器中打开
+  # SBA Server 通过 DNS → Caddy 反向代理 → backend 仍可正常访问 actuator
   instance:
-    service-url: http://backend:8080
-    management-url: http://backend:8080/actuator
-    health-url: http://backend:8080/actuator/health
+    service-url: https://api.chonkybird.com/swagger-ui.html
+    management-url: https://api.chonkybird.com/actuator
+    health-url: https://api.chonkybird.com/actuator/health
 
