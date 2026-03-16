@@ -30,5 +30,10 @@ mybatis-plus:
   auto-ddl:
     enabled: false  # 生产环境禁用自动DDL（安全考虑）
 
-# Spring Boot Admin：生产环境禁用客户端注册（可选）
-spring.boot.admin.client.enabled: false
+# Spring Boot Admin：生产环境启用客户端注册，向监控中心上报
+spring.boot.admin.client:
+  enabled: true
+  url: http://monitor:9000
+  username: ${ADMIN_SERVER_USERNAME:admin}
+  password: ${ADMIN_SERVER_PASSWORD:admin}
+
