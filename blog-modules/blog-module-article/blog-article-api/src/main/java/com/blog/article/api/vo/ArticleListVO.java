@@ -35,6 +35,9 @@ public class ArticleListVO implements Serializable {
     @Schema(description = "封面图URL")
     private String coverImage;
 
+    @Schema(description = "封面图文件ID（用于前端刷新过期的预签名URL）")
+    private Long coverImageId;
+
     @Schema(description = "作者昵称")
     private String authorName;
 
