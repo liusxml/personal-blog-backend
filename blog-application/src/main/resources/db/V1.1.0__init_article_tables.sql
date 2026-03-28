@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS `art_article`
     -- ========== 向量搜索（⭐ MySQL 9.4 新特性）==========
     `embedding` VECTOR
 (
-    1536
+    1024
 ) COMMENT '文章内容向量（用于语义搜索和推荐）',
 
     -- ========== 公共字段（遵循项目规范）==========

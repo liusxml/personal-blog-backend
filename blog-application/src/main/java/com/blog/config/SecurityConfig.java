@@ -151,25 +151,10 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // 认证相关接口 - 公开访问
-                        .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login").permitAll()
-
-                        // 文章相关接口 - 公开访问（只读）
-                        .requestMatchers("/api/v1/articles", "/api/v1/articles/**").permitAll()
-
-                        // 分类和标签接口 - 公开访问（只读）
-                        .requestMatchers("/api/v1/categories/**", "/api/v1/tags/**").permitAll()
-
-                        // 评论查询接口 - 公开访问
-                        .requestMatchers("/api/v1/comments/tree", "/api/v1/comments").permitAll()
-
-                        // 文件访问URL接口 - 公开访问（前端刷新过期预签名URL用）
-                        // 只放行 access-url，文件上传/删除等管理接口仍需鉴权
-                        .requestMatchers("/api/v1/files/*/access-url").permitAll()
-
-                        // 其他 /api/** 需要认证
+                        // 公开路径已在 permitAllChain (@Order 1) 通过 yaml permit-all-urls 统一配置
+                        // jwtChain 只负责：/api/** 中未被白名单命中的请求，一律要求认证
                         .anyRequest().authenticated())
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class); // 添加 JWT 过滤器
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 

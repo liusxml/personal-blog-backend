@@ -26,6 +26,18 @@
             <artifactId>blog-article-api</artifactId>
         </dependency>
 
+        <!-- AI 接口层：用于获取 TextEmbeddingService 接口（向量化文章内容）-->
+        <dependency>
+            <groupId>com.blog</groupId>
+            <artifactId>blog-ai-api</artifactId>
+        </dependency>
+
+        <!-- LangChain4j Core：EmbeddingStore<TextSegment> 接口（compile-time only）-->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-core</artifactId>
+        </dependency>
+
         <!-- 依赖公共模块，获取 BaseService、工具类等基础设施 -->
         <dependency>
             <groupId>com.blog</groupId>

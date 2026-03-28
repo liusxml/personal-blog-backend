@@ -124,11 +124,27 @@ app:
   security:
     # 鉴权白名单 (无需登录即可访问)
     permit-all-urls:
+      # API 文档 & 监控
       - "/v3/api-docs/**"
       - "/swagger-ui/**"
       - "/swagger-ui.html"
       - "/actuator/**"
-      - "/api/v1/files/**"
+      # 认证
+      - "/api/v1/auth/register"
+      - "/api/v1/auth/login"
+      # 文章（只读，公开）
+      - "/api/v1/articles"
+      - "/api/v1/articles/**"
+      # 分类 & 标签（只读，公开）
+      - "/api/v1/categories/**"
+      - "/api/v1/tags/**"
+      # 评论（只读，公开）
+      - "/api/v1/comments/tree"
+      - "/api/v1/comments"
+      # 文件预签名 URL（前端跨域刷新用）
+      - "/api/v1/files/*/access-url"
+      # AI 问答（公开，无需登录）
+      - "/api/v1/ai/**"
 
     # JWT 认证配置
     jwt-secret: ${JWT_SECRET:dev-blog-jwt-secret-key-minimum-256-bits-change-in-production-environment}
@@ -251,3 +267,38 @@ springdoc:
     operations-sorter: alpha            # 接口方法排序规则 (alpha=按字母顺序)
   packages-to-scan: com.blog            # 扫描包路径，避免扫描到框架自身的接口
   show-actuator: true                   # 是否在 Swagger 中显示 Actuator 端点
+
+# ==============================================================================
+#  10. LangChain4j / DashScope AI 配置
+# ==============================================================================
+langchain4j:
+  community:
+    dashscope:
+      # ── 对话模型（RAG 生成回答） ─────────────────────────────────────────
+      chat-model:
+        # API Key 通过环境变量注入，切勿硬编码；启动前：export DASHSCOPE_API_KEY=sk-xxx
+        api-key: ${DASHSCOPE_API_KEY}
+        # 使用默认公共端点 dashscope.aliyuncs.com（Workspace 自定义子域名有 SSL 证书校验问题）
+        model-name: qwen-plus            # 通义千问 Plus
+        temperature: 0.7
+        max-tokens: 1024
+
+      # ── 向量模型（文章 / 问题向量化） ────────────────────────────────────
+      embedding-model:
+        api-key: ${DASHSCOPE_API_KEY}
+        # 使用默认公共端点（Workspace 自定义子域名有 SSL 证书校验问题）
+        model-name: text-embedding-v4    # 支持: 2048/1536/1024(默认)/768/512/256/128/64
+        dimension: 1024                  # 1536 LangChain4j 库校验暂不支持，用默认值 1024
+
+# ==============================================================================
+#  11. Qdrant Cloud 向量数据库配置
+# ==============================================================================
+qdrant:
+  # gRPC 连接（LangChain4j QdrantEmbeddingStore 使用 gRPC 6334，REST API 使用 6333）
+  host: ${QDRANT_HOST:7ff7ee79-22bd-4767-81d8-eab241031f89.us-east-1-1.aws.cloud.qdrant.io}
+  port: ${QDRANT_PORT:6334}
+  # API Key 必填，从 Qdrant Cloud 控制台获取（Cluster → Data Access Control → API Keys）
+  # 生产环境通过环境变量注入: export QDRANT_API_KEY=your-qdrant-api-key
+  api-key: ${QDRANT_API_KEY}
+  collection-name: articles             # Qdrant Collection 名称（与文章向量对应）
+  vector-dimension: 1024                # 向量维度，与 text-embedding-v4 的 dimension 保持一致

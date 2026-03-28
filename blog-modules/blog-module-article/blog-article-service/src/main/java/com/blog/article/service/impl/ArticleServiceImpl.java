@@ -3,6 +3,7 @@ package com.blog.article.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.blog.ai.api.service.TextEmbeddingService;
 import com.blog.article.api.dto.ArticleDTO;
 import com.blog.article.api.dto.ArticleQueryDTO;
 import com.blog.article.api.enums.ArticleStatus;
@@ -14,7 +15,7 @@ import com.blog.article.domain.state.ArticleState;
 import com.blog.article.domain.state.ArticleStateFactory;
 import com.blog.article.infrastructure.converter.ArticleConverter;
 import com.blog.article.infrastructure.mapper.ArticleMapper;
-import com.blog.article.infrastructure.vector.VectorSearchService;
+import com.blog.article.infrastructure.vector.ArticleEmbeddingHandler;
 import com.blog.article.service.BingWallpaperService;
 import com.blog.article.service.IArticleService;
 import com.blog.article.service.chain.ContentProcessor;
@@ -25,13 +26,21 @@ import com.blog.common.exception.BusinessException;
 import com.blog.common.exception.SystemErrorCode;
 import com.blog.common.model.PageResult;
 import com.blog.common.utils.SecurityUtils;
+import dev.langchain4j.data.embedding.Embedding;
+import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.store.embedding.EmbeddingMatch;
+import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
+import dev.langchain4j.store.embedding.EmbeddingStore;
+import dev.langchain4j.store.embedding.filter.MetadataFilterBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * 文章服务实现
@@ -69,9 +78,13 @@ public class ArticleServiceImpl
     private final ArticleStateFactory stateFactory;
     private final ContentProcessor contentProcessorChain;
     private final ApplicationEventPublisher eventPublisher;
-    private final VectorSearchService vectorSearchService;
+    private final ArticleMapper articleMapper;
     private final ArticleMetrics articleMetrics;
     private final BingWallpaperService bingWallpaperService;
+    /** Qdrant 相关文章语义搜索（Rule 5.3：构造注入） */
+    private final TextEmbeddingService embeddingService;
+    private final EmbeddingStore<TextSegment> embeddingStore;
+    private final ArticleEmbeddingHandler embeddingHandler;
 
     /**
      * 调用父类构造函数注入 converter
@@ -80,17 +93,23 @@ public class ArticleServiceImpl
             ArticleStateFactory stateFactory,
             ContentProcessor contentProcessorChain,
             ApplicationEventPublisher eventPublisher,
-            VectorSearchService vectorSearchService,
+            ArticleMapper articleMapper,
             ArticleMetrics articleMetrics,
-            BingWallpaperService bingWallpaperService) {
+            BingWallpaperService bingWallpaperService,
+            TextEmbeddingService embeddingService,
+            EmbeddingStore<TextSegment> embeddingStore,
+            ArticleEmbeddingHandler embeddingHandler) {
         super(converter);
         this.converter = converter;
         this.stateFactory = stateFactory;
         this.contentProcessorChain = contentProcessorChain;
         this.eventPublisher = eventPublisher;
-        this.vectorSearchService = vectorSearchService;
+        this.articleMapper = articleMapper;
         this.articleMetrics = articleMetrics;
         this.bingWallpaperService = bingWallpaperService;
+        this.embeddingService = embeddingService;
+        this.embeddingStore = embeddingStore;
+        this.embeddingHandler = embeddingHandler;
     }
 
     /**
@@ -178,6 +197,42 @@ public class ArticleServiceImpl
     @Override
     protected void preUpdate(ArticleEntity entity) {
         log.info("更新文章: id={}, title={}", entity.getId(), entity.getTitle());
+    }
+
+    /**
+     * 重写更新方法：保存成功后异步刷新 embedding
+     *
+     * <p>
+     * 不在 {@code preUpdate} 中触发，因为 preUpdate 在 DB 保存之前执行，
+     * 而 {@code generateAndSaveAsync} 是 @Async 异步从 DB 重新加载文章，
+     * 可能读到旧数据。在 super.updateByDto() 完成后触发才安全。
+     * </p>
+     */
+    @Override
+    public boolean updateByDto(ArticleDTO dto) {
+        boolean success = super.updateByDto(dto);
+        if (success && dto.getId() != null) {
+            // 文章内容变更后异步刷新向量（Qdrant + MySQL 双写）
+            embeddingHandler.generateAndSaveAsync(Long.parseLong(dto.getId().toString()));
+        }
+        return success;
+    }
+
+    /**
+     * 重写删除方法：逻辑删除成功后异步清理 Qdrant 向量
+     *
+     * <p>
+     * 防止已删除文章的向量作为"幽灵数据"留在 Qdrant 中，
+     * 影响相关文章推荐和 RAG 问答结果。
+     * </p>
+     */
+    @Override
+    public boolean removeById(Serializable id) {
+        boolean success = super.removeById(id);
+        if (success) {
+            embeddingHandler.removeAsync(Long.parseLong(id.toString()));
+        }
+        return success;
     }
 
     /**
@@ -306,8 +361,61 @@ public class ArticleServiceImpl
     public List<ArticleListVO> getRelatedArticles(Long articleId, Integer limit) {
         log.debug("获取相关文章: articleId={}, limit={}", articleId, limit);
 
-        // 调用向量搜索服务
-        return vectorSearchService.findRelatedArticles(articleId, limit);
+        try {
+            ArticleEntity article = articleMapper.selectById(articleId);
+            if (article == null) {
+                return List.of();
+            }
+
+            // Qdrant 语义相似度搜索（标题不为空时尝试，避免空文本 embed）
+            if (StringUtils.isNotBlank(article.getTitle())) {
+                try {
+                    String text = buildEmbeddingText(article);
+                    float[] vector = embeddingService.embed(text);
+                    // EmbeddingSearchRequest.filter() 在 Qdrant 服务端排除自身，比代码层过滤更高效
+                    EmbeddingSearchRequest req = EmbeddingSearchRequest.builder()
+                            .queryEmbedding(Embedding.from(vector))
+                            .maxResults(limit)
+                            .minScore(0.5)
+                            .filter(MetadataFilterBuilder.metadataKey("articleId")
+                                    .isNotEqualTo(articleId.toString()))
+                            .build();
+                    List<EmbeddingMatch<TextSegment>> matches = embeddingStore.search(req).matches();
+                    if (!matches.isEmpty()) {
+                        List<Long> ids = matches.stream()
+                                .map(m -> Long.parseLong(m.embedded().metadata().getString("articleId")))
+                                .collect(Collectors.toList());
+                        // 用 LambdaQueryWrapper in()，替代 deprecated 的 selectBatchIds
+                        List<ArticleEntity> related = articleMapper.selectList(
+                                new LambdaQueryWrapper<ArticleEntity>().in(ArticleEntity::getId, ids));
+                        if (!related.isEmpty()) {
+                            return related.stream().map(converter::entityToListVo).toList();
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("Qdrant search failed, fallback to category: articleId={}, reason={}",
+                            articleId, e.getMessage());
+                }
+            }
+
+            // 降级策略：同分类
+            if (article.getCategoryId() != null) {
+                List<ArticleEntity> byCat = articleMapper.findByCategoryExcluding(
+                        article.getCategoryId(), articleId, limit);
+                if (!byCat.isEmpty()) {
+                    return byCat.stream().map(converter::entityToListVo).toList();
+                }
+            }
+
+            // 最终降级：最新文章
+            return articleMapper.findLatestArticlesExcluding(articleId, limit)
+                    .stream().map(converter::entityToListVo).toList();
+
+        } catch (Exception e) {
+            log.error("获取相关文章失败: articleId={}", articleId, e);
+            return articleMapper.findLatestArticlesExcluding(articleId, limit)
+                    .stream().map(converter::entityToListVo).toList();
+        }
     }
 
     /**
@@ -546,4 +654,36 @@ public class ArticleServiceImpl
                 new LambdaQueryWrapper<ArticleEntity>()
                         .eq(ArticleEntity::getStatus, ArticleStatus.PUBLISHED.getCode()));
     }
+
+    /**
+     * 构建用于向量化的文章文本
+     *
+     * <p>
+     * 与 {@code ArticleEmbeddingHandler.buildEmbeddingText} 保持一致：
+     * <ul>
+     *   <li>标题 ×3（加权）</li>
+     *   <li>摘要</li>
+     *   <li>正文前 500 字</li>
+     * </ul>
+     * </p>
+     *
+     * @param article 文章实体
+     * @return 拼接后的文本，用于调用 {@link TextEmbeddingService#embed}
+     */
+    private String buildEmbeddingText(ArticleEntity article) {
+        StringBuilder sb = new StringBuilder();
+        if (StringUtils.isNotBlank(article.getTitle())) {
+            // 标题重复 3 次以加大语义权重（与 ArticleEmbeddingHandler 保持一致）
+            String title = article.getTitle() + " ";
+            sb.append(title).append(title).append(title);
+        }
+        if (StringUtils.isNotBlank(article.getSummary())) {
+            sb.append(article.getSummary()).append(" ");
+        }
+        if (StringUtils.isNotBlank(article.getContent())) {
+            sb.append(StringUtils.left(article.getContent(), 500));
+        }
+        return sb.toString().trim();
+    }
 }
+
