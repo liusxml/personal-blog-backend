@@ -17,11 +17,11 @@ import java.util.List;
  * </p>
  *
  * <p>
- * 自定义查询方法可在对应的 mapper.xml 中编写，例如：
+ * 自定义查询方法说明：
  * </p>
  * <ul>
- * <li>向量相似度查询（COSINE_DISTANCE）</li>
- * <li>复杂的多表关联查询</li>
+ * <li>相关文章推荐已迁移至 Qdrant Cloud 语义搜索（见 ArticleServiceImpl.getRelatedArticles）</li>
+ * <li>降级策略（同分类、最新文章）下线 SQL 不变</li>
  * </ul>
  *
  * @author liusxml
@@ -34,35 +34,6 @@ public interface ArticleMapper extends BaseMapper<ArticleEntity> {
 
     // BaseMapper 已提供基础 CRUD 方法
     // 可在此扩展自定义查询
-
-    /**
-     * 基于向量相似度查找相关文章
-     *
-     * <p>
-     * 使用 MySQL 9.4 的 COSINE_DISTANCE 函数计算向量相似度。
-     * </p>
-     *
-     * @param queryVector 查询向量（VECTOR格式字符串）
-     * @param excludeId   排除的文章ID（当前文章）
-     * @param limit       返回数量
-     * @return 相关文章列表（按相似度降序）
-     */
-    @Select("""
-                SELECT id, title, summary, cover_image as coverImage,
-                       author_id as authorId, category_id as categoryId,
-                       publish_time as publishTime, is_top as isTop
-                FROM art_article
-                WHERE is_deleted = 0
-                  AND status = 2
-                  AND id != #{excludeId}
-                  AND embedding IS NOT NULL
-                ORDER BY COSINE_DISTANCE(embedding, #{queryVector}) ASC
-                LIMIT #{limit}
-            """)
-    List<ArticleEntity> findRelatedArticlesByVector(
-            @Param("queryVector") String queryVector,
-            @Param("excludeId") Long excludeId,
-            @Param("limit") Integer limit);
 
     /**
      * 查找同分类文章（降级策略1）

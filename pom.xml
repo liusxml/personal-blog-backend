@@ -23,16 +23,16 @@
         <java.version>21</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- 核心框架 -->
-        <spring-boot.version>3.5.7</spring-boot.version>
+        <spring-boot.version>3.5.12</spring-boot.version>
         <spring-boot-admin.version>3.5.5</spring-boot-admin.version>
         <!-- 持久化与数据库 -->
         <mybatis-plus.version>3.5.14</mybatis-plus.version>
         <p6spy.version>3.9.1</p6spy.version>
-        <mysql-connector.version>9.4.0</mysql-connector.version> <!-- 新增: 数据库驱动 -->
+        <mysql-connector.version>9.6.0</mysql-connector.version> <!-- 新增: 数据库驱动 -->
         <!-- 安全框架 -->
         <jjwt.version>0.13.0</jjwt.version> <!-- 新增: JWT Token 处理库 -->
         <!-- API 文档 -->
-        <springdoc.version>2.8.14</springdoc.version>
+        <springdoc.version>2.8.16</springdoc.version>
         <!-- 缓存 -->
         <caffeine.version>3.2.2</caffeine.version>
         <!-- 开发工具 (注解处理器等) -->
@@ -53,6 +53,11 @@
         <!-- 监控与指标 -->
         <micrometer.version>1.16.0</micrometer.version>
         <logstash.logback.encoder.version>9.0</logstash.logback.encoder.version>
+        <!-- AI 框架 -->
+        <langchain4j.version>1.12.2</langchain4j.version>
+        <langchain4j-community.version>1.12.2-beta22</langchain4j-community.version>
+        <!-- Ops Agent: SSH 客户端 -->
+        <sshd.version>2.17.1</sshd.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -332,6 +337,39 @@
                 <groupId>com.blog</groupId>
                 <artifactId>blog-file-service</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+            <!-- AI 模块 -->
+            <dependency>
+                <groupId>com.blog</groupId>
+                <artifactId>blog-ai-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.blog</groupId>
+                <artifactId>blog-ai-service</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <!-- LangChain4j BOM：统一管理核心模块版本 -->
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j-bom</artifactId>
+                <version>${langchain4j.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- LangChain4j Community BOM：管理社区模块（含 dashscope）版本 -->
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j-community-bom</artifactId>
+                <version>${langchain4j-community.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- Apache MINA SSHD：Ops Agent SSH 远程遥控客户端 -->
+            <dependency>
+                <groupId>org.apache.sshd</groupId>
+                <artifactId>sshd-core</artifactId>
+                <version>${sshd.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

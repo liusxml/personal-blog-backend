@@ -4,6 +4,7 @@ import com.blog.article.api.dto.ArticleDTO;
 import com.blog.article.api.dto.ArticleQueryDTO;
 import com.blog.article.api.vo.ArticleDetailVO;
 import com.blog.article.api.vo.ArticleListVO;
+import com.blog.article.infrastructure.vector.ArticleEmbeddingHandler;
 import com.blog.article.service.impl.ArticleServiceImpl;
 import com.blog.common.exception.SystemErrorCode;
 import com.blog.common.model.PageResult;
@@ -63,6 +64,7 @@ import java.util.Optional;
 public class ArticleAdminController {
 
     private final ArticleServiceImpl articleService;
+    private final ArticleEmbeddingHandler embeddingHandler;
 
     /**
      * 分页查询文章列表（管理端）
@@ -279,5 +281,24 @@ public class ArticleAdminController {
 
         return vo.map(Result::success)
                 .orElseGet(() -> Result.error(SystemErrorCode.NOT_FOUND, "文章不存在"));
+    }
+
+    /**
+     * 批量重建所有已发布文章的 Embedding
+     *
+     * <p>
+     * 适用于迁移场景（如 MySQL → Qdrant），同步逐篇处理。
+     * 需要管理员权限，不常用。
+     * </p>
+     *
+     * @return 成功重建的文章数
+     */
+    @PostMapping("/rebuild-embeddings")
+    @Operation(summary = "批量重建文章向量", description = "重建所有已发布文章的 Qdrant 向量（迁移用）")
+    public Result<Integer> rebuildEmbeddings() {
+        log.info("开始批量重建文章向量");
+        int count = embeddingHandler.rebuildAll();
+        log.info("批量重建完成: 成功 {} 篇", count);
+        return Result.success(count);
     }
 }

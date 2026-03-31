@@ -1,7 +1,7 @@
 package com.blog.article.service.event;
 
 import com.blog.article.domain.event.ArticlePublishedEvent;
-import com.blog.article.infrastructure.vector.EmbeddingService;
+import com.blog.article.infrastructure.vector.ArticleEmbeddingHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -32,7 +32,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class ArticleEventListener {
 
-    private final EmbeddingService embeddingService;
+    private final ArticleEmbeddingHandler embeddingHandler;
     // 待实现: CacheManager, ArticleStatsService, NotificationService
 
     /**
@@ -50,7 +50,6 @@ public class ArticleEventListener {
      *
      * @param event 发布事件
      */
-    @Async
     @EventListener
     public void handleArticlePublished(ArticlePublishedEvent event) {
         log.info("处理文章发布事件: articleId={}, title={}", event.getArticleId(), event.getTitle());
@@ -96,8 +95,7 @@ public class ArticleEventListener {
      */
     private void generateEmbedding(ArticlePublishedEvent event) {
         log.debug("开始生成文章向量: articleId={}", event.getArticleId());
-        // 异步生成并保存向量
-        embeddingService.generateAndSaveAsync(event.getArticleId());
+        embeddingHandler.generateAndSaveAsync(event.getArticleId());
     }
 
     /**

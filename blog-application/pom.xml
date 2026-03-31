@@ -252,6 +252,12 @@
             <groupId>com.blog</groupId>
             <artifactId>blog-file-service</artifactId>
         </dependency>
+
+        <!-- AI 模块：提供 Embedding、RAG、Chat 服务 -->
+        <dependency>
+            <groupId>com.blog</groupId>
+            <artifactId>blog-ai-service</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <resources>

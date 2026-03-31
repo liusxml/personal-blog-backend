@@ -21,6 +21,7 @@
         <module>blog-module-article</module>
         <module>blog-module-comment</module>
         <module>blog-module-file</module>
+        <module>blog-module-ai</module>
     </modules>
 
     <!-- 这是一个纯聚合模块，不应包含任何 <dependencies> 或 <properties> -->
