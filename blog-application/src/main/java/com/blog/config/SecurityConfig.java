@@ -151,6 +151,8 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // 允许 ASYNC 类型的请求（防止 SseEmitter 完成时发生 Access Denied 导致截断报错）
+                        .dispatcherTypeMatchers(jakarta.servlet.DispatcherType.ASYNC).permitAll()
                         // 公开路径已在 permitAllChain (@Order 1) 通过 yaml permit-all-urls 统一配置
                         // jwtChain 只负责：/api/** 中未被白名单命中的请求，一律要求认证
                         .anyRequest().authenticated())
@@ -181,7 +183,10 @@ public class SecurityConfig {
     public SecurityFilterChain defaultChain(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
-                .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+                .authorizeHttpRequests(auth -> auth
+                        // 允许 ASYNC
+                        .dispatcherTypeMatchers(jakarta.servlet.DispatcherType.ASYNC).permitAll()
+                        .anyRequest().authenticated())
                 .formLogin(form -> form.defaultSuccessUrl("/swagger-ui.html", true)) // 启用默认表单登录并设置跳转
                 .httpBasic(Customizer.withDefaults());
         return http.build();

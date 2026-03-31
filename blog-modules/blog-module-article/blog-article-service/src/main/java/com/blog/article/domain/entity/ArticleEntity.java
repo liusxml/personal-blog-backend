@@ -159,7 +159,7 @@ public class ArticleEntity {
      * 注意：MyBatis-Plus 会将其映射为 String 类型
      * </p>
      */
-    @TableField(typeHandler = org.apache.ibatis.type.StringTypeHandler.class)
+    @TableField(select = false)
     private String embedding;
 
     // ========== 公共字段（必须包含）==========

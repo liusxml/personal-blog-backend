@@ -145,6 +145,8 @@ app:
       - "/api/v1/files/*/access-url"
       # AI 问答（公开，无需登录）
       - "/api/v1/ai/**"
+      # GitHub Webhook（公开，安全由 HMAC-SHA256 验签保障，无 JWT）
+      - "/api/v1/webhooks/**"
 
     # JWT 认证配置
     jwt-secret: ${JWT_SECRET:dev-blog-jwt-secret-key-minimum-256-bits-change-in-production-environment}
@@ -283,6 +285,13 @@ langchain4j:
         temperature: 0.7
         max-tokens: 1024
 
+      # ── 流式对话模型（Ops 终端流式输出） ──────────────────────────────────
+      streaming-chat-model:
+        api-key: ${DASHSCOPE_API_KEY}
+        model-name: qwen-plus            # 保持与 chat-model 相同的模型
+        temperature: 0.7
+        max-tokens: 1024
+
       # ── 向量模型（文章 / 问题向量化） ────────────────────────────────────
       embedding-model:
         api-key: ${DASHSCOPE_API_KEY}
@@ -302,3 +311,24 @@ qdrant:
   api-key: ${QDRANT_API_KEY}
   collection-name: articles             # Qdrant Collection 名称（与文章向量对应）
   vector-dimension: 1024                # 向量维度，与 text-embedding-v4 的 dimension 保持一致
+
+# ==============================================================================
+#  12. Ops Agent — SSH 远程运维配置
+# ==============================================================================
+ops:
+  ssh:
+    # 目标 VPS 地址（生产环境通过环境变量注入，本地开发可直接填写或使用默认值）
+    host: ${OPS_SSH_HOST:107.175.36.50}
+    # 专用最小权限用户（非 root），已配置 sudo docker NOPASSWD
+    user: ${OPS_SSH_USER:blog-ops}
+    # 私钥文件路径：
+    #   - 本地开发：直接读取 ~/.ssh/id_ed25519
+    #   - Docker 容器内：挂载宿主机私钥（compose.yml: - ~/.ssh/id_ed25519:/app/ssh/id_ed25519:ro）
+    private-key-path: ${OPS_SSH_KEY_PATH:${user.home}/.ssh/id_ed25519}
+    # 远端 compose.yml 所在目录（deploy 脚本在此执行）
+    deploy-dir: ${OPS_DEPLOY_DIR:/opt/personal-blog-deploy/personal-blog}
+    # SSH 连接超时（秒）
+    connect-timeout-seconds: ${OPS_SSH_CONNECT_TIMEOUT:10}
+  webhook-secret: ${OPS_WEBHOOK_SECRET:}
+  # ↑ GitHub Webhook Secret（与仓库 Settings > Webhooks > Secret 中配置的值一致）
+  # 本地开发可留空（自动跳过验签），生产环境必须设置：export OPS_WEBHOOK_SECRET=your-secret

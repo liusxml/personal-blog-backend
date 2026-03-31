@@ -22,8 +22,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
  */
 public interface TextEmbeddingService {
 
-    /** 向量维度，与 MySQL VECTOR(1536) 字段保持一致 */
-    int VECTOR_DIMENSION = 1536;
+    /** 向量维度，与 MySQL VECTOR(1024) 字段保持一致 */
+    int VECTOR_DIMENSION = 1024;
 
     /**
      * 将文本转换为向量

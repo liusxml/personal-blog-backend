@@ -2,6 +2,7 @@ package com.blog.ai.config;
 
 import io.qdrant.client.QdrantClient;
 import io.qdrant.client.grpc.Collections.Distance;
+import io.qdrant.client.grpc.Collections.PayloadSchemaType;
 import io.qdrant.client.grpc.Collections.VectorParams;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -61,24 +62,57 @@ public class QdrantCollectionInitializer {
             boolean exists = qdrantClient.collectionExistsAsync(collectionName).get();
             if (exists) {
                 log.info("Qdrant collection '{}' already exists, skip creation", collectionName);
-                return;
+            } else {
+                log.info("Qdrant collection '{}' not found, creating (dim={}, distance=Cosine)...",
+                        collectionName, vectorDimension);
+                qdrantClient.createCollectionAsync(
+                        collectionName,
+                        VectorParams.newBuilder()
+                                .setDistance(Distance.Cosine)
+                                .setSize(vectorDimension)
+                                .build()
+                ).get();
+                log.info("Qdrant collection '{}' created successfully", collectionName);
             }
 
-            log.info("Qdrant collection '{}' not found, creating (dim={}, distance=Cosine)...",
-                    collectionName, vectorDimension);
-            qdrantClient.createCollectionAsync(
-                    collectionName,
-                    VectorParams.newBuilder()
-                            .setDistance(Distance.Cosine)
-                            .setSize(vectorDimension)
-                            .build()
-            ).get();
-            log.info("Qdrant collection '{}' created successfully", collectionName);
+            // 无论 Collection 是新建还是已存在，都确保 articleId 有 Payload Index
+            // Qdrant Filter 按 payload 字段过滤时（如删除文章向量），必须有对应的索引
+            ensurePayloadIndex();
 
         } catch (Exception e) {
             // 不阻断启动，仅记录日志。如果 Collection 不存在，后续 embed/search 操作会失败并记录错误
             log.error("Failed to initialize Qdrant collection '{}': {}",
                     collectionName, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 确保 articleId 字段存在 Payload Index
+     *
+     * <p>
+     * Qdrant 要求：使用 Filter 按某个 payload 字段过滤时，该字段必须有索引。
+     * 否则会报 "Index required but not found" 错误。
+     * </p>
+     *
+     * <p>
+     * 幂等操作：如果索引已存在，Qdrant 会返回成功（不会报错）。
+     * </p>
+     */
+    private void ensurePayloadIndex() {
+        try {
+            qdrantClient.createPayloadIndexAsync(
+                    collectionName,
+                    "articleId",
+                    PayloadSchemaType.Keyword,  // 字符串类型用 Keyword
+                    null,                       // indexParams（使用默认值）
+                    null,                       // wait（使用默认 true）
+                    null,                       // ordering（使用默认值）
+                    null                        // timeout（使用默认值）
+            ).get();
+            log.info("Qdrant payload index ensured for field 'articleId' in collection '{}'", collectionName);
+        } catch (Exception e) {
+            // 索引可能已存在（幂等操作），仅 warn 不影响启动
+            log.warn("Failed to ensure payload index for 'articleId': {}", e.getMessage());
         }
     }
 }
