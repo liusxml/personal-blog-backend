@@ -43,6 +43,13 @@
             <artifactId>langchain4j-qdrant</artifactId>
         </dependency>
 
+        <!-- LangChain4j Spring Boot Starter：提供 AiServices、TokenStream、MessageWindowChatMemory 等核心类 -->
+        <!-- 版本由根 pom 的 langchain4j-bom 统一管理，无需写版本号 -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-spring-boot-starter</artifactId>
+        </dependency>
+
         <!-- 工具类 -->
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -52,6 +59,29 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
+        </dependency>
+
+        <!-- ── Ops Agent: SSH 远程遥控 ───────────────────────────────────────── -->
+        <!-- Apache MINA SSHD：工业级 Java SSH 客户端，支持 ED25519 密钥及流式 OutputStream -->
+        <!-- 版本由根 pom 的 dependencyManagement 统一管理，无需写版本号 -->
+        <dependency>
+            <groupId>org.apache.sshd</groupId>
+            <artifactId>sshd-core</artifactId>
+        </dependency>
+
+        <!-- Bouncycastle：为 Apache MINA SSHD 提供 Ed25519 密钥类型支持 -->
+        <!-- sshd-core 本身不内置 Ed25519 实现，必须引入此依赖 -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk18on</artifactId>
+            <version>1.78.1</version>
+        </dependency>
+
+        <!-- Apache Commons Codec：提供 HmacUtils，用于 GitHub Webhook HMAC-SHA256 验签 -->
+        <!-- 版本由 Spring Boot BOM 统一管理，无需写版本号 -->
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
         </dependency>
 
         <!-- ── 测试 ─────────────────────────────────────────────────────────── -->
