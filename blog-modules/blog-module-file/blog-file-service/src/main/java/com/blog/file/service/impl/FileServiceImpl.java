@@ -8,11 +8,11 @@ import com.blog.file.api.enums.FileErrorCode;
 import com.blog.file.api.service.IFileService;
 import com.blog.file.api.vo.FileVO;
 import com.blog.file.api.vo.PreSignedUploadVO;
-import com.blog.file.converter.FileConverter;
-import com.blog.file.entity.FileEntity;
+import com.blog.file.infrastructure.converter.FileConverter;
+import com.blog.file.domain.entity.FileEntity;
 import com.blog.file.infrastructure.storage.FileStorageStrategy;
 import com.blog.file.infrastructure.storage.StorageContext;
-import com.blog.file.mapper.FileMapper;
+import com.blog.file.infrastructure.mapper.FileMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 

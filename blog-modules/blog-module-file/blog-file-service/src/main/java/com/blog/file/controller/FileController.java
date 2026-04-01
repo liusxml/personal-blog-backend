@@ -9,7 +9,7 @@ import com.blog.common.model.Result;
 import com.blog.file.api.dto.PreSignedUrlRequest;
 import com.blog.file.api.vo.FileVO;
 import com.blog.file.api.vo.PreSignedUploadVO;
-import com.blog.file.entity.FileEntity;
+import com.blog.file.domain.entity.FileEntity;
 import com.blog.file.service.impl.FileServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

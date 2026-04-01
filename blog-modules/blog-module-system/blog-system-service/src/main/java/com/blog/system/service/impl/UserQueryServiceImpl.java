@@ -1,7 +1,7 @@
 package com.blog.system.service.impl;
 
 import com.blog.system.api.service.IUserQueryService;
-import com.blog.system.mapper.UserMapper;
+import com.blog.system.infrastructure.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
