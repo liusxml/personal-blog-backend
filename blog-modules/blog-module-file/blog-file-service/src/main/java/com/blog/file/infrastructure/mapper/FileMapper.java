@@ -1,7 +1,7 @@
-package com.blog.file.mapper;
+package com.blog.file.infrastructure.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.blog.file.entity.FileEntity;
+import com.blog.file.domain.entity.FileEntity;
 import org.apache.ibatis.annotations.Mapper;
 
 /**

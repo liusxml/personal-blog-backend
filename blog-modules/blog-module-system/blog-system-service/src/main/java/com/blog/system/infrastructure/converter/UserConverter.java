@@ -1,4 +1,4 @@
-package com.blog.system.converter;
+package com.blog.system.infrastructure.converter;
 
 import com.blog.common.base.BaseConverter;
 import com.blog.system.api.dto.UserDTO;

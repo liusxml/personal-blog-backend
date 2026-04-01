@@ -3,7 +3,7 @@ package com.blog.system.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.blog.system.domain.entity.RoleEntity;
 import com.blog.system.domain.entity.UserEntity;
-import com.blog.system.mapper.UserMapper;
+import com.blog.system.infrastructure.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.GrantedAuthority;

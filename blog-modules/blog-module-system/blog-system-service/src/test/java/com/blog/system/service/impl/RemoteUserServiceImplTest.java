@@ -2,9 +2,9 @@ package com.blog.system.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.blog.system.api.dto.UserDTO;
-import com.blog.system.converter.UserConverter;
+import com.blog.system.infrastructure.converter.UserConverter;
 import com.blog.system.domain.entity.UserEntity;
-import com.blog.system.mapper.UserMapper;
+import com.blog.system.infrastructure.mapper.UserMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

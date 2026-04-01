@@ -1,9 +1,9 @@
-package com.blog.file.converter;
+package com.blog.file.infrastructure.converter;
 
 import com.blog.common.base.BaseConverter;
 import com.blog.file.api.dto.FileDTO;
 import com.blog.file.api.vo.FileVO;
-import com.blog.file.entity.FileEntity;
+import com.blog.file.domain.entity.FileEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 

@@ -1,4 +1,4 @@
-package com.blog.system.mapper;
+package com.blog.system.infrastructure.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.blog.system.domain.entity.RoleEntity;

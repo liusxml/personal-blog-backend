@@ -1,7 +1,7 @@
 package com.blog.config;
 
 import com.blog.system.domain.entity.RoleEntity;
-import com.blog.system.mapper.RoleMapper;
+import com.blog.system.infrastructure.mapper.RoleMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
