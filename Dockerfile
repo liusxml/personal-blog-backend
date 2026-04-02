@@ -55,7 +55,17 @@ FROM eclipse-temurin:21-jre-alpine AS runtime
 WORKDIR /app
 
 # ── 安全配置：创建非 root 用户（Spring Boot 官方指南要求）─────────────────
+# ⚠️ 必须在 ADD --chown=appuser 之前创建用户，否则构建报错
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+# ── OpenTelemetry Java Agent（无侵入链路追踪）────────────────────────────
+# 版本锁定（避免 latest 带来的不可控升级风险）
+# 当前版本：v2.26.1（2026-03-23）包含 CVE-2026-33701 安全修复
+# 升级时修改版本号，参考：https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases
+# 运行时通过 compose.yml 的 JAVA_TOOL_OPTIONS 环境变量激活，无需修改 ENTRYPOINT
+ADD --chown=appuser:appgroup \
+    https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v2.26.1/opentelemetry-javaagent.jar \
+    /app/opentelemetry-javaagent.jar
 
 # ── 分层复制（从变化最少 → 变化最频繁的顺序）────────────────────────────
 # 这样当你只改了业务代码时，Docker 只重建最后一层（< 1MB），
