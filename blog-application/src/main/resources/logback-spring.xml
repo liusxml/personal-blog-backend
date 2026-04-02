@@ -113,6 +113,29 @@
         <includeCallerData>false</includeCallerData>
     </appender>
 
+    <!-- JSON Console Appender (云原生 12-Factor App — 生产环境输出到 stdout) -->
+    <!-- Docker Daemon 负责日志轮转，Alloy 侧车负责采集并推送到 Grafana Cloud Loki -->
+    <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <!-- 自动包含 MDC 中的 traceId / spanId（OTel Agent 注入）-->
+            <includeMdcKeyName>traceId</includeMdcKeyName>
+            <includeMdcKeyName>spanId</includeMdcKeyName>
+            <includeMdcKeyName>userId</includeMdcKeyName>
+            <!-- 自定义字段 -->
+            <customFields>{"app":"${APP_NAME}","env":"prod"}</customFields>
+            <!-- ISO8601 时间戳，便于 Loki 解析 -->
+            <timestampPattern>yyyy-MM-dd'T'HH:mm:ss.SSS'Z'</timestampPattern>
+        </encoder>
+    </appender>
+
+    <appender name="ASYNC_JSON_CONSOLE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="JSON_CONSOLE"/>
+        <neverBlock>true</neverBlock>
+        <queueSize>1024</queueSize>
+        <discardingThreshold>204</discardingThreshold>
+        <includeCallerData>false</includeCallerData>
+    </appender>
+
     <!-- 异步错误日志 Appender (高优先级优化) -->
     <appender name="ASYNC_ERROR_FILE" class="ch.qos.logback.classic.AsyncAppender">
         <appender-ref ref="ERROR_FILE"/>
@@ -147,18 +170,20 @@
     </springProfile>
 
     <springProfile name="prod">
-        <!-- 生产环境：禁用控制台输出，只记录警告及以上级别 -->
-        <root level="WARN">
-            <!-- 移除 CONSOLE appender，减少性能开销 -->
-            <appender-ref ref="ASYNC_FILE"/>
-            <appender-ref ref="ASYNC_ERROR_FILE"/>
-            <appender-ref ref="ASYNC_JSON_FILE"/>
+        <!--
+            生产环境：遵循 12-Factor App，所有日志输出到 stdout（JSON 格式）
+            - Docker Daemon 负责日志轮转（在 compose.yml 中通过 logging driver 配置）
+            - Grafana Alloy 侧车负责采集并推送到 Grafana Cloud Loki
+            - 完全移除本地文件写入，消灭磁盘 I/O 瓶颈
+        -->
+        <root level="INFO">
+            <appender-ref ref="ASYNC_JSON_CONSOLE"/>
         </root>
 
-        <!-- 项目日志保持INFO级别 -->
+        <!-- 项目日志保持 INFO，允许业务日志完整上报 -->
         <logger name="com.blog" level="INFO"/>
 
-        <!-- 框架日志只记录警告 -->
+        <!-- 框架日志过滤到 WARN，减少 Loki 存储噪音 -->
         <logger name="org.springframework" level="WARN"/>
         <logger name="org.apache" level="WARN"/>
         <logger name="com.zaxxer.hikari" level="WARN"/>
