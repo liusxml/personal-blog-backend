@@ -90,8 +90,33 @@ public class OpsAgentController {
         emitter.onCompletion(() -> SseEmitterContext.remove(sessionId));
 
         // 构建并启动 LangChain4j TokenStream
-        TokenStream tokenStream = opsAdminAgent.chat(sessionId, message);
+        // 防御性处理：DashScope QwenHelper.sanitizeMessages() 在多轮工具调用后
+        // 可能因消息窗口截断导致 "The first message should be a system/user message" 异常
+        try {
+            startTokenStream(opsAdminAgent.chat(sessionId, message), emitter, sessionId);
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage() != null && e.getMessage().contains("first message should be")) {
+                log.warn("Ops Agent 消息窗口溢出，清空会话记忆后重试: sessionId=[{}]", sessionId);
+                opsAdminAgent.evictChatMemory(sessionId);
+                try {
+                    startTokenStream(opsAdminAgent.chat(sessionId, message), emitter, sessionId);
+                } catch (Exception retryEx) {
+                    log.error("Ops Agent 重试仍失败: sessionId=[{}]", sessionId, retryEx);
+                    sendErrorAndComplete(emitter, "对话记忆异常，已重置会话，请重新提问: " + retryEx.getMessage());
+                }
+            } else {
+                log.error("Ops Agent 参数异常: sessionId=[{}]", sessionId, e);
+                sendErrorAndComplete(emitter, e.getMessage());
+            }
+        }
 
+        return emitter;
+    }
+
+    /**
+     * 启动 TokenStream 并注册 SSE 事件回调。
+     */
+    private void startTokenStream(TokenStream tokenStream, SseEmitter emitter, String sessionId) {
         tokenStream
                 .onPartialResponse(token -> sendEvent(emitter, "message", token))
                 .onToolExecuted(toolExecution ->
@@ -105,8 +130,6 @@ public class OpsAgentController {
                     sendErrorAndComplete(emitter, e.getMessage());
                 })
                 .start();
-
-        return emitter;
     }
 
     // ── 内部工具方法 ──────────────────────────────────────────────────────────
