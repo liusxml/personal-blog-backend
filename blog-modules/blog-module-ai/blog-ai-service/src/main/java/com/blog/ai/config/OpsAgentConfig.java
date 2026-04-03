@@ -32,14 +32,20 @@ public class OpsAgentConfig {
     private final RemoteDevOpsTools remoteDevOpsTools;
 
     /**
-     * 对话记忆窗口大小：保留最近 20 条消息（约 6~8 轮对话）。
+     * 对话记忆窗口大小：保留最近 10 条消息（约 3~4 轮工具调用）。
      *
      * <p>
-     * 为什么是 20：每次 Tool 调用会产生 2~3 条消息（AiMessage + ToolExecutionResultMessage），
-     * 10 条窗口在多工具调用场景下很快被填满导致截断；20 条可承载更多轮次。
+     * 为什么是 10（从 20 降低）：
+     * <ul>
+     * <li>DashScope 社区适配器 {@code QwenHelper.sanitizeMessages()} 存在 bug：
+     *     当窗口截断导致孤立的 {@code ToolExecutionResultMessage} 出现时会直接 throw，
+     *     而不是按 LangChain4j 标准行为静默丢弃。</li>
+     * <li>Ops Agent 是单管理员工具，每次运维指令是独立任务，不需要超长上下文。</li>
+     * <li>缩小窗口减少 tool pair 被截断到边界的概率，Controller 层还有 evictChatMemory + 重试双重保底。</li>
+     * </ul>
      * </p>
      */
-    private static final int MEMORY_WINDOW_SIZE = 20;
+    private static final int MEMORY_WINDOW_SIZE = 10;
 
     /**
      * 构建并注册 {@link OpsAdminAgent} Bean。
