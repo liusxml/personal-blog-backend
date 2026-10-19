@@ -1,0 +1,12 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="文档 - docusaurus" type="js.build_tools.npm" folderName="文档 (docs)">
+    <package-json value="$PROJECT_DIR$/../personal-blog-docs/package.json" />
+    <command value="run" />
+    <scripts>
+      <script value="docusaurus" />
+    </scripts>
+    <node-interpreter value="project" />
+    <envs />
+    <method v="2" />
+  </configuration>
+</component>
