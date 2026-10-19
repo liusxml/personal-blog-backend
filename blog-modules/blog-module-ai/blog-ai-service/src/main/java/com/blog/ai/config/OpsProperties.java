@@ -32,7 +32,7 @@ public class OpsProperties {
     /**
      * 目标 VPS 公网 IP 或域名
      */
-    private String host = "107.175.36.50";
+    private String host = "127.0.0.1";
 
     /**
      * SSH 登录用户名（专用最小权限用户，已配置 sudo docker NOPASSWD）
@@ -46,7 +46,7 @@ public class OpsProperties {
      *   <li>Docker 容器内：通过 compose volume 挂载为 {@code /app/ssh/id_ed25519}</li>
      * </ul>
      */
-    private String privateKeyPath = System.getProperty("user.home") + "/.ssh/id_ed25519";
+    private String privateKeyPath = System.getProperty("user.home") + "/.ssh/id_ed25519_server_vps107";
 
     /**
      * 远端 {@code compose.yml} 所在目录，运维脚本在此目录执行

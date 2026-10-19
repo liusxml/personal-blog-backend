@@ -84,7 +84,7 @@ spring:
       host: 127.0.0.1                           # Redis 服务器地址
       port: 6379                                # Redis 端口
       database: 0                               # 使用的数据库索引 (0-15)
-      password: ${REDIS_PASSWORD:}              # Redis 密码（生产环境通过环境变量注入）
+      password: ${REDIS_PASSWORD:s3cr3t_r00t_p@ssw0rd} # Redis 密码（生产环境通过环境变量注入）
       timeout: 3000ms                           # 连接超时时间
       
       # Lettuce 连接池配置（Spring Boot 2.0+ 默认使用 Lettuce）
@@ -231,8 +231,8 @@ oss:
   # Bitiful 配置
   bitiful:
     endpoint: ${BITIFUL_ENDPOINT:https://s3.bitiful.net}
-    access-key: ${BITIFUL_ACCESS_KEY:e665xOEYha7D25M9ksQdtCSP}
-    secret-key: ${BITIFUL_SECRET_KEY:hQkUH8bRDVI92OTYKxWfBZ8TE5meAPS}
+    access-key: ${BITIFUL_ACCESS_KEY:your-bitiful-access-key}
+    secret-key: ${BITIFUL_SECRET_KEY:your-bitiful-secret-key}
     bucket: ${BITIFUL_BUCKET:blog-module-file}  # 必须与Bitiful控制台的bucket名称一致
     region: ${BITIFUL_REGION:cn-east-1}
     max-file-size: 10485760                 # 10MB
@@ -279,7 +279,7 @@ langchain4j:
       # ── 对话模型（RAG 生成回答） ─────────────────────────────────────────
       chat-model:
         # API Key 通过环境变量注入，切勿硬编码；启动前：export DASHSCOPE_API_KEY=sk-xxx
-        api-key: ${DASHSCOPE_API_KEY}
+        api-key: ${DASHSCOPE_API_KEY:sk-dev-placeholder}
         # 使用默认公共端点 dashscope.aliyuncs.com（Workspace 自定义子域名有 SSL 证书校验问题）
         model-name: qwen-plus            # 通义千问 Plus
         temperature: 0.7
@@ -287,14 +287,14 @@ langchain4j:
 
       # ── 流式对话模型（Ops 终端流式输出） ──────────────────────────────────
       streaming-chat-model:
-        api-key: ${DASHSCOPE_API_KEY}
+        api-key: ${DASHSCOPE_API_KEY:sk-dev-placeholder}
         model-name: qwen-plus            # 保持与 chat-model 相同的模型
         temperature: 0.7
         max-tokens: 1024
 
       # ── 向量模型（文章 / 问题向量化） ────────────────────────────────────
       embedding-model:
-        api-key: ${DASHSCOPE_API_KEY}
+        api-key: ${DASHSCOPE_API_KEY:sk-dev-placeholder}
         # 使用默认公共端点（Workspace 自定义子域名有 SSL 证书校验问题）
         model-name: text-embedding-v4    # 支持: 2048/1536/1024(默认)/768/512/256/128/64
         dimension: 1024                  # 1536 LangChain4j 库校验暂不支持，用默认值 1024
@@ -308,7 +308,7 @@ qdrant:
   port: ${QDRANT_PORT:6334}
   # API Key 必填，从 Qdrant Cloud 控制台获取（Cluster → Data Access Control → API Keys）
   # 生产环境通过环境变量注入: export QDRANT_API_KEY=your-qdrant-api-key
-  api-key: ${QDRANT_API_KEY}
+  api-key: ${QDRANT_API_KEY:dev-qdrant-placeholder}
   collection-name: articles             # Qdrant Collection 名称（与文章向量对应）
   vector-dimension: 1024                # 向量维度，与 text-embedding-v4 的 dimension 保持一致
 
@@ -318,13 +318,13 @@ qdrant:
 ops:
   ssh:
     # 目标 VPS 地址（生产环境通过环境变量注入，本地开发可直接填写或使用默认值）
-    host: ${OPS_SSH_HOST:107.175.36.50}
+    host: ${OPS_SSH_HOST:127.0.0.1}
     # 专用最小权限用户（非 root），已配置 sudo docker NOPASSWD
     user: ${OPS_SSH_USER:blog-ops}
     # 私钥文件路径：
     #   - 本地开发：直接读取 ~/.ssh/id_ed25519
     #   - Docker 容器内：挂载宿主机私钥（compose.yml: - ~/.ssh/id_ed25519:/app/ssh/id_ed25519:ro）
-    private-key-path: ${OPS_SSH_KEY_PATH:${user.home}/.ssh/id_ed25519}
+    private-key-path: ${OPS_SSH_KEY_PATH:${user.home}/.ssh/id_ed25519_server_vps107}
     # 远端 compose.yml 所在目录（deploy 脚本在此执行）
     deploy-dir: ${OPS_DEPLOY_DIR:/opt/personal-blog-deploy/personal-blog}
     # SSH 连接超时（秒）
