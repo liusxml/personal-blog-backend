@@ -14,6 +14,7 @@
         <module>blog-modules</module>
         <module>blog-application</module>
         <module>blog-admin-server</module>
+        <module>blog-mcp-server</module>
     </modules>
     <!--
      优化点: 真正的“单一事实来源 (Single Source of Truth)”。
@@ -56,6 +57,7 @@
         <!-- AI 框架 -->
         <langchain4j.version>1.12.2</langchain4j.version>
         <langchain4j-community.version>1.12.2-beta22</langchain4j-community.version>
+        <spring-ai.version>1.1.8</spring-ai.version>
         <!-- Ops Agent: SSH 客户端 -->
         <sshd.version>2.17.1</sshd.version>
     </properties>
@@ -362,6 +364,14 @@
                 <groupId>dev.langchain4j</groupId>
                 <artifactId>langchain4j-community-bom</artifactId>
                 <version>${langchain4j-community.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- Spring AI BOM：统一管理 Spring AI 及 MCP Server 相关组件版本 -->
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-bom</artifactId>
+                <version>${spring-ai.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

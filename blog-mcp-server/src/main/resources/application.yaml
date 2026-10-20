@@ -1,0 +1,54 @@
+# ===================================================================
+# 个人博客 MCP Server 配置文件 (Spring AI MCP Server WebMVC)
+# ===================================================================
+
+server:
+  # 独立运行端口（与 blog-application 的 8080、blog-admin-server 的 9000 错开）
+  port: ${MCP_SERVER_PORT:8081}
+
+spring:
+  application:
+    name: blog-mcp-server
+
+  ai:
+    mcp:
+      server:
+        # 是否启用 MCP Server 自动配置（默认 true）
+        enabled: true
+        # MCP 服务名称：AI 客户端（如 Cursor / Claude / Antigravity）连接后会看到该标识
+        name: personal-blog-mcp-server
+        # MCP 服务版本号
+        version: 1.0.0
+        # 通信执行模型：
+        # - SYNC（同步模式）：适合 Spring MVC 与常规阻塞式调用（RestClient / SSH），直观易调试
+        # - ASYNC（异步响应式）：适合 Spring WebFlux (Reactor Mono/Flux)
+        type: SYNC
+        # 服务端使用说明（Instructions）：
+        # 连接握手成功后会自动发送给 AI 客户端，帮助大模型理解本服务提供的工具范围与使用规范
+        instructions: >
+          这是个人博客系统 (personal-blog) 的官方 MCP 服务。
+          你可以通过本服务提供的工具：
+          1. 查询博客的分类列表、标签列表与已发布文章；
+          2. 创建博客文章草稿或直接发布 Markdown 格式的技术文章（写文章前请先查询分类与标签 ID）；
+          3. 检查博客后端服务健康状态以及 VPS 服务器的 CPU、内存、磁盘和 Docker 容器运行状态。
+        # SSE 长连接握手端点（AI 客户端配置的连接地址即为 http://localhost:8081/sse）
+        sse-endpoint: /sse
+        # JSON-RPC 消息接收端点（客户端通过该端点发送 tools/list、tools/call 等指令）
+        sse-message-endpoint: /mcp/message
+        # 能力声明：开启工具 (Tool) 调用能力与变更通知
+        capabilities:
+          tool: true
+          resource: false
+          prompt: false
+          completion: false
+
+# ===================================================================
+# 博客系统对接自定义配置（供后续阶段调用主服务 API 与 SSH 巡检使用）
+# ===================================================================
+blog:
+  api:
+    # 博客主后端服务 (blog-application) 的基础地址
+    base-url: ${BLOG_API_BASE_URL:http://localhost:8080}
+    # 用于调用管理端写文章接口 (/api/v1/admin/**) 的管理员账号与密码
+    username: ${BLOG_ADMIN_USERNAME:admin}
+    password: ${BLOG_ADMIN_PASSWORD:admin123}
