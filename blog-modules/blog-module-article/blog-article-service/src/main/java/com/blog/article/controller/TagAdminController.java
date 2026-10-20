@@ -1,9 +1,6 @@
 package com.blog.article.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.blog.article.domain.entity.ArticleTagEntity;
 import com.blog.article.dto.TagDTO;
 import com.blog.article.service.ITagService;
 import com.blog.article.vo.TagVO;
@@ -14,8 +11,15 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.io.Serializable;
 import java.util.List;
@@ -46,14 +50,7 @@ public class TagAdminController {
             @Parameter(description = "每页大小") @RequestParam(defaultValue = "20") Integer size,
             @Parameter(description = "标签名称（模糊搜索）") @RequestParam(required = false) String name) {
         log.info("分页查询标签: current={}, size={}, name={}", current, size, name);
-
-        Page<ArticleTagEntity> page = new Page<>(current, size);
-        var queryWrapper = Wrappers.lambdaQuery(ArticleTagEntity.class)
-                .like(StringUtils.isNotBlank(name), ArticleTagEntity::getName, name)
-                .orderByDesc(ArticleTagEntity::getArticleCount)
-                .orderByDesc(ArticleTagEntity::getCreateTime);
-
-        IPage<TagVO> result = tagService.pageVo(page, queryWrapper);
+        IPage<TagVO> result = tagService.pageTags(current, size, name);
         return Result.success(result);
     }
 

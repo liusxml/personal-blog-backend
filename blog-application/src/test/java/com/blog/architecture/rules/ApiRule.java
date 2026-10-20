@@ -1,5 +1,6 @@
 package com.blog.architecture.rules;
 
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.blog.architecture.ArchitectureTest;
 import com.blog.common.model.Result;
 import com.tngtech.archunit.core.domain.JavaClass;
@@ -8,8 +9,10 @@ import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods;
@@ -29,7 +32,7 @@ public final class ApiRule {
      */
     public static final ArchRule CONTROLLER_MUST_RETURN_RESULT = methods()
             .that().areDeclaredInClassesThat()
-            .areAnnotatedWith(org.springframework.web.bind.annotation.RestController.class)
+            .areAnnotatedWith(RestController.class)
             .and().arePublic()
             .and().areNotAnnotatedWith(ExceptionHandler.class) // 豁免异常处理器
             .and().doNotHaveName("download.*") // 豁免下载方法
@@ -61,38 +64,39 @@ public final class ApiRule {
                 }
             })
             .because("所有 Controller 方法必须返回统一的 Result<T>，特殊场景除外（文件下载、SSE等）");
+
     /*
      * --------------------------------------------------------------------- *
-     * 2. Controller 禁止直接返回 Entity
+     * 2. Controller 禁止直接或通过泛型（如 Result<XxxEntity>）返回 Entity
      * ---------------------------------------------------------------------
      */
     public static final ArchRule CONTROLLER_NO_ENTITY_IN_RESPONSE = methods()
             .that().areDeclaredInClassesThat()
-            .areAnnotatedWith(org.springframework.web.bind.annotation.RestController.class)
+            .areAnnotatedWith(RestController.class)
             .and().arePublic()
-            .should(new ArchCondition<JavaMethod>("not return Entity directly") {
+            .should(new ArchCondition<JavaMethod>("not return Entity directly or in generic response") {
                 @Override
                 public void check(JavaMethod method, ConditionEvents events) {
-                    JavaClass returnType = method.getRawReturnType();
-                    String returnTypeName = returnType.getName();
+                    for (JavaClass involvedType : method.getReturnType().getAllInvolvedRawTypes()) {
+                        String typeName = involvedType.getName();
+                        boolean isEntity = typeName.contains(".entity.")
+                                || involvedType.isAnnotatedWith(TableName.class)
+                                || (typeName.endsWith("Entity") && !involvedType.isAssignableTo(HttpEntity.class));
 
-                    // 检查是否直接返回 Entity（包路径包含 .entity. 或类名以 Entity 结尾）
-                    boolean isEntity = returnTypeName.contains(".entity.") ||
-                            (returnTypeName.endsWith("Entity")
-                                    && !returnTypeName.equals("org.springframework.http.HttpEntity"));
-
-                    if (isEntity) {
-                        String message = String.format(
-                                "Controller method %s.%s() returns Entity type '%s'. " +
-                                        "SOLUTION: Create a DTO in *-api module and use MapStruct to convert Entity to DTO.",
-                                method.getOwner().getSimpleName(),
-                                method.getName(),
-                                returnType.getSimpleName());
-                        events.add(SimpleConditionEvent.violated(method, message));
+                        if (isEntity) {
+                            String message = String.format(
+                                    "Controller method %s.%s() exposes Entity type '%s' in return type '%s'. " +
+                                            "SOLUTION: Create a VO in *-api module and use MapStruct to convert Entity to VO.",
+                                    method.getOwner().getSimpleName(),
+                                    method.getName(),
+                                    involvedType.getSimpleName(),
+                                    method.getReturnType().getName());
+                            events.add(SimpleConditionEvent.violated(method, message));
+                        }
                     }
                 }
             })
-            .because("Controller 禁止直接返回 Entity，必须映射为 DTO 以避免暴露内部结构");
+            .because("Controller 禁止直接或通过泛型返回 Entity，必须映射为 VO 以避免暴露内部结构");
 
     /**
      * 私有构造器，防止实例化（工具类）

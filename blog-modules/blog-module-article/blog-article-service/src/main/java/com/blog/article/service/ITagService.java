@@ -1,5 +1,6 @@
 package com.blog.article.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.blog.article.domain.entity.ArticleTagEntity;
 import com.blog.article.dto.TagDTO;
 import com.blog.article.vo.TagVO;
@@ -15,6 +16,16 @@ import java.util.Optional;
  * @since 1.7.0
  */
 public interface ITagService extends IBaseService<ArticleTagEntity, TagVO, TagDTO> {
+
+    /**
+     * 分页查询标签列表
+     *
+     * @param current 当前页
+     * @param size    每页大小
+     * @param name    标签名称关键字（可选）
+     * @return 标签分页结果
+     */
+    IPage<TagVO> pageTags(Integer current, Integer size, String name);
 
     /**
      * 批量创建标签

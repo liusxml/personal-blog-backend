@@ -25,10 +25,13 @@ public final class ArchUnitConfig {
     public static final String CONTROLLER_PKG = "com.blog..controller..";
     public static final String SERVICE_PKG = "com.blog..service..";
     public static final String SERVICE_IMPL_PKG = "com.blog..service.impl..";
+    public static final String APPLICATION_PKG = "com.blog..application..";
     public static final String REPOSITORY_PKG = "com.blog..repository..";
     public static final String MAPPER_PKG = "com.blog..mapper..";
+    public static final String CONVERTER_PKG = "com.blog..converter..";
     public static final String ENTITY_PKG = "com.blog..entity..";
     public static final String DTO_PKG = "com.blog..dto..";
+    public static final String VO_PKG = "com.blog..vo..";
     /* --------------------------------------------------------------------- *
      * 2. 模块包前缀映射（用于模块化规则）
      * --------------------------------------------------------------------- */
@@ -36,7 +39,8 @@ public final class ArchUnitConfig {
             "system", "com.blog.system",
             "article", "com.blog.article",
             "comment", "com.blog.comment",
-            "file", "com.blog.file"
+            "file", "com.blog.file",
+            "ai", "com.blog.ai"
     );
     public static final Set<String> BUSINESS_MODULE_NAMES = MODULE_PACKAGES.keySet();
     /* --------------------------------------------------------------------- *
@@ -47,7 +51,8 @@ public final class ArchUnitConfig {
             "class-service-impl", new String[]{"Service", "ServiceImpl"},
             "entity", new String[]{"Entity", "DO"},
             "dto", new String[]{"DTO"},
-            "mapper", new String[]{"Mapper"}
+            "vo", new String[]{"VO"},
+            "mapper", new String[]{"Mapper", "Converter"}
     );
 
 

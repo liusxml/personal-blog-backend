@@ -1,9 +1,11 @@
 package com.blog.architecture; // 注意：这个测试类放在 architecture 包下，与其规则同源
 
+import com.blog.architecture.rules.ApiRule;
 import com.blog.architecture.rules.DesignPatternRule;
 import com.blog.architecture.rules.LayerRule;
 import com.blog.architecture.rules.ModuleRule;
 import com.blog.architecture.rules.NamingRule;
+import com.blog.architecture.rules.PlantUMLRule;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.lang.ArchRule;
 import org.junit.jupiter.api.BeforeAll;
@@ -53,7 +55,7 @@ public class ArchUnitIntegrationTest {
         log.info("=".repeat(80));
         log.info("📦 正在加载待检查的 Java 类（来源：ArchitectureTest.CLASSES 缓存）...");
 
-        // 直接引用 ArchitectureTest 中已导入的 Ja vaClasses
+        // 直接引用 ArchitectureTest 中已导入的 JavaClasses
         long startTime = System.currentTimeMillis();
         importedClasses = ArchitectureTest.CLASSES;
         long loadTime = System.currentTimeMillis() - startTime;
@@ -67,7 +69,7 @@ public class ArchUnitIntegrationTest {
 
     /**
      * 【第1步】测试分层架构规则（Layered Architecture Rules）。
-     * 验证 Controller -> Service -> Repository -> Entity. DTO 等分层依赖是否严格遵守。
+     * 验证 Controller -> Service -> Persistence/Converter -> Entity 等分层依赖是否严格遵守。
      */
     @Test
     @Order(1)
@@ -77,15 +79,12 @@ public class ArchUnitIntegrationTest {
         log.info("🔍 [测试 1/7] 分层架构规则 (Layered Architecture)");
         log.info("-".repeat(80));
         log.info("📋 验证项:");
-        log.info("   ├─ Controller → Service → Repository → Entity 依赖方向");
-        log.info("   ├─ Controller 必须在 *.controller 包下");
-        log.info("   ├─ Service 实现必须在 *.impl 子包");
+        log.info("   ├─ Controller → Service → Persistence/Converter → Entity 依赖方向");
+        log.info("   ├─ Controller 必须在 *.controller 包下（且禁止位于 blog-application）");
+        log.info("   ├─ 标准 Service 实现必须在 *.service.impl 子包");
         log.info("   └─ Repository/Mapper 必须在正确的包下");
 
-        LayerRule.LAYERED_ARCHITECTURE.check(importedClasses);
-        LayerRule.CONTROLLERS_IN_CORRECT_PACKAGE.check(importedClasses);
-        LayerRule.SERVICES_IN_IMPL_PACKAGE.check(importedClasses);
-        LayerRule.REPOSITORIES_IN_CORRECT_PACKAGE.check(importedClasses);
+        LayerRule.check(importedClasses);
 
         log.info("✅ 测试通过: 所有分层架构规则遵守");
     }
@@ -102,21 +101,19 @@ public class ArchUnitIntegrationTest {
         log.info("🔍 [测试 2/7] 模块间依赖规则 (Module Dependencies)");
         log.info("-".repeat(80));
         log.info("📋 验证项:");
-        log.info("   ├─ 禁止跨模块实现层依赖（Service 不能直接依赖其他 Service）");
+        log.info("   ├─ 禁止跨模块非 API 层依赖（跨模块必须走 *-api）");
         log.info("   ├─ 禁止模块间循环依赖");
         log.info("   ├─ Common 模块无业务逻辑");
-        log.info("   └─ API 模块纯度检查");
+        log.info("   └─ API 模块纯度检查（禁止实现类与 Entity）");
 
-        ModuleRule.checkNoCrossModuleImplDependency();
-        ModuleRule.NO_CYCLE_BETWEEN_MODULES.check(importedClasses);
-        ModuleRule.COMMON_NO_BUSINESS_LOGIC.check(importedClasses);
+        ModuleRule.check();
 
         log.info("✅ 测试通过: 所有模块间依赖规则遵守");
     }
 
     /**
      * 【第3步】测试命名规范规则（Naming Convention Rules）。
-     * 验证 Service、Mapper、Entity、DTO 等类的命名是否符合预期以及禁止下划线。
+     * 验证 Service、Mapper、Entity、DTO、VO 等类的命名是否符合预期以及禁止下划线。
      */
     @Test
     @Order(3)
@@ -127,7 +124,7 @@ public class ArchUnitIntegrationTest {
         log.info("-".repeat(80));
         log.info("📋 验证项:");
         log.info("   ├─ Service 接口和实现类命名");
-        log.info("   ├─ DTO 和 Entity 命名及注解");
+        log.info("   ├─ DTO/VO 和 Entity 命名及注解");
         log.info("   ├─ Mapper/Converter 命名");
         log.info("   └─ 禁止类名包含下划线");
 
@@ -148,10 +145,10 @@ public class ArchUnitIntegrationTest {
         log.info("🔍 [测试 4/7] 设计模式与通用编码规则 (Design Patterns & General Coding)");
         log.info("-".repeat(80));
         log.info("📋 验证项:");
-        log.info("   ├─ Service 层禁止手动映射（强制使用 MapStruct）");
+        log.info("   ├─ Service 层禁止手动映射（强制使用 MapStruct BaseConverter）");
         log.info("   ├─ 禁止字段注入（强制构造器注入）");
         log.info("   ├─ 禁止泛型异常（Exception.class/RuntimeException.class）");
-        log.info("   ├─ Service 实现类应继承 BaseServiceImpl");
+        log.info("   ├─ 标准 CRUD Service 实现类必须继承 BaseServiceImpl");
         log.info("   └─ 通用编码规范（禁用 JodaTime、java.util.logging 等）");
 
         DesignPatternRule.check();
@@ -159,8 +156,6 @@ public class ArchUnitIntegrationTest {
         log.info("✅ 测试通过: 所有设计模式与通用编码规则遵守");
     }
 
-    // 您也可以为单个特别复杂的 ArchRule 定义一个独立的测试方法，
-    // 例如，如果某个规则容易出错或经常被违反，单独测试它会更有帮助。
     @Test
     @Order(5)
     @DisplayName("5. 独立验证 Service 层禁止手动映射")
@@ -168,7 +163,7 @@ public class ArchUnitIntegrationTest {
         log.info("");
         log.info("🔍 [测试 5/7] 独立检查: Service 层禁止手动映射");
         log.info("-".repeat(80));
-        log.info("📋 重点验证: Service 层必须使用 MapStruct，禁止 new DTO()、BeanUtils.copyProperties() 等手动映射");
+        log.info("📋 重点验证: Service 层必须使用 MapStruct，禁止手写 toDto/toVo/toEntity 或调用 BeanUtils.copyProperties()");
 
         DesignPatternRule.NO_MANUAL_MAPPING_IN_SERVICE.check(importedClasses);
 
@@ -188,9 +183,9 @@ public class ArchUnitIntegrationTest {
         log.info("-".repeat(80));
         log.info("📋 验证项:");
         log.info("   ├─ Controller 方法必须返回 Result<T>（允许特殊类型白名单）");
-        log.info("   └─ Controller 禁止直接返回 Entity（防止数据泄露）");
+        log.info("   └─ Controller 禁止直接或通过泛型返回 Entity（防止数据泄露）");
 
-        com.blog.architecture.rules.ApiRule.check();
+        ApiRule.check();
 
         log.info("✅ 测试通过: 所有 API 规范规则遵守");
     }
@@ -207,9 +202,9 @@ public class ArchUnitIntegrationTest {
         log.info("🔍 [测试 7/7] PlantUML 架构图规则 (Architecture Diagram)");
         log.info("-".repeat(80));
         log.info("📋 验证项: 代码依赖关系是否符合 architecture-diagram.puml 中定义的架构约束");
-        log.info("📊 架构图位置: {}", com.blog.architecture.rules.PlantUMLRule.getPlantUmlDiagramPath());
+        log.info("📊 架构图位置: {}", PlantUMLRule.getPlantUmlDiagramPath());
 
-        com.blog.architecture.rules.PlantUMLRule.check();
+        PlantUMLRule.check();
 
         log.info("✅ 测试通过: PlantUML 架构图规则遵守");
         log.info("");

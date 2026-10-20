@@ -1,6 +1,7 @@
 package com.blog.file.api.service;
 
-import com.blog.file.api.dto.PreSignedUrlRequest;
+import com.blog.common.model.PageResult;
+import com.blog.file.api.dto.PreSignedUrlDTO;
 import com.blog.file.api.vo.FileVO;
 import com.blog.file.api.vo.PreSignedUploadVO;
 
@@ -36,7 +37,7 @@ public interface IFileService {
      * @param request 预签名 URL 请求
      * @return 预签名上传 VO
      */
-    PreSignedUploadVO generateUploadUrl(PreSignedUrlRequest request);
+    PreSignedUploadVO generateUploadUrl(PreSignedUrlDTO request);
 
     /**
      * 确认上传完成（前端回调）
@@ -48,6 +49,26 @@ public interface IFileService {
      * @param fileId 文件 ID
      */
     void confirmUpload(Long fileId);
+
+    /**
+     * 分页查询文件列表
+     *
+     * @param pageNum      当前页码
+     * @param pageSize     每页大小
+     * @param fileCategory 文件分类（可选）
+     * @param storageType  存储类型（可选）
+     * @return 分页结果
+     */
+    PageResult<FileVO> pageList(int pageNum, int pageSize, String fileCategory, String storageType);
+
+    /**
+     * 动态生成访问 URL
+     *
+     * @param fileId        文件 ID
+     * @param expireMinutes 过期时间（分钟）
+     * @return 访问 URL
+     */
+    String getAccessUrl(Long fileId, int expireMinutes);
 
     /**
      * 根据 ID 获取文件 VO

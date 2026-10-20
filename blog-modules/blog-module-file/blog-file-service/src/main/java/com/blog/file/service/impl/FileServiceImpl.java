@@ -1,20 +1,26 @@
 package com.blog.file.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.blog.common.base.BaseServiceImpl;
 import com.blog.common.exception.BusinessException;
+import com.blog.common.model.PageResult;
 import com.blog.file.api.dto.FileDTO;
-import com.blog.file.api.dto.PreSignedUrlRequest;
+import com.blog.file.api.dto.PreSignedUrlDTO;
 import com.blog.file.api.enums.FileErrorCode;
 import com.blog.file.api.service.IFileService;
 import com.blog.file.api.vo.FileVO;
 import com.blog.file.api.vo.PreSignedUploadVO;
-import com.blog.file.infrastructure.converter.FileConverter;
 import com.blog.file.domain.entity.FileEntity;
+import com.blog.file.infrastructure.converter.FileConverter;
+import com.blog.file.infrastructure.mapper.FileMapper;
 import com.blog.file.infrastructure.storage.FileStorageStrategy;
 import com.blog.file.infrastructure.storage.StorageContext;
-import com.blog.file.infrastructure.mapper.FileMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -87,7 +93,7 @@ public class FileServiceImpl
      * @return 预签名上传 VO
      */
     @Override
-    public PreSignedUploadVO generateUploadUrl(PreSignedUrlRequest request) {
+    public PreSignedUploadVO generateUploadUrl(PreSignedUrlDTO request) {
         log.info("生成预签名URL: fileName={}, size={}",
                 request.getFileName(), request.getFileSize());
 
@@ -181,6 +187,23 @@ public class FileServiceImpl
         log.info("确认上传成功: fileId={}, fileKey={}", fileId, file.getFileKey());
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public PageResult<FileVO> pageList(int pageNum, int pageSize, String fileCategory, String storageType) {
+        Page<FileEntity> page = new Page<>(pageNum, pageSize);
+        LambdaQueryWrapper<FileEntity> wrapper = new LambdaQueryWrapper<>();
+        if (StringUtils.isNotBlank(fileCategory)) {
+            wrapper.eq(FileEntity::getFileCategory, fileCategory);
+        }
+        if (StringUtils.isNotBlank(storageType)) {
+            wrapper.eq(FileEntity::getStorageType, storageType);
+        }
+        wrapper.orderByDesc(FileEntity::getCreateTime);
+
+        IPage<FileVO> voPage = pageVo(page, wrapper);
+        return PageResult.of(voPage);
+    }
+
     /**
      * 动态生成访问 URL
      *
@@ -192,6 +215,7 @@ public class FileServiceImpl
      * @param expireMinutes 过期时间（分钟）
      * @return 访问 URL
      */
+    @Override
     public String getAccessUrl(Long fileId, int expireMinutes) {
         FileEntity file = getById(fileId);
         if (file == null) {
@@ -307,7 +331,7 @@ public class FileServiceImpl
     private Optional<FileEntity> checkInstantUpload(String md5, Long fileSize) {
         return Optional.ofNullable(
                 baseMapper.selectOne(
-                        new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<FileEntity>()
+                        new LambdaQueryWrapper<FileEntity>()
                                 .eq(FileEntity::getMd5, md5)
                                 .eq(FileEntity::getFileSize, fileSize)
                                 .eq(FileEntity::getUploadStatus, 1) // 只匹配已完成的文件

@@ -1,10 +1,12 @@
 package com.blog.article.service.impl;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.blog.article.infrastructure.converter.TagConverter;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.blog.article.domain.entity.ArticleTagEntity;
 import com.blog.article.domain.entity.ArticleTagRelationEntity;
 import com.blog.article.dto.TagDTO;
+import com.blog.article.infrastructure.converter.TagConverter;
 import com.blog.article.infrastructure.mapper.ArticleTagMapper;
 import com.blog.article.infrastructure.mapper.ArticleTagRelationMapper;
 import com.blog.article.service.ITagService;
@@ -12,7 +14,6 @@ import com.blog.article.vo.TagVO;
 import com.blog.common.base.BaseServiceImpl;
 import com.blog.common.exception.BusinessException;
 import com.blog.common.exception.SystemErrorCode;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -41,6 +43,17 @@ public class TagServiceImpl
         super(converter);
         this.tagMapper = mapper;
         this.tagRelationMapper = relationMapper;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public IPage<TagVO> pageTags(Integer current, Integer size, String name) {
+        Page<ArticleTagEntity> page = new Page<>(current, size);
+        var queryWrapper = Wrappers.lambdaQuery(ArticleTagEntity.class)
+                .like(StringUtils.isNotBlank(name), ArticleTagEntity::getName, name)
+                .orderByDesc(ArticleTagEntity::getArticleCount)
+                .orderByDesc(ArticleTagEntity::getCreateTime);
+        return pageVo(page, queryWrapper);
     }
 
     @Override
@@ -191,11 +204,11 @@ public class TagServiceImpl
     }
 
     @Override
-    public java.util.Optional<TagVO> getBySlug(String slug) {
+    public Optional<TagVO> getBySlug(String slug) {
         log.debug("根据 slug 获取标签: slug={}", slug);
 
         if (StringUtils.isBlank(slug)) {
-            return java.util.Optional.empty();
+            return Optional.empty();
         }
 
         ArticleTagEntity entity = tagMapper.selectOne(
@@ -203,10 +216,10 @@ public class TagServiceImpl
                         .eq(ArticleTagEntity::getSlug, slug));
 
         if (entity == null) {
-            return java.util.Optional.empty();
+            return Optional.empty();
         }
 
-        return java.util.Optional.of(converter.entityToVo(entity));
+        return Optional.of(converter.entityToVo(entity));
     }
 
     /**

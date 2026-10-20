@@ -1,4 +1,4 @@
-package com.blog.config;
+package com.blog.system.service.impl;
 
 import com.blog.system.domain.entity.RoleEntity;
 import com.blog.system.infrastructure.mapper.RoleMapper;
@@ -9,13 +9,13 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 缓存预热组件
+ * 缓存预热与管理服务
  * <p>
  * 在应用启动完成后自动预加载热点数据到 Redis，避免冷启动和缓存击穿。
  *
@@ -23,9 +23,9 @@ import java.util.concurrent.TimeUnit;
  * @since 1.0.0
  */
 @Slf4j
-@Component
+@Service
 @RequiredArgsConstructor
-public class CacheWarmup {
+public class CacheWarmupService {
 
     private final RoleMapper roleMapper;
     private final RedisTemplate<String, Object> redisTemplate;

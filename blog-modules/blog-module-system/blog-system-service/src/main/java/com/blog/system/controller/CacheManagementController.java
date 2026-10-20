@@ -1,9 +1,11 @@
-package com.blog.config;
+package com.blog.system.controller;
 
 import com.blog.common.model.Result;
+import com.blog.system.service.impl.CacheWarmupService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.Cache;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -38,7 +41,7 @@ public class CacheManagementController {
 
     private final CacheManager cacheManager;
     private final RedisTemplate<String, Object> redisTemplate;
-    private final CacheWarmup cacheWarmup;
+    private final CacheWarmupService cacheWarmup;
 
     /**
      * 获取所有缓存名称和统计信息
@@ -252,9 +255,9 @@ public class CacheManagementController {
     /**
      * 缓存信息 VO
      */
-    @lombok.Data
+    @Data
     public static class CacheInfoVO {
-        private java.util.Collection<String> cacheNames;
+        private Collection<String> cacheNames;
         private int totalCaches;
         private Map<String, CacheDetailVO> caches;
     }
@@ -262,7 +265,7 @@ public class CacheManagementController {
     /**
      * 缓存详情 VO
      */
-    @lombok.Data
+    @Data
     public static class CacheDetailVO {
         private String name;
         private String nativeCache;
@@ -271,18 +274,18 @@ public class CacheManagementController {
     /**
      * 缓存操作结果 VO
      */
-    @lombok.Data
+    @Data
     public static class CacheOperationVO {
         private boolean success;
         private String message;
         private String cacheName;
-        private java.util.Collection<String> clearedCaches;
+        private Collection<String> clearedCaches;
     }
 
     /**
      * 用户缓存操作结果 VO
      */
-    @lombok.Data
+    @Data
     public static class UserCacheOperationVO {
         private boolean success;
         private String message;
@@ -293,7 +296,7 @@ public class CacheManagementController {
     /**
      * 缓存预热结果 VO
      */
-    @lombok.Data
+    @Data
     public static class CacheWarmupVO {
         private boolean success;
         private String message;
@@ -303,7 +306,7 @@ public class CacheManagementController {
     /**
      * Redis 信息 VO
      */
-    @lombok.Data
+    @Data
     public static class RedisInfoVO {
         private boolean success;
         private boolean connected;

@@ -47,11 +47,15 @@ public abstract class BaseServiceImpl<M extends BaseMapper<E>, E, V, D extends I
 
     protected final C converter;
 
-    @Autowired(required = false)
     private Validator validator;
 
     protected BaseServiceImpl(C converter) {
         this.converter = converter;
+    }
+
+    @Autowired(required = false)
+    public void setValidator(Validator validator) {
+        this.validator = validator;
     }
 
     /**

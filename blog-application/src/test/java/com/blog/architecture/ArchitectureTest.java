@@ -92,6 +92,8 @@ public class ArchitectureTest {
      * }</pre>
      */
     public static final JavaClasses CLASSES = new ClassFileImporter()
+            .withImportOption(new ImportOption.DoNotIncludeTests())
+            .withImportOption(new ImportOption.DoNotIncludeJars())
             .withImportOption(new GeneratedCodeFilter())
             .importPackages("com.blog");
 
@@ -107,7 +109,7 @@ public class ArchitectureTest {
      * </p>
      *
      * <p>
-     * <b>典型值</b>：{@code ["system", "article", "comment", "file"]}
+     * <b>典型值</b>：{@code ["system", "article", "comment", "file", "ai"]}
      * </p>
      *
      * <h3>使用场景</h3>
@@ -134,11 +136,14 @@ public class ArchitectureTest {
 
         @Override
         public boolean includes(Location location) {
-            String path = location.toString();
+            String path = location.asURI().getPath();
             String filename = FilenameUtils.getName(path);
 
-            // 排除 Lombok 生成的 _*.class 文件
-            if (filename.contains("_")) {
+            // 排除 Lombok 生成的 _*.class 或 *Builder.class 文件，以及 MapStruct 生成的 *ConverterImpl.class / *MapperImpl.class
+            if (filename.contains("_")
+                    || filename.endsWith("Builder.class")
+                    || filename.endsWith("ConverterImpl.class")
+                    || filename.endsWith("MapperImpl.class")) {
                 return false;
             }
 

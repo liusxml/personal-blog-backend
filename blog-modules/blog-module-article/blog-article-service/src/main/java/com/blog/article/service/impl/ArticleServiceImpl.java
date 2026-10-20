@@ -16,7 +16,6 @@ import com.blog.article.domain.state.ArticleStateFactory;
 import com.blog.article.infrastructure.converter.ArticleConverter;
 import com.blog.article.infrastructure.mapper.ArticleMapper;
 import com.blog.article.infrastructure.vector.ArticleEmbeddingHandler;
-import com.blog.article.service.BingWallpaperService;
 import com.blog.article.service.IArticleService;
 import com.blog.article.service.chain.ContentProcessor;
 import com.blog.article.service.chain.ProcessResult;
@@ -81,7 +80,9 @@ public class ArticleServiceImpl
     private final ArticleMapper articleMapper;
     private final ArticleMetrics articleMetrics;
     private final BingWallpaperService bingWallpaperService;
-    /** Qdrant 相关文章语义搜索（Rule 5.3：构造注入） */
+    /**
+     * Qdrant 相关文章语义搜索（Rule 5.3：构造注入）
+     */
     private final TextEmbeddingService embeddingService;
     private final EmbeddingStore<TextSegment> embeddingStore;
     private final ArticleEmbeddingHandler embeddingHandler;
@@ -90,15 +91,15 @@ public class ArticleServiceImpl
      * 调用父类构造函数注入 converter
      */
     public ArticleServiceImpl(ArticleConverter converter,
-            ArticleStateFactory stateFactory,
-            ContentProcessor contentProcessorChain,
-            ApplicationEventPublisher eventPublisher,
-            ArticleMapper articleMapper,
-            ArticleMetrics articleMetrics,
-            BingWallpaperService bingWallpaperService,
-            TextEmbeddingService embeddingService,
-            EmbeddingStore<TextSegment> embeddingStore,
-            ArticleEmbeddingHandler embeddingHandler) {
+                              ArticleStateFactory stateFactory,
+                              ContentProcessor contentProcessorChain,
+                              ApplicationEventPublisher eventPublisher,
+                              ArticleMapper articleMapper,
+                              ArticleMetrics articleMetrics,
+                              BingWallpaperService bingWallpaperService,
+                              TextEmbeddingService embeddingService,
+                              EmbeddingStore<TextSegment> embeddingStore,
+                              ArticleEmbeddingHandler embeddingHandler) {
         super(converter);
         this.converter = converter;
         this.stateFactory = stateFactory;
@@ -637,7 +638,7 @@ public class ArticleServiceImpl
 
     /**
      * 获取文章总数（供 ArticleMetrics 使用）
-     * 
+     *
      * @return 文章总数
      */
     public long getMetricTotalCount() {
@@ -646,7 +647,7 @@ public class ArticleServiceImpl
 
     /**
      * 获取已发布文章数（供 ArticleMetrics 使用）
-     * 
+     *
      * @return 已发布文章数
      */
     public long getMetricPublishedCount() {

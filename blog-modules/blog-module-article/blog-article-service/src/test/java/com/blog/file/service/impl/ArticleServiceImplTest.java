@@ -11,7 +11,7 @@ import com.blog.article.domain.state.ArticleStateFactory;
 import com.blog.article.infrastructure.converter.ArticleConverter;
 import com.blog.article.infrastructure.mapper.ArticleMapper;
 import com.blog.article.metrics.ArticleMetrics;
-import com.blog.article.service.BingWallpaperService;
+import com.blog.article.service.impl.BingWallpaperService;
 import com.blog.article.service.chain.ContentProcessor;
 import com.blog.article.service.chain.ProcessResult;
 import com.blog.article.service.impl.ArticleServiceImpl;
@@ -81,7 +81,9 @@ class ArticleServiceImplTest {
     @Mock
     private ArticleMetrics articleMetrics;
 
-    /** Qdrant 语义搜索所需的两个新 Bean（Phase 7 新增） */
+    /**
+     * Qdrant 语义搜索所需的两个新 Bean（Phase 7 新增）
+     */
     @Mock
     private TextEmbeddingService embeddingService;
 

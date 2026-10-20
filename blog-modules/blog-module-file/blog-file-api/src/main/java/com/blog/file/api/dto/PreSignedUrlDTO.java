@@ -23,7 +23,7 @@ import java.io.Serializable;
  */
 @Data
 @Schema(description = "预签名上传URL请求")
-public class PreSignedUrlRequest implements Serializable, Identifiable<Long> {
+public class PreSignedUrlDTO implements Serializable, Identifiable<Long> {
 
     private static final long serialVersionUID = 1L;
 
