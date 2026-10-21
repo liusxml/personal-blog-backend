@@ -58,8 +58,9 @@ public class RemoteDevOpsTools {
     public String updateService(String serviceName, @ToolMemoryId String sessionId) {
         OpsCommandWhitelist.validate(serviceName, OpsCommandWhitelist.UPDATABLE_SERVICES);
         String deployDir = opsProperties.getDeployDir();
+        // 拉取新镜像并重启容器后，立即执行 image prune -f 自动回收被替换下来的 <none> 悬空旧镜像，防止长期累积占满 VPS 磁盘
         String command = String.format(
-                "sudo docker compose -f %s/compose.yml pull %s && sudo docker compose -f %s/compose.yml up -d %s",
+                "sudo docker compose -f %s/compose.yml pull %s && sudo docker compose -f %s/compose.yml up -d %s && sudo docker image prune -f",
                 deployDir, serviceName, deployDir, serviceName
         );
         log.info("Ops updateService: service=[{}]", serviceName);
@@ -155,15 +156,15 @@ public class RemoteDevOpsTools {
      *
      * <p><b>此方法无 serviceName 参数</b>，固定操作 backend，无需白名单校验。</p>
      *
-     * @param sessionId   会话 ID
+     * @param sessionId 会话 ID
      * @return 执行状态结果
      */
     @Tool("更新 backend 服务自身（拉取最新镜像并重启）。此操作使用 nohup 延迟执行，防止自杀悖论。无需传入 serviceName。")
     public String updateBackendSelf(@ToolMemoryId String sessionId) {
         String deployDir = opsProperties.getDeployDir();
-        // nohup 延迟 3 秒后执行，确保当前 SSH 会话能先正常返回
+        // nohup 延迟 3 秒后执行，确保当前 SSH 会话能先正常返回；重启完成后自动清理被替换的 <none> 悬空镜像
         String command = String.format(
-                "nohup sh -c 'sleep 3 && sudo docker compose -f %s/compose.yml pull backend && sudo docker compose -f %s/compose.yml up -d backend' > /tmp/backend-update.log 2>&1 &",
+                "nohup sh -c 'sleep 3 && sudo docker compose -f %s/compose.yml pull backend && sudo docker compose -f %s/compose.yml up -d backend && sudo docker image prune -f' > /tmp/backend-update.log 2>&1 &",
                 deployDir, deployDir
         );
         log.info("Ops updateBackendSelf: nohup 异步触发 backend 更新");

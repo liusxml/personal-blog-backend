@@ -6,22 +6,26 @@ on:
     branches:
       - main
 
+# 并发控制：同一 PR 或分支连续推送时自动取消未完成的旧扫描任务
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   qodana:
     runs-on: ubuntu-latest
+    # 最小权限配置：仅需读取代码并向 PR 写入审查评论与 Checks 状态（无需 contents: write）
     permissions:
-      contents: write
+      contents: read
       pull-requests: write
       checks: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.pull_request.head.sha }}  # to check out the actual pull request commit, not the merge commit
-          fetch-depth: 0  # a full history is required for pull request analysis
+          ref: ${{ github.event.pull_request.head.sha }}  # 检出 PR 的实际提交以对比变更
+          fetch-depth: 0                                  # 拉取完整 Git 历史，供 Qodana 增量 PR 模式（默认 pr-mode: true）做基线对比
       - name: 'Qodana Scan'
-        uses: JetBrains/qodana-action@v2025.2
-        with:
-          pr-mode: false
+        uses: JetBrains/qodana-action@v2026.2
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN_1942835763 }}
           QODANA_ENDPOINT: 'https://qodana.cloud'

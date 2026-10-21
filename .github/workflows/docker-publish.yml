@@ -1,10 +1,34 @@
 # 工作流名称（在 GitHub Actions 页面显示的名称）
 name: Build and Push Backend Image
 
-# 触发条件：当代码被推送到 main 分支时，自动触发这个工作流
+# 触发条件：
+# 1. push: 当核心后端代码被推送到 main 分支时自动触发（忽略文档、IDE 配置及独立的监控端模块）
+# 2. workflow_dispatch: 支持在 GitHub Actions 网页端手动点击 "Run workflow" 触发重构建
 on:
   push:
     branches: [ "main" ]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - ".run/**"
+      - ".idea/**"
+      - ".vscode/**"
+      - "blog-admin-server/**"
+      - "Dockerfile.admin-server"
+      - ".github/workflows/docker-publish-admin-server.yml"
+  workflow_dispatch:
+
+# 并发控制（GitHub 官方推荐最佳实践）：
+# 同一工作流在同一分支上只保留最新一次运行；若短时间内连续推送，自动取消正在排队的旧构建，
+# 防止旧构建晚完成而将 Docker Hub 上的 :latest 标签覆盖回旧版本
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# 最小权限原则（Security Best Practice）：
+# 构建并推送到 Docker Hub（含 GHA Cache 读写）仅需代码只读权限，显式收紧默认 GITHUB_TOKEN 权限
+permissions:
+  contents: read
 
 # 工作流包含的任务（jobs）
 jobs:
@@ -15,16 +39,16 @@ jobs:
     # 任务的具体步骤，按顺序执行
     steps:
       # 步骤 1：把仓库代码克隆到云服务器
-      # 官方文档（Path context）推荐使用 actions/checkout@v5
+      # 官方文档（Path context）推荐使用最新版 actions/checkout@v7
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       # 步骤 2：登录到 Docker Hub
       # username: 从 GitHub Variables（vars.*）读取，非敏感配置推荐用 vars 而非 secrets
       # password: 从 GitHub Secrets 读取 Token（不会暴露在日志里）
       # 登录步骤放在 Buildx 之前，是官方推荐的标准顺序
       - name: Log in to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -32,12 +56,12 @@ jobs:
       # 步骤 3：安装 Docker Buildx（高级构建工具）
       # Buildx 支持更好的多层缓存机制，是 docker/build-push-action 的依赖
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       # 步骤 4：构建镜像并推送到 Docker Hub
       # docker/build-push-action 是 Docker 官方提供的核心动作
       - name: Build and push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           # context: 使用 Path context 模式（配合 actions/checkout 使用）
           # 这样 .dockerignore 文件才能被正确处理
@@ -51,6 +75,6 @@ jobs:
             ${{ vars.DOCKERHUB_USERNAME }}/personal-blog-backend:latest
             ${{ vars.DOCKERHUB_USERNAME }}/personal-blog-backend:sha-${{ github.sha }}
           # cache-from/cache-to: 启用 GitHub Actions 的构建缓存（GHA Cache）
-          # 第一次构建后，后续构建会复用缓存，显著加快速度（Maven 依赖不用重复下载）
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # 显式指定 scope=backend，防止与同仓库的 admin-server 工作流并发运行时互相覆盖 BuildKit 缓存
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,scope=backend,mode=max

@@ -13,42 +13,42 @@ FROM maven:3.9-eclipse-temurin-21-alpine AS builder
 WORKDIR /build
 
 # ── 优化：先只复制所有 pom.xml 文件（利用 Docker 层缓存）─────────────────
-# 如果 pom.xml 没有改变，Docker 复用这一层，不重新下载依赖
+# 包含全部聚合模块与子模块的 pom.xml，确保 Maven 反应堆拓扑完整
 COPY pom.xml .
 COPY blog-common/pom.xml blog-common/
+COPY blog-mcp-server/pom.xml blog-mcp-server/
 COPY blog-modules/pom.xml blog-modules/
 COPY blog-modules/blog-module-system/pom.xml blog-modules/blog-module-system/
+COPY blog-modules/blog-module-system/blog-system-api/pom.xml blog-modules/blog-module-system/blog-system-api/
+COPY blog-modules/blog-module-system/blog-system-service/pom.xml blog-modules/blog-module-system/blog-system-service/
 COPY blog-modules/blog-module-article/pom.xml blog-modules/blog-module-article/
+COPY blog-modules/blog-module-article/blog-article-api/pom.xml blog-modules/blog-module-article/blog-article-api/
+COPY blog-modules/blog-module-article/blog-article-service/pom.xml blog-modules/blog-module-article/blog-article-service/
 COPY blog-modules/blog-module-comment/pom.xml blog-modules/blog-module-comment/
+COPY blog-modules/blog-module-comment/blog-comment-api/pom.xml blog-modules/blog-module-comment/blog-comment-api/
+COPY blog-modules/blog-module-comment/blog-comment-service/pom.xml blog-modules/blog-module-comment/blog-comment-service/
 COPY blog-modules/blog-module-file/pom.xml blog-modules/blog-module-file/
+COPY blog-modules/blog-module-file/blog-file-api/pom.xml blog-modules/blog-module-file/blog-file-api/
+COPY blog-modules/blog-module-file/blog-file-service/pom.xml blog-modules/blog-module-file/blog-file-service/
+COPY blog-modules/blog-module-ai/pom.xml blog-modules/blog-module-ai/
+COPY blog-modules/blog-module-ai/blog-ai-api/pom.xml blog-modules/blog-module-ai/blog-ai-api/
+COPY blog-modules/blog-module-ai/blog-ai-service/pom.xml blog-modules/blog-module-ai/blog-ai-service/
 COPY blog-application/pom.xml blog-application/
 COPY blog-admin-server/pom.xml blog-admin-server/
 
 # 复制全部源代码
 COPY . .
 
-# ── 优化：RUN --mount=type=cache 挂载 Maven 本地仓库 ─────────────────────
-# 官方 Dockerfile 文档推荐的最优缓存方式：即使 pom.xml 改变，已下载的依赖仍然复用
+# ── 优化：RUN --mount=type=cache 挂载 Maven 本地仓库并直接分层解压 ─────────
+# 使用 Spring Boot 3.5 官方推荐的 -Djarmode=tools 分层提取（替代已废弃的 layertools）
 RUN --mount=type=cache,target=/root/.m2 \
-    mvn package -DskipTests -B -pl blog-admin-server -am
+    mvn package -DskipTests -B -pl blog-admin-server -am && \
+    cp blog-admin-server/target/blog-admin-server-*.jar app.jar && \
+    java -Djarmode=tools -jar app.jar extract --layers --destination extracted
 
 # ==============================================================================
-# 第二阶段：解压阶段（Extractor）
-# Spring Boot 官方指南推荐：使用 layertools 将 fat jar 拆分为 4 个独立的层
-# ==============================================================================
-FROM eclipse-temurin:21-jre-alpine AS extractor
-
-WORKDIR /build
-
-# 从第一阶段复制 fat jar
-COPY --from=builder /build/blog-admin-server/target/blog-admin-server-*.jar app.jar
-
-# 使用 Spring Boot layertools 将 fat jar 解压为 4 个层
-RUN java -Djarmode=layertools -jar app.jar extract --destination extracted
-
-# ==============================================================================
-# 第三阶段：运行阶段（Runtime）
-# 最小 JRE Alpine 镜像，分层复制 jar 内容
+# 第二阶段：运行阶段（Runtime）
+# 最小 JRE Alpine 镜像，分层复制解压后的产物
 # ==============================================================================
 FROM eclipse-temurin:21-jre-alpine AS runtime
 
@@ -58,10 +58,10 @@ WORKDIR /app
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 # ── 分层复制（从变化最少 → 变化最频繁的顺序）────────────────────────────
-COPY --from=extractor --chown=appuser:appgroup /build/extracted/dependencies/ ./
-COPY --from=extractor --chown=appuser:appgroup /build/extracted/spring-boot-loader/ ./
-COPY --from=extractor --chown=appuser:appgroup /build/extracted/snapshot-dependencies/ ./
-COPY --from=extractor --chown=appuser:appgroup /build/extracted/application/ ./
+COPY --from=builder --chown=appuser:appgroup /build/extracted/dependencies/ ./
+COPY --from=builder --chown=appuser:appgroup /build/extracted/spring-boot-loader/ ./
+COPY --from=builder --chown=appuser:appgroup /build/extracted/snapshot-dependencies/ ./
+COPY --from=builder --chown=appuser:appgroup /build/extracted/application/ ./
 
 # 切换到非 root 用户运行
 USER appuser
@@ -74,4 +74,5 @@ ENTRYPOINT ["java", \
   "-XX:+UseContainerSupport", \
   "-XX:MaxRAMPercentage=75.0", \
   "-Djava.security.egd=file:/dev/./urandom", \
-  "org.springframework.boot.loader.launch.JarLauncher"]
+  "-jar", \
+  "app.jar"]

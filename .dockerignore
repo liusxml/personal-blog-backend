@@ -3,8 +3,11 @@
 .gitignore
 .github
 
-# IDE / Editor
+# IDE / Editor / Agent configs
 .idea
+.run/
+.agent/
+.agents/
 *.iml
 *.iws
 *.ipr
@@ -29,6 +32,8 @@ logs/
 *.md
 docs/
 
-# Docker files (not needed inside the image)
+# Docker & CI files (not needed inside the image)
 Dockerfile
+Dockerfile.admin-server
 .dockerignore
+qodana.yaml
