@@ -20,13 +20,13 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       # 关键第一步：设置项目所需的 Java 版本
       # CodeQL 需要使用与您项目相同的 JDK 版本来构建代码
       # 请将 '17' 修改为您项目 pom.xml 或 build.gradle 中指定的 Java 版本
       - name: Setup Java JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           java-version: '21' # <-- 修改这里，例如 '11', '17', '21'
           distribution: 'temurin'

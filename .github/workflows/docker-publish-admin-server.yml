@@ -1,10 +1,27 @@
 # 工作流名称（在 GitHub Actions 页面显示的名称）
 name: Build and Push Admin Server Image
 
-# 触发条件：当代码被推送到 main 分支时，自动触发这个工作流
+# 触发条件：
+# 1. push: 仅当监控端模块（blog-admin-server）、父 pom.xml 或其专属 Dockerfile 变更时才自动触发，避免每次改业务代码都无意义重编
+# 2. workflow_dispatch: 支持在 GitHub Actions 网页端手动点击 "Run workflow" 随时构建
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - "blog-admin-server/**"
+      - "pom.xml"
+      - "Dockerfile.admin-server"
+      - ".github/workflows/docker-publish-admin-server.yml"
+  workflow_dispatch:
+
+# 并发控制：同一分支只保留最新一次运行，自动取消排队中的旧构建
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# 最小权限原则：仅授予代码只读权限
+permissions:
+  contents: read
 
 # 工作流包含的任务（jobs）
 jobs:
@@ -16,22 +33,22 @@ jobs:
     steps:
       # 步骤 1：把仓库代码克隆到云服务器
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       # 步骤 2：登录到 Docker Hub
       - name: Log in to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       # 步骤 3：安装 Docker Buildx（高级构建工具）
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       # 步骤 4：构建镜像并推送到 Docker Hub
       - name: Build and push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           # 指定使用 Dockerfile.admin-server（非默认 Dockerfile）
@@ -40,5 +57,6 @@ jobs:
           tags: |
             ${{ vars.DOCKERHUB_USERNAME }}/personal-blog-admin-server:latest
             ${{ vars.DOCKERHUB_USERNAME }}/personal-blog-admin-server:sha-${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # 显式指定 scope=admin-server，与主后端缓存（scope=backend）完全隔离，互不覆盖
+          cache-from: type=gha,scope=admin-server
+          cache-to: type=gha,scope=admin-server,mode=max
