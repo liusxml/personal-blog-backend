@@ -253,6 +253,12 @@
             <artifactId>blog-file-service</artifactId>
         </dependency>
 
+        <!-- MCP Server 模块：基于 Spring AI 向外部 AI 客户端暴露写文章与服务器巡检工具 -->
+        <dependency>
+            <groupId>com.blog</groupId>
+            <artifactId>blog-mcp-server</artifactId>
+        </dependency>
+
         <!-- AI 模块：提供 Embedding、RAG、Chat 服务 -->
         <dependency>
             <groupId>com.blog</groupId>

@@ -49,6 +49,27 @@
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
         </dependency>
+
+        <!-- =================================================== -->
+        <!-- ================ 服务器 SSH 巡检依赖 ================ -->
+        <!-- =================================================== -->
+        <!--
+         Apache MINA SSHD：纯 Java 实现的轻量级 SSH 客户端，用于连接远端 VPS 执行只读巡检命令。
+         版本由根 POM 的 <dependencyManagement> 统一管理 (2.17.1)。
+        -->
+        <dependency>
+            <groupId>org.apache.sshd</groupId>
+            <artifactId>sshd-core</artifactId>
+        </dependency>
+
+        <!--
+         BouncyCastle：为 Apache MINA SSHD 提供 Ed25519 椭圆曲线私钥算法支持。
+        -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk18on</artifactId>
+            <version>1.78.1</version>
+        </dependency>
     </dependencies>
 
 </project>

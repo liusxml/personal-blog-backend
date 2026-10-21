@@ -43,6 +43,7 @@ spring:
   boot:
     admin:
       client:
+        enabled: ${SBA_CLIENT_ENABLED:false}    # 默认关闭，启动 AdminServerApplication(9000) 时可通过环境变量开启
         url: http://localhost:9000              # Admin Server 地址
         username: admin
         password: "admin"
@@ -97,6 +98,32 @@ spring:
         shutdown-timeout: 100ms                 # 关闭超时
         keepalive: true                         # TCP Keepalive：防止NAT/防火墙因空闲超时切断连接（日志每5分钟Reconnecting的根因）
 
+  # ------------------------------------------------------------
+  # Spring AI MCP Server 配置（随主服务 8080 端口一同启动）
+  # ------------------------------------------------------------
+  ai:
+    mcp:
+      server:
+        enabled: true
+        name: personal-blog-mcp-server
+        version: 1.0.0
+        type: SYNC
+        instructions: >
+          这是个人博客系统 (personal-blog) 的官方 MCP 服务。
+          你可以通过本服务提供的工具：
+          1. 查询博客的分类列表、标签列表与已发布文章；
+          2. 创建博客文章草稿或直接发布 Markdown 格式的技术文章（写文章前请先查询分类与标签 ID）；
+          3. 检查博客后端服务健康状态以及 VPS 服务器的 CPU、内存、磁盘和 Docker 容器运行状态。
+        sse-endpoint: /sse
+        sse-message-endpoint: /mcp/message
+        annotation-scanner:
+          enabled: false                        # 使用标准 @Tool + ToolCallbackProvider 注册，禁用 @McpTool 扫描器以消除 BeanPostProcessor 警告
+        capabilities:
+          tool: true
+          resource: false
+          prompt: false
+          completion: false
+
 # ==============================================================================
 #  3. 持久层配置 (MyBatis-Plus)
 # ==============================================================================
@@ -147,6 +174,9 @@ app:
       - "/api/v1/ai/**"
       # GitHub Webhook（公开，安全由 HMAC-SHA256 验签保障，无 JWT）
       - "/api/v1/webhooks/**"
+      # Spring AI MCP Server 协议端点（SSE 握手与 JSON-RPC 消息端点）
+      - "/sse"
+      - "/mcp/**"
 
     # JWT 认证配置
     jwt-secret: ${JWT_SECRET:dev-blog-jwt-secret-key-minimum-256-bits-change-in-production-environment}
@@ -304,7 +334,7 @@ langchain4j:
 # ==============================================================================
 qdrant:
   # gRPC 连接（LangChain4j QdrantEmbeddingStore 使用 gRPC 6334，REST API 使用 6333）
-  host: ${QDRANT_HOST:7ff7ee79-22bd-4767-81d8-eab241031f89.us-east-1-1.aws.cloud.qdrant.io}
+  host: ${QDRANT_HOST:6536a180-3042-4194-a009-afe5b7e50051.us-east-1-1.aws.cloud.qdrant.io}
   port: ${QDRANT_PORT:6334}
   # API Key 必填，从 Qdrant Cloud 控制台获取（Cluster → Data Access Control → API Keys）
   # 生产环境通过环境变量注入: export QDRANT_API_KEY=your-qdrant-api-key
@@ -318,7 +348,7 @@ qdrant:
 ops:
   ssh:
     # 目标 VPS 地址（生产环境通过环境变量注入，本地开发可直接填写或使用默认值）
-    host: ${OPS_SSH_HOST:127.0.0.1}
+    host: ${OPS_SSH_HOST:107.175.36.50}
     # 专用最小权限用户（非 root），已配置 sudo docker NOPASSWD
     user: ${OPS_SSH_USER:blog-ops}
     # 私钥文件路径：
@@ -332,3 +362,19 @@ ops:
   webhook-secret: ${OPS_WEBHOOK_SECRET:}
   # ↑ GitHub Webhook Secret（与仓库 Settings > Webhooks > Secret 中配置的值一致）
   # 本地开发可留空（自动跳过验签），生产环境必须设置：export OPS_WEBHOOK_SECRET=your-secret
+
+# ==============================================================================
+#  13. Blog MCP Server — 博客 API 与 SSH 巡检配置
+# ==============================================================================
+blog:
+  api:
+    base-url: ${BLOG_API_BASE_URL:http://localhost:${server.port:8080}}
+    username: ${BLOG_ADMIN_USERNAME:admin}
+    password: ${BLOG_ADMIN_PASSWORD:admin123}
+  ssh:
+    host: ${OPS_SSH_HOST:107.175.36.50}
+    port: ${OPS_SSH_PORT:22}
+    user: ${OPS_SSH_USER:blog-ops}
+    private-key-path: ${OPS_SSH_KEY_PATH:${user.home}/.ssh/id_ed25519_server_vps107}
+    deploy-dir: ${OPS_DEPLOY_DIR:/opt/personal-blog-deploy/personal-blog}
+    timeout-seconds: ${OPS_SSH_CONNECT_TIMEOUT:10}

@@ -3,16 +3,18 @@ package com.blog.comment.metrics;
 import com.blog.comment.service.impl.CommentServiceImpl;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-import jakarta.annotation.PostConstruct;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 评论模块 Micrometer 指标采集组件
- * 
+ *
  * <p>
  * 暴露以下业务指标：
  * </p>
@@ -49,6 +51,9 @@ public class CommentMetrics {
         this.commentService = commentService;
     }
 
+    /**
+     * 初始化指标注册（仅向 MeterRegistry 注册指标定义，不触发数据库查询）
+     */
     @PostConstruct
     public void init() {
         // 1. 评论总数 Gauge
@@ -66,14 +71,13 @@ public class CommentMetrics {
                 .description("累计创建评论次数")
                 .register(registry);
 
-        refreshCache();
-
         log.info("✅ 评论模块 Micrometer 指标已启用");
     }
 
     /**
-     * 刷新缓存
+     * 刷新缓存（在应用完全就绪后自动执行首次预热，避免在 @PostConstruct 中触发半成品 Bean 循环依赖异常）
      */
+    @EventListener(ApplicationReadyEvent.class)
     public void refreshCache() {
         try {
             long totalCount = commentService.getMetricTotalCount();

@@ -34,7 +34,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class QdrantEmbeddingStoreConfig {
 
-    @Value("${qdrant.host:7ff7ee79-22bd-4767-81d8-eab241031f89.us-east-1-1.aws.cloud.qdrant.io}")
+    @Value("${qdrant.host:6536a180-3042-4194-a009-afe5b7e50051.us-east-1-1.aws.cloud.qdrant.io}")
     private String host;
 
     @Value("${qdrant.port:6334}")
@@ -47,40 +47,38 @@ public class QdrantEmbeddingStoreConfig {
     private String collectionName;
 
     /**
-     * Qdrant EmbeddingStore Bean
+     * Qdrant gRPC 客户端 Bean（全局复用单条 gRPC Channel）
      *
      * <p>
-     * 替代 {@code MySQLEmbeddingStore}，成为全局唯一的 {@code EmbeddingStore<TextSegment>} Bean。
-     * 使用 TLS（Cloud 强制要求）和 API Key 鉴权。
-     * </p>
-     */
-    @Bean
-    public EmbeddingStore<TextSegment> embeddingStore() {
-        log.info("Initializing QdrantEmbeddingStore: host={}, port={}, collection={}",
-                host, port, collectionName);
-        return QdrantEmbeddingStore.builder()
-                .host(host)
-                .port(port)
-                .useTls(true)
-                .apiKey(apiKey)
-                .collectionName(collectionName)
-                .build();
-    }
-
-    /**
-     * Qdrant gRPC 客户端 Bean
-     *
-     * <p>
-     * 使用官方推荐的 {@code QdrantGrpcClient.newBuilder(host, port, useTls)} 重载
-     * （来自 Qdrant 官方 Quickstart 文档，比手动构建 ManagedChannel 更简洁）。
-     * 供 {@code QdrantCollectionInitializer} 在启动时自动创建 Collection 使用。
+     * 使用官方 {@code QdrantGrpcClient.newBuilder(host, port, useTls, checkCompatibility)} 重载：
+     * <ul>
+     *   <li>{@code useTransportLayerSecurity = true}：Qdrant Cloud 强制要求 TLS 加密连接</li>
+     *   <li>{@code checkCompatibility = false}：跳过启动时的跨版本比对请求（消除 client 1.17 vs server 1.19 警告，并节省一次跨国 gRPC 往返耗时）</li>
+     * </ul>
      * </p>
      */
     @Bean
     public QdrantClient qdrantClient() {
         return new QdrantClient(
-                QdrantGrpcClient.newBuilder(host, port, true)   // host, grpcPort, useTls=true
+                QdrantGrpcClient.newBuilder(host, port, true, false)
                         .withApiKey(apiKey)
                         .build());
+    }
+
+    /**
+     * Qdrant EmbeddingStore Bean
+     *
+     * <p>
+     * 直接复用上方的 {@link QdrantClient} Bean，避免重复建立第二条底层 Netty gRPC 连接池。
+     * </p>
+     */
+    @Bean
+    public EmbeddingStore<TextSegment> embeddingStore(QdrantClient qdrantClient) {
+        log.info("Initializing QdrantEmbeddingStore: host={}, port={}, collection={}",
+                host, port, collectionName);
+        return QdrantEmbeddingStore.builder()
+                .client(qdrantClient)
+                .collectionName(collectionName)
+                .build();
     }
 }

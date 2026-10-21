@@ -3,16 +3,18 @@ package com.blog.article.metrics;
 import com.blog.article.service.impl.ArticleServiceImpl;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-import jakarta.annotation.PostConstruct;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 文章模块 Micrometer 指标采集组件
- * 
+ *
  * <p>
  * 暴露以下业务指标供 Actuator 使用：
  * </p>
@@ -22,7 +24,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * <li><b>blog.articles.published</b> - 累计发布次数（Counter，累计）</li>
  * <li><b>blog.articles.views</b> - 累计浏览量（Counter，累计）</li>
  * </ul>
- * 
+ *
  * <p>
  * 性能优化：使用缓存机制，避免 Gauge 每次查询数据库
  * </p>
@@ -56,7 +58,7 @@ public class ArticleMetrics {
     }
 
     /**
-     * 初始化指标注册
+     * 初始化指标注册（仅向 MeterRegistry 注册指标定义，不触发数据库查询）
      */
     @PostConstruct
     public void init() {
@@ -82,15 +84,18 @@ public class ArticleMetrics {
                 .tag("module", "article")
                 .register(registry);
 
-        // 初始化缓存
-        refreshCache();
-
         log.info("✅ 文章模块 Micrometer 指标已启用");
     }
 
     /**
-     * 刷新缓存（定时任务或手动调用）
+     * 刷新缓存（在应用完全就绪后自动执行首次预热，也可由定时任务或手动调用）
+     *
+     * <p><b>为什么使用 {@code @EventListener(ApplicationReadyEvent.class)} 而不是在 {@code @PostConstruct} 中调用？</b><br>
+     * 因为 {@link ArticleServiceImpl} 构造器强依赖 {@link ArticleMetrics}。如果在 {@code @PostConstruct} 阶段
+     * 立即通过 {@code @Lazy} 代理调用 {@code articleService}，此时外层的 {@code ArticleServiceImpl} 尚未完成构造，
+     * 会触发 Spring 的 {@code BeanCurrentlyInCreationException} 循环引用保护。推迟到容器完全就绪后再查库预热即可彻底规避。</p>
      */
+    @EventListener(ApplicationReadyEvent.class)
     public void refreshCache() {
         try {
             long totalCount = articleService.getMetricTotalCount();

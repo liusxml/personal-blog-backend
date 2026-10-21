@@ -351,6 +351,12 @@
                 <artifactId>blog-ai-service</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <!-- MCP Server 模块 -->
+            <dependency>
+                <groupId>com.blog</groupId>
+                <artifactId>blog-mcp-server</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <!-- LangChain4j BOM：统一管理核心模块版本 -->
             <dependency>
                 <groupId>dev.langchain4j</groupId>
@@ -374,6 +380,12 @@
                 <version>${spring-ai.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <!-- 显式锁定 victools jsonschema-generator 版本，避免 dashscope-sdk-java 传递的旧版 4.31.1 覆盖 Spring AI 所需的 4.38.0 -->
+            <dependency>
+                <groupId>com.github.victools</groupId>
+                <artifactId>jsonschema-generator</artifactId>
+                <version>4.38.0</version>
             </dependency>
             <!-- Apache MINA SSHD：Ops Agent SSH 远程遥控客户端 -->
             <dependency>

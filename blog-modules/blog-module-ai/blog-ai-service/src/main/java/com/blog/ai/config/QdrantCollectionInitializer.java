@@ -80,9 +80,9 @@ public class QdrantCollectionInitializer {
             ensurePayloadIndex();
 
         } catch (Exception e) {
-            // 不阻断启动，仅记录日志。如果 Collection 不存在，后续 embed/search 操作会失败并记录错误
-            log.error("Failed to initialize Qdrant collection '{}': {}",
-                    collectionName, e.getMessage(), e);
+            // 不阻断启动，仅打印单行警告日志（避免远端 Qdrant Cloud 休眠或网络波动时刷屏堆栈）
+            log.warn("跳过 Qdrant collection '{}' 启动初始化（远端连接暂不可用: {}）",
+                    collectionName, e.getMessage());
         }
     }
 

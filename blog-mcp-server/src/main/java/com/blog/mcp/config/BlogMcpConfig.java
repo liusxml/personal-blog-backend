@@ -2,6 +2,7 @@ package com.blog.mcp.config;
 
 import com.blog.mcp.tools.BlogArticleReadTools;
 import com.blog.mcp.tools.BlogArticleWriteTools;
+import com.blog.mcp.tools.BlogServerOpsTools;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.ai.tool.method.MethodToolCallbackProvider;
 import org.springframework.beans.factory.annotation.Value;
@@ -61,14 +62,16 @@ public class BlogMcpConfig {
      *
      * @param articleReadTools  博客文章只读工具集
      * @param articleWriteTools 博客文章写入与发布工具集
+     * @param serverOpsTools    服务器与容器状态巡检工具集
      * @return 工具回调提供者
      */
     @Bean
     public ToolCallbackProvider blogToolCallbackProvider(
             BlogArticleReadTools articleReadTools,
-            BlogArticleWriteTools articleWriteTools) {
+            BlogArticleWriteTools articleWriteTools,
+            BlogServerOpsTools serverOpsTools) {
         return MethodToolCallbackProvider.builder()
-                .toolObjects(articleReadTools, articleWriteTools)
+                .toolObjects(articleReadTools, articleWriteTools, serverOpsTools)
                 .build();
     }
 }
