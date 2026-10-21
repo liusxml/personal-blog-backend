@@ -1,22 +1,17 @@
 package com.blog.file.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.blog.common.exception.SystemErrorCode;
 import com.blog.common.model.PageResult;
 import com.blog.common.model.Result;
-import com.blog.file.api.dto.PreSignedUrlRequest;
+import com.blog.file.api.dto.PreSignedUrlDTO;
+import com.blog.file.api.service.IFileService;
 import com.blog.file.api.vo.FileVO;
 import com.blog.file.api.vo.PreSignedUploadVO;
-import com.blog.file.domain.entity.FileEntity;
-import com.blog.file.service.impl.FileServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -52,7 +47,7 @@ import java.util.Optional;
 @Tag(name = "文件管理", description = "文件上传、查询、删除等功能")
 public class FileController {
 
-    private final FileServiceImpl fileService;
+    private final IFileService fileService;
 
     /**
      * 生成预签名上传 URL
@@ -68,7 +63,7 @@ public class FileController {
      */
     @PostMapping("/presigned")
     @Operation(summary = "生成预签名上传URL", description = "返回预签名URL供前端直传Bitiful S4")
-    public Result<PreSignedUploadVO> generateUploadUrl(@Valid @RequestBody PreSignedUrlRequest request) {
+    public Result<PreSignedUploadVO> generateUploadUrl(@Valid @RequestBody PreSignedUrlDTO request) {
         log.info("生成预签名URL请求: fileName={}", request.getFileName());
 
         PreSignedUploadVO vo = fileService.generateUploadUrl(request);
@@ -110,26 +105,7 @@ public class FileController {
         log.info("查询文件列表: pageNum={}, pageSize={}, fileCategory={}, storageType={}",
                 pageNum, pageSize, fileCategory, storageType);
 
-        Page<FileEntity> page = new Page<>(pageNum, pageSize);
-        LambdaQueryWrapper<FileEntity> wrapper = new LambdaQueryWrapper<>();
-
-        // 筛选条件
-        if (StringUtils.isNotBlank(fileCategory)) {
-            wrapper.eq(FileEntity::getFileCategory, fileCategory);
-        }
-        if (StringUtils.isNotBlank(storageType)) {
-            wrapper.eq(FileEntity::getStorageType, storageType);
-        }
-
-        // 按创建时间倒序
-        wrapper.orderByDesc(FileEntity::getCreateTime);
-
-        // 使用 BaseServiceImpl 的 pageVo 方法
-        IPage<FileVO> voPage = fileService.pageVo(page, wrapper);
-
-        // 转换为 PageResult
-        PageResult<FileVO> result = PageResult.of(voPage);
-
+        PageResult<FileVO> result = fileService.pageList(pageNum, pageSize, fileCategory, storageType);
         return Result.success(result);
     }
 
@@ -174,7 +150,7 @@ public class FileController {
     @GetMapping("/{id}/access-url")
     @Operation(summary = "获取文件访问URL", description = "动态生成预签名GET URL（7天有效）")
     public Result<String> getAccessUrl(@PathVariable Long id,
-            @RequestParam(defaultValue = "60") int expireMinutes) {
+                                       @RequestParam(defaultValue = "60") int expireMinutes) {
         log.info("获取访问URL: id={}, expireMinutes={}", id, expireMinutes);
 
         String accessUrl = fileService.getAccessUrl(id, expireMinutes);

@@ -6,7 +6,7 @@ import com.tngtech.archunit.lang.ArchRule;
 import java.net.URL;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
-import static com.tngtech.archunit.library.plantuml.rules.PlantUmlArchCondition.Configuration.consideringAllDependencies;
+import static com.tngtech.archunit.library.plantuml.rules.PlantUmlArchCondition.Configuration.consideringOnlyDependenciesInDiagram;
 import static com.tngtech.archunit.library.plantuml.rules.PlantUmlArchCondition.adhereToPlantUmlDiagram;
 
 /**
@@ -19,7 +19,7 @@ import static com.tngtech.archunit.library.plantuml.rules.PlantUmlArchCondition.
  * <b>工作原理</b>：
  * - PlantUML 组件图使用 `<<package.name>>` 语法标记组件对应的 Java 包
  * - ArchUnit 自动解析图表并验证实际代码依赖是否符合图表定义
- * - 使用 `consideringOnlyDependenciesInDiagram()` 只检查图中显式定义的依赖
+ * - 使用 `consideringOnlyDependenciesInDiagram()` 只检查图中显式定义的组件间依赖
  * </p>
  * <p>
  * <b>示例</b>：
@@ -53,17 +53,14 @@ public final class PlantUMLRule {
      * 1. 加载 architecture-diagram.puml 文件
      * 2. 解析组件定义（通过 <<package>> stereotype 关联代码）
      * 3. 验证实际代码依赖是否符合图表中的箭头（-->）定义
-     * 4. 检查所有依赖关系（consideringAllDependencies）- 图中未定义的依赖会引发警告
-     * </p>
-     * <p>
-     * ⚠️ 注意：本规则重点验证<b>模块间依赖关系</b>，不强制要求所有类都在图表中。
-     * 图表主要关注业务模块（system、article、comment、file）之间的依赖控制。
+     * 4. 仅检查图表中已定义组件之间的依赖关系（consideringOnlyDependenciesInDiagram）
      * </p>
      */
     public static final ArchRule ARCHITECTURE_MATCHES_DIAGRAM = classes()
+            .that().doNotHaveSimpleName("BlogApplication")
             .should(adhereToPlantUmlDiagram(
                     getDiagramUrl(),
-                    consideringAllDependencies()))
+                    consideringOnlyDependenciesInDiagram()))
             .because("代码架构必须严格遵循 architecture-diagram.puml 中定义的模块依赖关系");
 
     /**

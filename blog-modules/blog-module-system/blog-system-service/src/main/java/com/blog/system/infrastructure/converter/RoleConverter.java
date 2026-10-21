@@ -5,7 +5,6 @@ import com.blog.system.api.dto.RoleDTO;
 import com.blog.system.api.vo.RoleVO;
 import com.blog.system.domain.entity.RoleEntity;
 import org.mapstruct.Mapper;
-import org.mapstruct.NullValuePropertyMappingStrategy;
 
 /**
  * 角色转换器
@@ -13,7 +12,7 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
  * @author liusxml
  * @since 1.0.0
  */
-@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+@Mapper(config = BaseConverter.class)
 public interface RoleConverter extends BaseConverter<RoleDTO, RoleEntity, RoleVO> {
     // 继承 BaseConverter 的所有方法
 }

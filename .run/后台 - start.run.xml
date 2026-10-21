@@ -1,0 +1,12 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="后台 - start" type="js.build_tools.npm" folderName="后台 (admin)">
+    <package-json value="$PROJECT_DIR$/../personal-blog-admin/package.json" />
+    <command value="run" />
+    <scripts>
+      <script value="start" />
+    </scripts>
+    <node-interpreter value="project" />
+    <envs />
+    <method v="2" />
+  </configuration>
+</component>

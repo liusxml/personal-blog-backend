@@ -1,6 +1,6 @@
 package com.blog.article.controller;
 
-import com.blog.article.service.BingWallpaperService;
+import com.blog.article.service.impl.BingWallpaperService;
 import com.blog.common.exception.SystemErrorCode;
 import com.blog.common.model.Result;
 import io.swagger.v3.oas.annotations.Operation;

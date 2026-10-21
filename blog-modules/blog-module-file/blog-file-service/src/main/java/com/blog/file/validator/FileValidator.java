@@ -3,7 +3,7 @@ package com.blog.file.validator;
 import com.blog.common.config.BitifulProperties;
 import com.blog.common.exception.BusinessException;
 import com.blog.common.exception.SystemErrorCode;
-import com.blog.file.api.dto.PreSignedUrlRequest;
+import com.blog.file.api.dto.PreSignedUrlDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -36,7 +36,7 @@ public class FileValidator {
      * @param request 请求对象
      * @throws BusinessException 验证失败时抛出
      */
-    public void validateUploadRequest(PreSignedUrlRequest request) {
+    public void validateUploadRequest(PreSignedUrlDTO request) {
         // 验证文件大小
         validateFileSize(request.getFileSize());
 

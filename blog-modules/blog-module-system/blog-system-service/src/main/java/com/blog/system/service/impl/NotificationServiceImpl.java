@@ -1,4 +1,4 @@
-package com.blog.system.service;
+package com.blog.system.service.impl;
 
 import com.blog.common.enums.NotificationType;
 import com.blog.system.api.service.INotificationService;
@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 import java.util.Set;
 
 /**
- * 通知服务
+ * 通知服务实现
  *
  * @author liusxml
  * @since 1.6.0
@@ -19,7 +19,7 @@ import java.util.Set;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class NotificationService implements INotificationService {
+public class NotificationServiceImpl implements INotificationService {
 
     private final NotificationMapper notificationMapper;
 

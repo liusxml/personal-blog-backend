@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!--
+     继承自根 POM (personal-blog-backend)：
+     1. 自动复用根 POM 中通过 <dependencyManagement> 声明的 Spring Boot 3.5.12 与 Spring AI 1.1.8 BOM 版本。
+     2. 自动继承根 POM 中配置的 Java 21 编译插件与 Lombok 注解处理器。
+    -->
+    <parent>
+        <groupId>com.blog</groupId>
+        <artifactId>personal-blog-backend</artifactId>
+        <version>1.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>blog-mcp-server</artifactId>
+    <packaging>jar</packaging>
+    <name>blog-mcp-server (Spring AI MCP Server)</name>
+    <description>基于 Spring AI 实现的独立 MCP 服务端，向外部 AI 客户端提供博客内容管理与服务器巡检工具。</description>
+
+    <dependencies>
+        <!-- =================================================== -->
+        <!-- ============ Spring AI MCP Server 核心 ============ -->
+        <!-- =================================================== -->
+        <!--
+         spring-ai-starter-mcp-server-webmvc：
+         1. 内置了 Spring Boot Web (Spring MVC + 嵌入式 Tomcat)，无需重复引入 spring-boot-starter-web。
+         2. 自动配置 MCP Server 协议栈（支持 SSE 与 Streamable-HTTP 传输协议）。
+         3. 自动扫描容器中注册的 ToolCallbackProvider Bean，将 @Tool 方法转换为标准 MCP JSON Schema。
+         版本由根 POM 的 spring-ai-bom 统一管理。
+        -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-mcp-server-webmvc</artifactId>
+        </dependency>
+
+        <!-- =================================================== -->
+        <!-- ================== 开发与工具依赖 ================== -->
+        <!-- =================================================== -->
+        <!--
+         Lombok：编译期自动生成日志对象 (@Slf4j)、构造器 (@RequiredArgsConstructor) 和 Getter/Setter。
+         scope=provided 表示仅在编译阶段生效，不会打入最终运行包。
+        -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- =================================================== -->
+        <!-- ================ 服务器 SSH 巡检依赖 ================ -->
+        <!-- =================================================== -->
+        <!--
+         Apache MINA SSHD：纯 Java 实现的轻量级 SSH 客户端，用于连接远端 VPS 执行只读巡检命令。
+         版本由根 POM 的 <dependencyManagement> 统一管理 (2.17.1)。
+        -->
+        <dependency>
+            <groupId>org.apache.sshd</groupId>
+            <artifactId>sshd-core</artifactId>
+        </dependency>
+
+        <!--
+         BouncyCastle：为 Apache MINA SSHD 提供 Ed25519 椭圆曲线私钥算法支持。
+        -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk18on</artifactId>
+            <version>1.78.1</version>
+        </dependency>
+    </dependencies>
+
+</project>

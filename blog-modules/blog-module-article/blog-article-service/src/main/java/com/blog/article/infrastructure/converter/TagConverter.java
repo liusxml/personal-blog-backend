@@ -5,7 +5,6 @@ import com.blog.article.dto.TagDTO;
 import com.blog.article.vo.TagVO;
 import com.blog.common.base.BaseConverter;
 import org.mapstruct.Mapper;
-import org.mapstruct.NullValuePropertyMappingStrategy;
 
 /**
  * 标签转换器
@@ -13,6 +12,6 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
  * @author liusxml
  * @since 1.7.0
  */
-@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+@Mapper(config = BaseConverter.class)
 public interface TagConverter extends BaseConverter<TagDTO, ArticleTagEntity, TagVO> {
 }

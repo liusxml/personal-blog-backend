@@ -43,6 +43,7 @@ spring:
   boot:
     admin:
       client:
+        enabled: ${SBA_CLIENT_ENABLED:false}    # 默认关闭，启动 AdminServerApplication(9000) 时可通过环境变量开启
         url: http://localhost:9000              # Admin Server 地址
         username: admin
         password: "admin"
@@ -84,7 +85,7 @@ spring:
       host: 127.0.0.1                           # Redis 服务器地址
       port: 6379                                # Redis 端口
       database: 0                               # 使用的数据库索引 (0-15)
-      password: ${REDIS_PASSWORD:}              # Redis 密码（生产环境通过环境变量注入）
+      password: ${REDIS_PASSWORD:s3cr3t_r00t_p@ssw0rd} # Redis 密码（生产环境通过环境变量注入）
       timeout: 3000ms                           # 连接超时时间
       
       # Lettuce 连接池配置（Spring Boot 2.0+ 默认使用 Lettuce）
@@ -96,6 +97,34 @@ spring:
           max-wait: 3000ms                      # 连接池阻塞最大等待时间
         shutdown-timeout: 100ms                 # 关闭超时
         keepalive: true                         # TCP Keepalive：防止NAT/防火墙因空闲超时切断连接（日志每5分钟Reconnecting的根因）
+
+  # ------------------------------------------------------------
+  # Spring AI MCP Server 配置（随主服务 8080 端口一同启动）
+  # ------------------------------------------------------------
+  ai:
+    mcp:
+      server:
+        enabled: true
+        protocol: STREAMABLE                    # 采用新一代 MCP Streamable HTTP 协议（替代旧版双端点 SSE）
+        name: personal-blog-mcp-server
+        version: 1.0.0
+        type: SYNC
+        instructions: >
+          这是个人博客系统 (personal-blog) 的官方 MCP 服务。
+          你可以通过本服务提供的工具：
+          1. 查询博客的分类列表、标签列表与全状态文章（含草稿与已发布）；
+          2. 创建博客文章草稿或直接发布 Markdown 格式的技术文章（写文章前请先查询分类与标签 ID）；
+          3. 检查博客后端服务健康状态以及 VPS 服务器的 CPU、内存、磁盘和 Docker 容器运行状态。
+        streamable-http:
+          mcp-endpoint: /mcp                    # Streamable HTTP 统一单端点路径 (http://localhost:8080/mcp)
+          keep-alive-interval: 15s              # 开启 Streamable HTTP 会话定期 Ping 保活，防止 SSE 异步通道无数据导致客户端阻塞或空闲断开
+        annotation-scanner:
+          enabled: false                        # 使用标准 @Tool + ToolCallbackProvider 注册，禁用 @McpTool 扫描器以消除 BeanPostProcessor 警告
+        capabilities:
+          tool: true
+          resource: true
+          prompt: true
+          completion: true
 
 # ==============================================================================
 #  3. 持久层配置 (MyBatis-Plus)
@@ -147,6 +176,10 @@ app:
       - "/api/v1/ai/**"
       # GitHub Webhook（公开，安全由 HMAC-SHA256 验签保障，无 JWT）
       - "/api/v1/webhooks/**"
+      # Spring AI MCP Server 协议端点（支持 Streamable HTTP /mcp 与 SSE /sse）
+      - "/mcp"
+      - "/mcp/**"
+      - "/sse"
 
     # JWT 认证配置
     jwt-secret: ${JWT_SECRET:dev-blog-jwt-secret-key-minimum-256-bits-change-in-production-environment}
@@ -231,8 +264,8 @@ oss:
   # Bitiful 配置
   bitiful:
     endpoint: ${BITIFUL_ENDPOINT:https://s3.bitiful.net}
-    access-key: ${BITIFUL_ACCESS_KEY:e665xOEYha7D25M9ksQdtCSP}
-    secret-key: ${BITIFUL_SECRET_KEY:hQkUH8bRDVI92OTYKxWfBZ8TE5meAPS}
+    access-key: ${BITIFUL_ACCESS_KEY:your-bitiful-access-key}
+    secret-key: ${BITIFUL_SECRET_KEY:your-bitiful-secret-key}
     bucket: ${BITIFUL_BUCKET:blog-module-file}  # 必须与Bitiful控制台的bucket名称一致
     region: ${BITIFUL_REGION:cn-east-1}
     max-file-size: 10485760                 # 10MB
@@ -279,7 +312,7 @@ langchain4j:
       # ── 对话模型（RAG 生成回答） ─────────────────────────────────────────
       chat-model:
         # API Key 通过环境变量注入，切勿硬编码；启动前：export DASHSCOPE_API_KEY=sk-xxx
-        api-key: ${DASHSCOPE_API_KEY}
+        api-key: ${DASHSCOPE_API_KEY:sk-dev-placeholder}
         # 使用默认公共端点 dashscope.aliyuncs.com（Workspace 自定义子域名有 SSL 证书校验问题）
         model-name: qwen-plus            # 通义千问 Plus
         temperature: 0.7
@@ -287,14 +320,14 @@ langchain4j:
 
       # ── 流式对话模型（Ops 终端流式输出） ──────────────────────────────────
       streaming-chat-model:
-        api-key: ${DASHSCOPE_API_KEY}
+        api-key: ${DASHSCOPE_API_KEY:sk-dev-placeholder}
         model-name: qwen-plus            # 保持与 chat-model 相同的模型
         temperature: 0.7
         max-tokens: 1024
 
       # ── 向量模型（文章 / 问题向量化） ────────────────────────────────────
       embedding-model:
-        api-key: ${DASHSCOPE_API_KEY}
+        api-key: ${DASHSCOPE_API_KEY:sk-dev-placeholder}
         # 使用默认公共端点（Workspace 自定义子域名有 SSL 证书校验问题）
         model-name: text-embedding-v4    # 支持: 2048/1536/1024(默认)/768/512/256/128/64
         dimension: 1024                  # 1536 LangChain4j 库校验暂不支持，用默认值 1024
@@ -304,11 +337,11 @@ langchain4j:
 # ==============================================================================
 qdrant:
   # gRPC 连接（LangChain4j QdrantEmbeddingStore 使用 gRPC 6334，REST API 使用 6333）
-  host: ${QDRANT_HOST:7ff7ee79-22bd-4767-81d8-eab241031f89.us-east-1-1.aws.cloud.qdrant.io}
+  host: ${QDRANT_HOST:6536a180-3042-4194-a009-afe5b7e50051.us-east-1-1.aws.cloud.qdrant.io}
   port: ${QDRANT_PORT:6334}
   # API Key 必填，从 Qdrant Cloud 控制台获取（Cluster → Data Access Control → API Keys）
   # 生产环境通过环境变量注入: export QDRANT_API_KEY=your-qdrant-api-key
-  api-key: ${QDRANT_API_KEY}
+  api-key: ${QDRANT_API_KEY:dev-qdrant-placeholder}
   collection-name: articles             # Qdrant Collection 名称（与文章向量对应）
   vector-dimension: 1024                # 向量维度，与 text-embedding-v4 的 dimension 保持一致
 
@@ -324,7 +357,7 @@ ops:
     # 私钥文件路径：
     #   - 本地开发：直接读取 ~/.ssh/id_ed25519
     #   - Docker 容器内：挂载宿主机私钥（compose.yml: - ~/.ssh/id_ed25519:/app/ssh/id_ed25519:ro）
-    private-key-path: ${OPS_SSH_KEY_PATH:${user.home}/.ssh/id_ed25519}
+    private-key-path: ${OPS_SSH_KEY_PATH:${user.home}/.ssh/id_ed25519_server_vps107}
     # 远端 compose.yml 所在目录（deploy 脚本在此执行）
     deploy-dir: ${OPS_DEPLOY_DIR:/opt/personal-blog-deploy/personal-blog}
     # SSH 连接超时（秒）
@@ -332,3 +365,19 @@ ops:
   webhook-secret: ${OPS_WEBHOOK_SECRET:}
   # ↑ GitHub Webhook Secret（与仓库 Settings > Webhooks > Secret 中配置的值一致）
   # 本地开发可留空（自动跳过验签），生产环境必须设置：export OPS_WEBHOOK_SECRET=your-secret
+
+# ==============================================================================
+#  13. Blog MCP Server — 博客 API 与 SSH 巡检配置
+# ==============================================================================
+blog:
+  api:
+    base-url: ${BLOG_API_BASE_URL:http://localhost:${server.port:8080}}
+    username: ${BLOG_ADMIN_USERNAME:admin}
+    password: ${BLOG_ADMIN_PASSWORD:Admin@123}
+  ssh:
+    host: ${OPS_SSH_HOST:107.175.36.50}
+    port: ${OPS_SSH_PORT:22}
+    user: ${OPS_SSH_USER:blog-ops}
+    private-key-path: ${OPS_SSH_KEY_PATH:${user.home}/.ssh/id_ed25519_server_vps107}
+    deploy-dir: ${OPS_DEPLOY_DIR:/opt/personal-blog-deploy/personal-blog}
+    timeout-seconds: ${OPS_SSH_CONNECT_TIMEOUT:10}

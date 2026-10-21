@@ -10,7 +10,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -64,7 +64,7 @@ import java.util.UUID;
  * @author Your Name
  * @since 1.0-SNAPSHOT
  */
-@Service("BITIFUL")
+@Component("BITIFUL")
 @RequiredArgsConstructor
 public class BitifulStorage implements FileStorageStrategy {
 
