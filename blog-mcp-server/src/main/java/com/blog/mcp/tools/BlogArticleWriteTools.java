@@ -97,7 +97,8 @@ public class BlogArticleWriteTools {
                     .body(String.class);
 
             JsonNode root = objectMapper.readTree(createResponse);
-            if (root.path("code").asInt(-1) != 200) {
+            int code = root.path("code").asInt(-1);
+            if (code != 0 && code != 200) {
                 return "创建文章失败，后端返回: " + createResponse;
             }
 

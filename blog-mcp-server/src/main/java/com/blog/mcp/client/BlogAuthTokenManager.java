@@ -45,7 +45,7 @@ public class BlogAuthTokenManager {
     @Value("${blog.api.username:admin}")
     private String username;
 
-    @Value("${blog.api.password:admin123}")
+    @Value("${blog.api.password:Admin@123}")
     private String password;
 
     /**
@@ -88,7 +88,7 @@ public class BlogAuthTokenManager {
             // 2. 解析统一响应体 Result<LoginVO> 中的 data.token 和 data.expiresIn
             JsonNode root = objectMapper.readTree(responseBody);
             int code = root.path("code").asInt(-1);
-            if (code != 200) {
+            if (code != 0 && code != 200) {
                 String msg = root.path("message").asText("未知登录错误");
                 throw new IllegalStateException("博客后端登录失败: " + msg);
             }
