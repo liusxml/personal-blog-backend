@@ -4,6 +4,7 @@ import io.modelcontextprotocol.server.McpServerFeatures;
 import io.modelcontextprotocol.spec.McpSchema;
 import lombok.extern.slf4j.Slf4j;
 import org.springaicommunity.mcp.annotation.McpArg;
+import org.springaicommunity.mcp.annotation.McpComplete;
 import org.springaicommunity.mcp.annotation.McpPrompt;
 import org.springframework.ai.mcp.annotation.spring.SyncMcpAnnotationProviders;
 import org.springframework.context.annotation.Bean;
@@ -11,16 +12,16 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.Locale;
+import java.util.stream.Stream;
 
 /**
- * 博客 MCP Server 提示词模板 (Prompts) 声明式配置
+ * 博客 MCP Server 提示词模板 (Prompts) 与参数自动补全 (Completions) 声明式配置
  *
- * <p><b>核心升级（编程式 ➔ 声明式 {@code @McpPrompt} + {@code @McpArg} 注解）</b>：</p>
+ * <p><b>核心能力</b>：</p>
  * <ul>
- *   <li>使用 {@link McpPrompt} 与 {@link McpArg} 直接在 Java 方法签名上声明模板名称、描述与参数元数据，
- *       告别手动构建 {@code new McpSchema.PromptArgument(...)} 与 {@code Map.get(...)} 强转；</li>
- *   <li>通过 {@link SyncMcpAnnotationProviders#promptSpecifications(List)} 显式将注解方法解析为
- *       {@code List<SyncPromptSpecification>}，兼顾零启动警告与声明式开发体验。</li>
+ *   <li><b>Prompts（{@link McpPrompt} + {@link McpArg}）</b>：声明标准化带参提示词工作流（SOP）；</li>
+ *   <li><b>Completions（{@link McpComplete}）</b>：当用户在客户端输入 Prompt 参数前缀时，实时返回匹配的候选值列表。</li>
  * </ul>
  *
  * @author liusxml
@@ -32,9 +33,27 @@ import java.util.List;
 public class BlogMcpPromptConfig {
 
     /**
+     * VPS 线上全部 13 个容器服务名候选池（供 ops-full-inspection 参数自动补全使用）
+     */
+    private static final List<String> OPS_SERVICE_CANDIDATES = List.of(
+            "frontend", "admin", "backend", "redis", "mysql", "caddy",
+            "monitor", "grafana", "prometheus", "alloy", "dozzle",
+            "mysql-exporter", "redis-exporter"
+    );
+
+    /**
+     * 常用技术博客创作主题候选池（供 write-tech-article 的 topic 参数提供自动补全灵感）
+     */
+    private static final List<String> TECH_TOPIC_CANDIDATES = List.of(
+            "Spring AI 1.1.8 实现 MCP Server 全解析",
+            "Spring Boot 3.5 + MyBatis-Plus 企业级最佳实践",
+            "Next.js 16 + React 19 SSR 性能优化实战",
+            "Docker Compose + Caddy + Grafana 可观测性体系搭建",
+            "LangChain4j + Qdrant 向量检索 RAG 实战"
+    );
+
+    /**
      * 显式注册当前类中所有标记了 {@code @McpPrompt} 的提示词模板
-     *
-     * @return 同步提示词规范列表
      */
     @Bean
     public List<McpServerFeatures.SyncPromptSpecification> blogMcpPrompts() {
@@ -42,10 +61,19 @@ public class BlogMcpPromptConfig {
     }
 
     /**
+     * 显式注册当前类中所有标记了 {@code @McpComplete} 的参数自动补全处理器
+     */
+    @Bean
+    public List<McpServerFeatures.SyncCompletionSpecification> blogMcpCompletions() {
+        return SyncMcpAnnotationProviders.completeSpecifications(List.of(this));
+    }
+
+    /**
      * 模板 1：技术博客标准创作工作流 (write-tech-article)
      */
     @McpPrompt(
             name = "write-tech-article",
+            title = "write-tech-article（技术文章创作）",
             description = "撰写并保存个人博客技术文章的标准工作流模板（自动匹配分类与标签规范）"
     )
     public McpSchema.GetPromptResult writeTechArticle(
@@ -91,6 +119,7 @@ public class BlogMcpPromptConfig {
      */
     @McpPrompt(
             name = "ops-full-inspection",
+            title = "ops-full-inspection（服务器全量巡检）",
             description = "对个人博客后端服务与远程 VPS 服务器执行全量健康巡检并输出诊断报告"
     )
     public McpSchema.GetPromptResult opsFullInspection(
@@ -118,6 +147,47 @@ public class BlogMcpPromptConfig {
                 """.formatted(logStep);
 
         return buildUserPromptResult("个人博客系统与远程 VPS 全量运维巡检 SOP 指令", promptText);
+    }
+
+    /**
+     * 自动补全 1：为 ops-full-inspection 的 focusService 参数提供 13 个线上容器名前缀补全
+     *
+     * @param prefix 用户在客户端输入框中已输入的前缀（如 "gra"、"my"）
+     * @return 匹配的容器服务名列表
+     */
+    @McpComplete(prompt = "ops-full-inspection")
+    public List<String> completeOpsService(String prefix) {
+        String normalized = prefix != null ? prefix.trim().toLowerCase(Locale.ROOT) : "";
+        return OPS_SERVICE_CANDIDATES.stream()
+                .filter(service -> service.startsWith(normalized))
+                .toList();
+    }
+
+    /**
+     * 自动补全 2：为 write-tech-article 的多参数（topic / publishNow）提供智能补全
+     *
+     * <p>当一个 Prompt 包含多个参数时，使用 {@link McpSchema.CompleteRequest.CompleteArgument}
+     * 即可通过 {@code argument.name()} 区分当前正在补全哪个参数。</p>
+     *
+     * @param argument 包含参数名 (name) 与当前已输入前缀 (value) 的补全请求对象
+     * @return 匹配的候选值列表
+     */
+    @McpComplete(prompt = "write-tech-article")
+    public List<String> completeWriteTechArticleArgs(McpSchema.CompleteRequest.CompleteArgument argument) {
+        String argName = argument.name();
+        String prefix = argument.value() != null ? argument.value().trim().toLowerCase(Locale.ROOT) : "";
+
+        if ("publishNow".equals(argName)) {
+            return Stream.of("false", "true")
+                    .filter(val -> val.startsWith(prefix))
+                    .toList();
+        }
+        if ("topic".equals(argName)) {
+            return TECH_TOPIC_CANDIDATES.stream()
+                    .filter(candidate -> candidate.toLowerCase(Locale.ROOT).contains(prefix))
+                    .toList();
+        }
+        return List.of();
     }
 
     private McpSchema.GetPromptResult buildUserPromptResult(String description, String promptText) {
