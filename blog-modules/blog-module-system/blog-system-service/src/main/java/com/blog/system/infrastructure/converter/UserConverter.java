@@ -5,7 +5,6 @@ import com.blog.system.api.dto.UserDTO;
 import com.blog.system.api.vo.UserVO;
 import com.blog.system.domain.entity.UserEntity;
 import org.mapstruct.Mapper;
-import org.mapstruct.NullValuePropertyMappingStrategy;
 
 /**
  * 用户转换器
@@ -13,7 +12,7 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
  * @author liusxml
  * @since 1.0.0
  */
-@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+@Mapper(config = BaseConverter.class)
 public interface UserConverter extends BaseConverter<UserDTO, UserEntity, UserVO> {
 
     /**

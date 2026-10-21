@@ -5,7 +5,6 @@ import com.blog.file.api.dto.FileDTO;
 import com.blog.file.api.vo.FileVO;
 import com.blog.file.domain.entity.FileEntity;
 import org.mapstruct.Mapper;
-import org.mapstruct.NullValuePropertyMappingStrategy;
 
 /**
  * 文件转换器
@@ -13,16 +12,15 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
  * <p>
  * 遵循项目规范：
  * <ul>
- * <li>使用 MapStruct 自动生成转换代码</li>
- * <li>配置 nullValuePropertyMappingStrategy = IGNORE</li>
- * <li>继承 BaseConverter 获得基础转换方法</li>
+ * <li>使用 {@code @Mapper(config = BaseConverter.class)} 复用全局 MapStruct 配置</li>
+ * <li>继承 {@link BaseConverter} 获得基础转换方法</li>
  * </ul>
  * </p>
  *
  * @author liusxml
  * @since 1.0.0
  */
-@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+@Mapper(config = BaseConverter.class)
 public interface FileConverter extends BaseConverter<FileDTO, FileEntity, FileVO> {
     // MapStruct 会自动实现 BaseConverter 的所有方法
     // 无需手动覆盖，避免 Ambiguous mapping 错误
