@@ -15,6 +15,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.Map;
@@ -212,6 +213,24 @@ public class GlobalExceptionHandler {
                 ex.getPayload() != null ? ex.getPayload().toString() : "N/A",
                 ex);
         return Result.error(ex.getErrorCode(), ex.getMessage());
+    }
+
+    /**
+     * 处理异步请求超时异常（如 SSE 流式响应、Spring AI MCP Streamable HTTP GET 长连接超时）
+     * <p>
+     * <b>是什么</b>：Spring MVC 异步请求（{@code DeferredResult} / {@code SseEmitter} / {@code ServerResponse.sse}）
+     * 达到容器超时时间或服务优雅停机时抛出的标准超时异常。<br>
+     * <b>有什么作用</b>：显式拦截该异常并不写入任何 JSON 响应体，交由 Servlet 容器正常关闭异步流。<br>
+     * <b>为什么这么设计</b>：SSE 端点的响应 Content-Type 为 {@code text/event-stream}，若落入下方兜底的
+     * {@link #handleUnexpectedException(Exception, HttpServletRequest)} 并返回 {@link Result} JSON 对象，
+     * 会引发 {@code HttpMessageNotWritableException} 转换失败及无意义的 ERROR 级别告警。
+     *
+     * @param ex      异步请求超时异常
+     * @param request HTTP 请求
+     */
+    @ExceptionHandler(AsyncRequestTimeoutException.class)
+    public void handleAsyncRequestTimeoutException(AsyncRequestTimeoutException ex, HttpServletRequest request) {
+        log.debug(LOG_TEMPLATE, "异步长连接请求超时关闭", request.getRequestURI(), request.getMethod());
     }
 
     /**

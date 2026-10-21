@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS `cmt_comment`
 
     -- 内容字段
     `content` TEXT NOT NULL COMMENT '评论原始内容',
+    `content_html` TEXT NULL COMMENT '渲染后的 HTML 内容',
 
     -- 状态字段
     `status` TINYINT
@@ -51,6 +52,10 @@ CREATE TABLE IF NOT EXISTS `cmt_comment`
     1
 ) NOT NULL DEFAULT 0 COMMENT '评论深度 (0-根评论, 1-一级回复, ...)',
     `root_id` BIGINT NULL COMMENT '根评论ID (顶级评论时为自身ID)',
+    `audit_reason` VARCHAR(500) NULL COMMENT '审核/删除原因',
+    `is_edited` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否已编辑：0-未编辑，1-已编辑',
+    `edit_time` DATETIME NULL COMMENT '最后编辑时间',
+    `mentioned_user_ids` VARCHAR(500) NULL COMMENT '被@提及的用户ID列表(JSON格式，如"[123,456]")',
 
     -- 审计字段
     `version` INT NOT NULL DEFAULT 1 COMMENT '版本号 (乐观锁)',

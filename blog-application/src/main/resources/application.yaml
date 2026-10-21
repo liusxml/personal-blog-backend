@@ -117,6 +117,7 @@ spring:
           3. 检查博客后端服务健康状态以及 VPS 服务器的 CPU、内存、磁盘和 Docker 容器运行状态。
         streamable-http:
           mcp-endpoint: /mcp                    # Streamable HTTP 统一单端点路径 (http://localhost:8080/mcp)
+          keep-alive-interval: 15s              # 开启 Streamable HTTP 会话定期 Ping 保活，防止 SSE 异步通道无数据导致客户端阻塞或空闲断开
         annotation-scanner:
           enabled: false                        # 使用标准 @Tool + ToolCallbackProvider 注册，禁用 @McpTool 扫描器以消除 BeanPostProcessor 警告
         capabilities:
