@@ -35,10 +35,11 @@ import java.util.Set;
 public class BlogServerOpsTools {
 
     /**
-     * 允许查看日志的 Docker Compose 服务名白名单（不可变集合）
+     * 允许查看日志的 Docker Compose 服务名白名单（对应线上 compose.yml 全部 13 个真实服务）
      */
     private static final Set<String> ALLOWED_SERVICES = Set.of(
-            "frontend", "admin", "backend", "redis", "mysql", "caddy", "monitor"
+            "frontend", "admin", "backend", "redis", "mysql", "caddy", "monitor",
+            "grafana", "prometheus", "alloy", "dozzle", "mysql-exporter", "redis-exporter"
     );
 
     private final RestClient blogRestClient;
@@ -99,9 +100,9 @@ public class BlogServerOpsTools {
      * @param serviceName 服务名称（必须属于白名单 ALLOWED_SERVICES）
      * @return 容器最近 50 行日志文本
      */
-    @Tool(description = "通过 SSH 查看 VPS 上指定 Docker 服务的最近 50 行运行日志。serviceName 参数仅允许传入以下合法值之一：frontend、admin、backend、redis、mysql、caddy、monitor。")
+    @Tool(description = "通过 SSH 查看 VPS 上指定 Docker 服务的最近 50 行运行日志。serviceName 参数仅允许传入以下 13 个合法值之一：frontend、admin、backend、redis、mysql、caddy、monitor、grafana、prometheus、alloy、dozzle、mysql-exporter、redis-exporter。")
     public String fetchServiceLogs(
-            @ToolParam(description = "服务名称，可选值：frontend / admin / backend / redis / mysql / caddy / monitor") String serviceName) {
+            @ToolParam(description = "服务名称，可选值：frontend / admin / backend / redis / mysql / caddy / monitor / grafana / prometheus / alloy / dozzle / mysql-exporter / redis-exporter") String serviceName) {
 
         log.info("MCP Tool 调用: fetchServiceLogs(serviceName={})", serviceName);
 

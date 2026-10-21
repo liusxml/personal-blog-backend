@@ -102,16 +102,16 @@ public class BlogArticleWriteTools {
                 return "创建文章失败，后端返回: " + createResponse;
             }
 
-            long articleId = root.path("data").asLong();
+            String articleId = root.path("data").asText();
 
             // 3. 如果需要立即发布，接着调用发布接口 POST /api/v1/admin/articles/{id}/publish
             if (Boolean.TRUE.equals(publishNow)) {
                 String publishResponse = publishDraftArticle(articleId);
-                return String.format("文章《%s》已创建并成功发布！文章 ID: %d，发布响应: %s",
+                return String.format("文章《%s》已创建并成功发布！文章 ID: \"%s\"，发布响应: %s",
                         title, articleId, publishResponse);
             }
 
-            return String.format("文章《%s》已成功保存为草稿！文章 ID: %d（后续可调用 publishDraftArticle 工具将其正式发布）。",
+            return String.format("文章《%s》已成功保存为草稿！文章 ID: \"%s\"（后续可将该字符串 ID 传给 publishDraftArticle 工具正式发布）。",
                     title, articleId);
 
         } catch (Exception e) {
@@ -123,19 +123,22 @@ public class BlogArticleWriteTools {
     /**
      * 将已存在的草稿文章正式发布
      *
-     * @param articleId 草稿文章 ID
+     * @param articleId 草稿文章 ID（字符串形式，防止 19 位雪花 ID 在 JS 客户端丢失精度）
      * @return 发布响应 JSON 字符串
      */
-    @Tool(description = "根据文章 ID 将草稿状态的文章正式发布为公开可见状态，并自动触发 AI 向量化检索同步。")
+    @Tool(description = "根据文章 ID 将草稿状态的文章正式发布为公开可见状态，并自动触发 AI 向量化检索同步。请以字符串形式传入 19 位文章 ID。")
     public String publishDraftArticle(
-            @ToolParam(description = "待发布的草稿文章 ID（数字类型）") Long articleId) {
+            @ToolParam(description = "待发布的草稿文章 ID（字符串格式，如 \"2112801352432652289\"，防止 64 位长整型精度丢失）") String articleId) {
 
         log.info("MCP Tool 调用: publishDraftArticle(articleId={})", articleId);
+        if (!StringUtils.hasText(articleId)) {
+            return "参数错误：articleId 不能为空";
+        }
 
         try {
             String bearerToken = authTokenManager.getBearerToken();
             return blogRestClient.post()
-                    .uri("/api/v1/admin/articles/{id}/publish", articleId)
+                    .uri("/api/v1/admin/articles/{id}/publish", articleId.trim())
                     .header(HttpHeaders.AUTHORIZATION, bearerToken)
                     .retrieve()
                     .body(String.class);

@@ -105,17 +105,18 @@ spring:
     mcp:
       server:
         enabled: true
+        protocol: STREAMABLE                    # 采用新一代 MCP Streamable HTTP 协议（替代旧版双端点 SSE）
         name: personal-blog-mcp-server
         version: 1.0.0
         type: SYNC
         instructions: >
           这是个人博客系统 (personal-blog) 的官方 MCP 服务。
           你可以通过本服务提供的工具：
-          1. 查询博客的分类列表、标签列表与已发布文章；
+          1. 查询博客的分类列表、标签列表与全状态文章（含草稿与已发布）；
           2. 创建博客文章草稿或直接发布 Markdown 格式的技术文章（写文章前请先查询分类与标签 ID）；
           3. 检查博客后端服务健康状态以及 VPS 服务器的 CPU、内存、磁盘和 Docker 容器运行状态。
-        sse-endpoint: /sse
-        sse-message-endpoint: /mcp/message
+        streamable-http:
+          mcp-endpoint: /mcp                    # Streamable HTTP 统一单端点路径 (http://localhost:8080/mcp)
         annotation-scanner:
           enabled: false                        # 使用标准 @Tool + ToolCallbackProvider 注册，禁用 @McpTool 扫描器以消除 BeanPostProcessor 警告
         capabilities:
@@ -174,9 +175,10 @@ app:
       - "/api/v1/ai/**"
       # GitHub Webhook（公开，安全由 HMAC-SHA256 验签保障，无 JWT）
       - "/api/v1/webhooks/**"
-      # Spring AI MCP Server 协议端点（SSE 握手与 JSON-RPC 消息端点）
-      - "/sse"
+      # Spring AI MCP Server 协议端点（支持 Streamable HTTP /mcp 与 SSE /sse）
+      - "/mcp"
       - "/mcp/**"
+      - "/sse"
 
     # JWT 认证配置
     jwt-secret: ${JWT_SECRET:dev-blog-jwt-secret-key-minimum-256-bits-change-in-production-environment}
