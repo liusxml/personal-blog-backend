@@ -1,19 +1,23 @@
 package com.blog.system.controller;
 
 import com.blog.common.model.Result;
+import com.blog.common.utils.SecurityUtils;
 import com.blog.system.api.dto.LoginDTO;
 import com.blog.system.api.dto.RegisterDTO;
 import com.blog.system.api.vo.LoginVO;
 import com.blog.system.api.vo.UserVO;
 import com.blog.system.service.IUserService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -63,5 +67,26 @@ public class AuthController {
         // 这里可以添加黑名单机制或记录登出日志
         log.info("用户登出");
         return Result.success();
+    }
+
+    /**
+     * 签发 MCP 客户端接入专用长效 Bearer Token（仅限管理员）
+     * <p>
+     * 通过 {@link SecurityUtils#getCurrentUserId()} 获取当前已认证的管理员身份，
+     * 签发指定有效天数的长效 JWT Token，供 Antigravity / Cursor / Claude Desktop 等 MCP 客户端配置使用。
+     *
+     * @param expirationDays Token 有效天数（1~365 天，默认 30 天）
+     * @return 包含 Bearer Token 及过期时间的响应对象
+     */
+    @PostMapping("/mcp-token")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "签发 MCP 专用 Token", description = "为当前登录管理员签发用于 MCP 客户端接入的长效 Bearer Token")
+    public Result<LoginVO> generateMcpToken(
+            @Parameter(description = "Token 有效天数（1~365 天，默认 30 天）", example = "30")
+            @RequestParam(value = "expirationDays", defaultValue = "30") Integer expirationDays) {
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        log.info("管理员请求签发 MCP Token: userId={}, expirationDays={}", currentUserId, expirationDays);
+        LoginVO mcpTokenVO = userService.generateMcpToken(currentUserId, expirationDays);
+        return Result.success(mcpTokenVO);
     }
 }

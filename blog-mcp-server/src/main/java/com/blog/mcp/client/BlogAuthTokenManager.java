@@ -2,13 +2,17 @@ package com.blog.mcp.client;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.Instant;
 import java.util.Map;
@@ -18,13 +22,10 @@ import java.util.Map;
  *
  * <p><b>核心作用</b>：</p>
  * <ul>
- *   <li>当 AI 调用需要管理员权限的接口（如创建文章、发布文章）时，自动向 {@code POST /api/v1/auth/login} 发起登录请求获取 JWT Token。</li>
- *   <li>在内存中缓存获取到的 Token 及其过期时间，在有效期内直接复用，避免每次工具调用都重复登录。</li>
+ *   <li><b>优先透传请求头（推荐）</b>：当外部 MCP 客户端携带 {@code Authorization: Bearer <token>} 访问 {@code /mcp} 时，
+ *       直接从当前 HTTP 请求上下文提取并复用该管理员 Token，无需依赖配置文件中的明文账号密码。</li>
+ *   <li><b>账号密码登录兜底</b>：若非 HTTP 请求线程或未携带请求头，则向 {@code POST /api/v1/auth/login} 发起登录获取 JWT Token 并缓存。</li>
  * </ul>
- *
- * <p><b>为什么在 MCP Server 内部管理 Token？</b><br>
- * 外部大模型不应该知晓管理员的账号密码（安全隔离），也不需要理解后端的 JWT 刷新逻辑。
- * 由 MCP Server 在底层透明地附加 {@code Authorization: Bearer <token>} 请求头，对大模型做到完全无感。</p>
  *
  * @author liusxml
  * @since 1.0.0
@@ -61,11 +62,20 @@ public class BlogAuthTokenManager {
     /**
      * 获取合法的 Authorization 请求头值（格式：{@code Bearer <token>}）
      *
-     * <p>采用 {@code synchronized} 保证多线程并发调用时不会同时触发多次登录。</p>
+     * <p>优先从当前 HTTP 请求头提取客户端传入的 Bearer Token；若不存在则走内存缓存或账号密码登录兜底。</p>
      *
      * @return 完整的 Bearer Token 字符串
      */
     public synchronized String getBearerToken() {
+        // 0. 优先从当前 MCP HTTP 请求上下文提取客户端传入的 Authorization: Bearer <token>
+        if (RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes servletAttrs) {
+            HttpServletRequest request = servletAttrs.getRequest();
+            String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+            if (StringUtils.hasText(authHeader) && authHeader.startsWith("Bearer ")) {
+                return authHeader;
+            }
+        }
+
         // 如果已缓存且未临近过期，直接返回复用
         if (StringUtils.hasText(cachedToken) && Instant.now().isBefore(tokenExpireAt)) {
             return "Bearer " + cachedToken;

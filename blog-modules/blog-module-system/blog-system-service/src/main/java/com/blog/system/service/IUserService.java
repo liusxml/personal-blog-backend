@@ -39,4 +39,13 @@ public interface IUserService extends IBaseService<UserEntity, UserVO, UserDTO> 
      * @return 用户实体
      */
     UserEntity getUserByUsername(String username);
+
+    /**
+     * 为当前登录管理员签发 MCP 专用长效 Bearer Token
+     *
+     * @param userId         当前管理员用户 ID
+     * @param expirationDays Token 有效天数（1 ~ 365 天）
+     * @return 包含 MCP Token、有效期（秒）与用户信息的响应对象
+     */
+    LoginVO generateMcpToken(Long userId, int expirationDays);
 }
