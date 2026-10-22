@@ -165,6 +165,51 @@ public class UserServiceImpl extends BaseServiceImpl<UserMapper, UserEntity, Use
         return loginVO;
     }
 
+    @Override
+    public LoginVO generateMcpToken(Long userId, int expirationDays) {
+        if (userId == null) {
+            throw new BusinessException(SystemErrorCode.UNAUTHORIZED);
+        }
+
+        UserEntity user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException(SystemErrorCode.USER_NOT_FOUND);
+        }
+        if (user.getStatus() == 0) {
+            throw new BusinessException(SystemErrorCode.USER_DISABLED);
+        }
+
+        // 限制有效天数在 [1, 365] 范围内，默认 30 天
+        int safeDays = expirationDays <= 0 ? 30 : Math.min(expirationDays, 365);
+        long expirationMillis = safeDays * 24L * 60L * 60L * 1000L;
+
+        List<String> roleKeys = getUserRoleKeys(user.getId());
+        List<GrantedAuthority> authorities = roleKeys.stream()
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toList());
+
+        UserDetails userDetails = User.builder()
+                .username(user.getUsername())
+                .password(user.getPassword())
+                .authorities(authorities)
+                .build();
+
+        String mcpToken = jwtTokenProvider.generateMcpToken(userDetails, user.getId(), expirationMillis);
+
+        UserVO userVO = converter.entityToVo(user);
+        userVO.setRoles(roleKeys);
+
+        log.info("管理员签发 MCP 专用 Token 成功: userId={}, username={}, expirationDays={}",
+                user.getId(), user.getUsername(), safeDays);
+
+        return LoginVO.builder()
+                .token(mcpToken)
+                .tokenType("Bearer")
+                .expiresIn(expirationMillis / 1000)
+                .user(userVO)
+                .build();
+    }
+
     /**
      * 更新用户信息
      * <p>

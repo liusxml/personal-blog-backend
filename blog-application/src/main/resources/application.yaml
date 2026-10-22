@@ -176,10 +176,7 @@ app:
       - "/api/v1/ai/**"
       # GitHub Webhook（公开，安全由 HMAC-SHA256 验签保障，无 JWT）
       - "/api/v1/webhooks/**"
-      # Spring AI MCP Server 协议端点（支持 Streamable HTTP /mcp 与 SSE /sse）
-      - "/mcp"
-      - "/mcp/**"
-      - "/sse"
+      # 注：Spring AI MCP Server 端点（/mcp、/mcp/**、/sse）已纳入 SecurityConfig.jwtChain 强制要求管理员 Bearer Token 鉴权
 
     # JWT 认证配置
     jwt-secret: ${JWT_SECRET:dev-blog-jwt-secret-key-minimum-256-bits-change-in-production-environment}

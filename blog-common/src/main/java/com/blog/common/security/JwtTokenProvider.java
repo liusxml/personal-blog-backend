@@ -69,14 +69,51 @@ public class JwtTokenProvider {
     }
 
     /**
-     * 创建 Token
+     * 生成 MCP 客户端接入专用长效 JWT Token
+     * <p>
+     * 在标准登录 Claims（roles、userId）基础上额外写入 {@code tokenType = "MCP"} 标识，
+     * 并支持按管理员在后台选择的自定义有效时长（毫秒）签发长效凭证。
+     *
+     * @param userDetails      Spring Security 用户详情
+     * @param userId           当前管理员用户ID
+     * @param expirationMillis 自定义有效时长（毫秒）
+     * @return MCP 专用 JWT Token 字符串
+     */
+    public String generateMcpToken(UserDetails userDetails, Long userId, long expirationMillis) {
+        Map<String, Object> claims = new HashMap<>();
+
+        List<String> roles = userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList());
+        claims.put("roles", roles);
+        claims.put("userId", userId);
+        claims.put("tokenType", "MCP");
+
+        return createToken(claims, userDetails.getUsername(), expirationMillis);
+    }
+
+    /**
+     * 使用默认过期时间创建 Token
      */
     private String createToken(Map<String, Object> claims, String subject) {
+        return createToken(claims, subject, securityProperties.getJwtExpiration());
+    }
+
+    /**
+     * 使用指定过期时长创建 Token
+     *
+     * @param claims           JWT 载荷声明
+     * @param subject          主题（用户名）
+     * @param expirationMillis 有效时长（毫秒）
+     * @return 签名后的 JWT 字符串
+     */
+    private String createToken(Map<String, Object> claims, String subject, long expirationMillis) {
+        long now = System.currentTimeMillis();
         return Jwts.builder()
                 .claims(claims)
                 .subject(subject)
-                .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + securityProperties.getJwtExpiration()))
+                .issuedAt(new Date(now))
+                .expiration(new Date(now + expirationMillis))
                 .signWith(getSigningKey())
                 .compact();
     }

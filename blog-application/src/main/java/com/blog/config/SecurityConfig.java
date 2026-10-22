@@ -3,6 +3,7 @@ package com.blog.config;
 import com.blog.common.config.SecurityProperties;
 import com.blog.security.JwtAuthenticationFilter;
 import com.google.common.collect.ImmutableList;
+import jakarta.servlet.DispatcherType;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.annotation.Bean;
@@ -75,7 +76,7 @@ public class SecurityConfig {
      * @param jwtAuthenticationFilter JWT 认证过滤器
      */
     public SecurityConfig(SecurityProperties securityProperties,
-            JwtAuthenticationFilter jwtAuthenticationFilter) {
+                          JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.securityProperties = securityProperties;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
@@ -131,10 +132,12 @@ public class SecurityConfig {
     /**
      * <h3>JWT 认证过滤链</h3>
      * <p>
-     * 匹配 <strong>/api/**</strong> 的请求，使用 JWT Token 认证。
+     * 匹配 <strong>/api/**</strong> 以及 MCP 协议端点（<strong>/mcp</strong>、<strong>/mcp/**</strong>、<strong>/sse</strong>）的请求，
+     * 统一使用 JWT Bearer Token 认证：
      * <ul>
-     * <li><code>/api/v1/auth/**</code> - 认证相关端点（注册、登录等）需要放行</li>
-     * <li><code>/api/v1/**</code> - 业务 API，需要JWT认证</li>
+     * <li><code>/api/v1/auth/**</code> - 认证相关公开端点已在 {@code permitAllChain} 放行</li>
+     * <li><code>/mcp</code>、<code>/mcp/**</code>、<code>/sse</code> - MCP Server 协议端点，强制要求具备 {@code ROLE_ADMIN} 角色的 Bearer Token</li>
+     * <li><code>/api/v1/**</code> - 其余受保护业务 API，要求有效 JWT 认证</li>
      * </ul>
      * <p>
      * <strong>认证方式</strong>：JWT Bearer Token
@@ -146,13 +149,15 @@ public class SecurityConfig {
     @Bean
     @Order(2)
     public SecurityFilterChain jwtChain(HttpSecurity http) throws Exception {
-        http.securityMatcher("/api/**")
+        http.securityMatcher("/api/**", "/mcp", "/mcp/**", "/sse")
                 .cors(Customizer.withDefaults()) // 启用CORS
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // 允许 ASYNC 类型的请求（防止 SseEmitter 完成时发生 Access Denied 导致截断报错）
-                        .dispatcherTypeMatchers(jakarta.servlet.DispatcherType.ASYNC).permitAll()
+                        // 允许 ASYNC 类型的请求（防止 SseEmitter 及 MCP Streamable HTTP 异步流完成时发生 Access Denied）
+                        .dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll()
+                        // MCP 协议端点仅限管理员 Bearer Token 访问
+                        .requestMatchers("/mcp", "/mcp/**", "/sse").hasRole("ADMIN")
                         // 公开路径已在 permitAllChain (@Order 1) 通过 yaml permit-all-urls 统一配置
                         // jwtChain 只负责：/api/** 中未被白名单命中的请求，一律要求认证
                         .anyRequest().authenticated())
