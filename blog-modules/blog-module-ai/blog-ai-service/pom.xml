@@ -22,7 +22,6 @@
         </dependency>
 
 
-
         <!-- Spring Boot Web（提供 @RestController） -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -48,6 +47,21 @@
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-spring-boot-starter</artifactId>
+        </dependency>
+
+        <!-- ── Ops Agent (Spring AI + MCP Client 模式) ───────────────────────── -->
+        <!-- Spring AI Google GenAI Starter：原生接入 Google Gemini 大模型，自动配置 GoogleGenAiChatModel 与 ChatClient.Builder -->
+        <!-- 版本由根 pom 的 spring-ai-bom (1.1.8) 统一管理，无需显式指定版本号 -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-model-google-genai</artifactId>
+        </dependency>
+
+        <!-- Spring AI MCP Client Starter：提供 MCP 客户端自动配置（支持 Streamable HTTP 传输与 ToolCallback 桥接） -->
+        <!-- 用于连接本服务暴露的 /mcp 端点，将远端 MCP 工具转化为 Spring AI ChatClient 可调用的 ToolCallback -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-mcp-client</artifactId>
         </dependency>
 
         <!-- 工具类 -->

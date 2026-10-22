@@ -99,10 +99,26 @@ spring:
         keepalive: true                         # TCP Keepalive：防止NAT/防火墙因空闲超时切断连接（日志每5分钟Reconnecting的根因）
 
   # ------------------------------------------------------------
-  # Spring AI MCP Server 配置（随主服务 8080 端口一同启动）
+  # Spring AI 配置（Google Gemini 模型 + MCP Server/Client）
   # ------------------------------------------------------------
   ai:
+    # 禁用 Spring AI 的向量模型自动配置（本项目向量模型统一由 LangChain4j DashScope text-embedding-v4 承担）
+    model:
+      embedding:
+        text: none
+
+    # ── Google GenAI (Gemini) 对话模型配置（供 Ops Copilot Spring AI + MCP 模式使用） ──
+    # 安全规范：真实 API Key 严禁硬编码到配置文件，统一通过环境变量 GEMINI_API_KEY 注入
+    google:
+      genai:
+        api-key: ${GEMINI_API_KEY:gemini-dev-placeholder}
+        chat:
+          options:
+            model: ${GEMINI_MODEL:gemini-2.5-flash} # 默认使用速度与工具调用兼优的 gemini-2.5-flash
+            temperature: 0.7
+
     mcp:
+      # ── MCP Server 配置（随主服务 8080 端口一同启动，对外及对内暴露 /mcp 端点） ──
       server:
         enabled: true
         protocol: STREAMABLE                    # 采用新一代 MCP Streamable HTTP 协议（替代旧版双端点 SSE）
@@ -125,6 +141,21 @@ spring:
           resource: true
           prompt: true
           completion: true
+
+      # ── MCP Client 配置（Ops Copilot 新模式通过 Streamable HTTP 回连本服务的 /mcp） ──
+      client:
+        enabled: ${OPS_MCP_CHAT_ENABLED:true}
+        name: personal-blog-ops-mcp-client
+        type: SYNC                              # 与服务端 SYNC 模式保持一致
+        request-timeout: 30s                    # 远程 SSH 巡检工具可能耗时数秒，放宽单次调用超时时间
+        initialized: false                      # 关键！同进程回环调用，禁止在 Bean 创建阶段（Tomcat 8080 端口就绪前）立即发起 initialize 握手
+        toolcallback:
+          enabled: false                        # 关键！当 initialized=false 时，禁用启动期自动调 listTools()，改由 OpsMcpChatConfig 延迟按需装配
+        streamable-http:
+          connections:
+            blog:
+              url: http://localhost:${server.port:8080}
+              endpoint: /mcp
 
 # ==============================================================================
 #  3. 持久层配置 (MyBatis-Plus)
@@ -250,6 +281,7 @@ logging:
     com.blog: INFO                              # 业务包日志级别
     com.baomidou.mybatisplus.extension.ddl: INFO # DDL日志
     org.springframework.web: INFO               # Web 日志
+    org.springframework.ai.chat.client.advisor: DEBUG # Spring AI SimpleLoggerAdvisor 审计日志级别
 
 # ==============================================================================
 #  7. 对象存储 (OSS)
@@ -362,6 +394,11 @@ ops:
   webhook-secret: ${OPS_WEBHOOK_SECRET:}
   # ↑ GitHub Webhook Secret（与仓库 Settings > Webhooks > Secret 中配置的值一致）
   # 本地开发可留空（自动跳过验签），生产环境必须设置：export OPS_WEBHOOK_SECRET=your-secret
+  mcp-chat:
+    # 是否启用 Spring AI + MCP Client 模式的 Ops Copilot（用于与 LangChain4j 模式并存对比）
+    enabled: ${OPS_MCP_CHAT_ENABLED:true}
+    # 访问本服务 /mcp 端点的管理员 Bearer Token（通过 POST /api/v1/auth/mcp-token 签发，严禁硬编码，统一通过环境变量注入）
+    mcp-token: ${OPS_MCP_TOKEN:}
 
 # ==============================================================================
 #  13. Blog MCP Server — 博客 API 与 SSH 巡检配置
