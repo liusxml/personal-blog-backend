@@ -151,9 +151,13 @@
         <logger name="com.baomidou.mybatisplus.core.mapper" level="DEBUG"/>
     </springProfile>
 
-    <!-- ── 默认 fallback（未指定 Profile 时）──────────────────────────────────────────── -->
-    <root level="INFO">
-        <appender-ref ref="CONSOLE"/>
-    </root>
+    <!-- ── 默认 fallback（仅当未匹配上述任何已知 Profile 时生效）──────────────────── -->
+    <!-- 注意：Logback 中多个未隔离的 <root> 会将 appender-ref 叠加，若不加 springProfile 守卫， -->
+    <!-- 会导致 prod 环境同时挂载 ASYNC_JSON_CONSOLE 与 CONSOLE，使容器 stdout 每条日志重复打印两遍 -->
+    <springProfile name="!prod &amp; !dev &amp; !debug &amp; !test">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
 
 </configuration>
