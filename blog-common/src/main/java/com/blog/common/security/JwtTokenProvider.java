@@ -16,6 +16,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -28,6 +29,11 @@ import java.util.stream.Collectors;
 @Component
 @RequiredArgsConstructor
 public class JwtTokenProvider {
+
+    /**
+     * MCP 客户端专用长效 Token 的类型标识常量
+     */
+    public static final String TOKEN_TYPE_MCP = "MCP";
 
     private final SecurityProperties securityProperties;
 
@@ -71,7 +77,7 @@ public class JwtTokenProvider {
     /**
      * 生成 MCP 客户端接入专用长效 JWT Token
      * <p>
-     * 在标准登录 Claims（roles、userId）基础上额外写入 {@code tokenType = "MCP"} 标识，
+     * 在标准登录 Claims（roles、userId）基础上额外写入 {@code tokenType = "MCP"} 标识与唯一 {@code jti}，
      * 并支持按管理员在后台选择的自定义有效时长（毫秒）签发长效凭证。
      *
      * @param userDetails      Spring Security 用户详情
@@ -87,7 +93,8 @@ public class JwtTokenProvider {
                 .collect(Collectors.toList());
         claims.put("roles", roles);
         claims.put("userId", userId);
-        claims.put("tokenType", "MCP");
+        claims.put("tokenType", TOKEN_TYPE_MCP);
+        claims.put("jti", UUID.randomUUID().toString());
 
         return createToken(claims, userDetails.getUsername(), expirationMillis);
     }
@@ -172,6 +179,28 @@ public class JwtTokenProvider {
     public List<String> getRolesFromToken(String token) {
         Claims claims = getClaimsFromToken(token);
         return (List<String>) claims.get("roles");
+    }
+
+    /**
+     * 从 Token 中提取凭证类型标识（如 MCP 专用凭证返回 "MCP"，普通登录凭证返回 null）
+     *
+     * @param token JWT Token
+     * @return tokenType 字符串或 null
+     */
+    public String getTokenTypeFromToken(String token) {
+        Claims claims = getClaimsFromToken(token);
+        Object tokenType = claims.get("tokenType");
+        return tokenType != null ? tokenType.toString() : null;
+    }
+
+    /**
+     * 从 Token 中提取签发时间（iat）
+     *
+     * @param token JWT Token
+     * @return 签发时间 Date，若未设置则返回 null
+     */
+    public Date getIssuedAtFromToken(String token) {
+        return getClaimsFromToken(token).getIssuedAt();
     }
 
     /**

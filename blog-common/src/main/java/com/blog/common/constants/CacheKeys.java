@@ -37,6 +37,15 @@ public final class CacheKeys {
      */
     public static final String ROLE_DETAIL_PREFIX = "role:detail:";
 
+    /**
+     * MCP 长效 Token 吊销基准时间戳缓存键前缀
+     * <p>
+     * 完整键格式：mcp:token:revoked_before:{userId}
+     * <p>
+     * 存储内容：毫秒级时间戳字符串；签发时间（iat）早于该时间戳的 MCP Token 一律视为已吊销
+     */
+    public static final String MCP_TOKEN_REVOKED_BEFORE_PREFIX = "mcp:token:revoked_before:";
+
     // ============================= Role Module (角色模块)
     // =============================
 
@@ -65,5 +74,15 @@ public final class CacheKeys {
      */
     public static String roleDetailKey(Long roleId) {
         return ROLE_DETAIL_PREFIX + roleId;
+    }
+
+    /**
+     * 构建用户 MCP Token 吊销基准时间戳缓存键
+     *
+     * @param userId 用户ID
+     * @return 完整的缓存键，例如：mcp:token:revoked_before:1
+     */
+    public static String mcpTokenRevokedBeforeKey(Long userId) {
+        return MCP_TOKEN_REVOKED_BEFORE_PREFIX + userId;
     }
 }

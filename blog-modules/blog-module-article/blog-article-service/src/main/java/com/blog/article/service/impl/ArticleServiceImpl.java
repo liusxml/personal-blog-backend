@@ -16,10 +16,12 @@ import com.blog.article.domain.state.ArticleStateFactory;
 import com.blog.article.infrastructure.converter.ArticleConverter;
 import com.blog.article.infrastructure.mapper.ArticleMapper;
 import com.blog.article.infrastructure.vector.ArticleEmbeddingHandler;
+import com.blog.article.metrics.ArticleMetrics;
 import com.blog.article.service.IArticleService;
+import com.blog.article.service.ITagService;
 import com.blog.article.service.chain.ContentProcessor;
 import com.blog.article.service.chain.ProcessResult;
-import com.blog.article.metrics.ArticleMetrics;
+import com.blog.article.vo.TagVO;
 import com.blog.common.base.BaseServiceImpl;
 import com.blog.common.exception.BusinessException;
 import com.blog.common.exception.SystemErrorCode;
@@ -32,13 +34,17 @@ import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.filter.MetadataFilterBuilder;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -80,6 +86,7 @@ public class ArticleServiceImpl
     private final ArticleMapper articleMapper;
     private final ArticleMetrics articleMetrics;
     private final BingWallpaperService bingWallpaperService;
+    private final ITagService tagService;
     /**
      * Qdrant 相关文章语义搜索（Rule 5.3：构造注入）
      */
@@ -97,6 +104,7 @@ public class ArticleServiceImpl
                               ArticleMapper articleMapper,
                               ArticleMetrics articleMetrics,
                               BingWallpaperService bingWallpaperService,
+                              ITagService tagService,
                               TextEmbeddingService embeddingService,
                               EmbeddingStore<TextSegment> embeddingStore,
                               ArticleEmbeddingHandler embeddingHandler) {
@@ -108,6 +116,7 @@ public class ArticleServiceImpl
         this.articleMapper = articleMapper;
         this.articleMetrics = articleMetrics;
         this.bingWallpaperService = bingWallpaperService;
+        this.tagService = tagService;
         this.embeddingService = embeddingService;
         this.embeddingStore = embeddingStore;
         this.embeddingHandler = embeddingHandler;
@@ -201,7 +210,24 @@ public class ArticleServiceImpl
     }
 
     /**
-     * 重写更新方法：保存成功后异步刷新 embedding
+     * 重写保存方法：文章主体落库后，同步持久化文章与标签的关联关系
+     *
+     * @param dto 文章创建 DTO
+     * @return 新创建的文章主键 ID
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Serializable saveByDto(ArticleDTO dto) {
+        Serializable id = super.saveByDto(dto);
+        if (id != null && CollectionUtils.isNotEmpty(dto.getTagIds())) {
+            Long articleId = Long.parseLong(id.toString());
+            tagService.bindArticleTags(articleId, dto.getTagIds());
+        }
+        return id;
+    }
+
+    /**
+     * 重写更新方法：保存成功后同步更新标签关联并异步刷新 embedding
      *
      * <p>
      * 不在 {@code preUpdate} 中触发，因为 preUpdate 在 DB 保存之前执行，
@@ -210,17 +236,23 @@ public class ArticleServiceImpl
      * </p>
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean updateByDto(ArticleDTO dto) {
         boolean success = super.updateByDto(dto);
         if (success && dto.getId() != null) {
+            Long articleId = Long.parseLong(dto.getId().toString());
+            // 若 DTO 中显式传入了 tagIds（含空列表表示清空标签），同步覆盖更新文章标签关联
+            if (dto.getTagIds() != null) {
+                tagService.bindArticleTags(articleId, dto.getTagIds());
+            }
             // 文章内容变更后异步刷新向量（Qdrant + MySQL 双写）
-            embeddingHandler.generateAndSaveAsync(Long.parseLong(dto.getId().toString()));
+            embeddingHandler.generateAndSaveAsync(articleId);
         }
         return success;
     }
 
     /**
-     * 重写删除方法：逻辑删除成功后异步清理 Qdrant 向量
+     * 重写删除方法：逻辑删除成功后清理标签关联并异步清理 Qdrant 向量
      *
      * <p>
      * 防止已删除文章的向量作为"幽灵数据"留在 Qdrant 中，
@@ -228,12 +260,41 @@ public class ArticleServiceImpl
      * </p>
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean removeById(Serializable id) {
         boolean success = super.removeById(id);
-        if (success) {
-            embeddingHandler.removeAsync(Long.parseLong(id.toString()));
+        if (success && id != null) {
+            Long articleId = Long.parseLong(id.toString());
+            tagService.bindArticleTags(articleId, Collections.emptyList());
+            embeddingHandler.removeAsync(articleId);
         }
         return success;
+    }
+
+    /**
+     * 重写按 ID 查询详情 VO 方法：回填文章关联的标签列表
+     *
+     * @param id 文章主键 ID
+     * @return 填充了标签信息的文章详情 VO
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<ArticleDetailVO> getVoById(Serializable id) {
+        Optional<ArticleDetailVO> voOpt = super.getVoById(id);
+        if (voOpt.isPresent() && id != null) {
+            Long articleId = Long.parseLong(id.toString());
+            List<TagVO> tags = tagService.listTagsByArticleId(articleId);
+            List<ArticleDetailVO.TagVO> detailTags = tags.stream().map(tag -> {
+                ArticleDetailVO.TagVO item = new ArticleDetailVO.TagVO();
+                item.setId(tag.getId());
+                item.setName(tag.getName());
+                item.setSlug(tag.getSlug());
+                item.setColor(tag.getColor());
+                return item;
+            }).toList();
+            voOpt.get().setTags(detailTags);
+        }
+        return voOpt;
     }
 
     /**
@@ -571,11 +632,10 @@ public class ArticleServiceImpl
                     .like(ArticleEntity::getSummary, query.getKeyword()));
         }
 
-        // 标签筛选（需要子查询）
+        // 标签筛选（art_article_tag 为物理关联中间表，无 is_deleted 列）
         if (query.getTagId() != null) {
             wrapper.inSql(ArticleEntity::getId,
-                    "SELECT article_id FROM art_article_tag WHERE tag_id = " + query.getTagId()
-                            + " AND is_deleted = 0");
+                    "SELECT article_id FROM art_article_tag WHERE tag_id = " + query.getTagId());
         }
 
         // 排序：置顶优先，然后按发布时间倒序
@@ -621,11 +681,10 @@ public class ArticleServiceImpl
                     .like(ArticleEntity::getSummary, query.getKeyword()));
         }
 
-        // 标签筛选（需要子查询）
+        // 标签筛选（art_article_tag 为物理关联中间表，无 is_deleted 列）
         if (query.getTagId() != null) {
             wrapper.inSql(ArticleEntity::getId,
-                    "SELECT article_id FROM art_article_tag WHERE tag_id = " + query.getTagId()
-                            + " AND is_deleted = 0");
+                    "SELECT article_id FROM art_article_tag WHERE tag_id = " + query.getTagId());
         }
 
         // 排序：置顶优先，然后按发布时间倒序

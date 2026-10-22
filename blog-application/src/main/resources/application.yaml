@@ -370,7 +370,7 @@ blog:
   api:
     base-url: ${BLOG_API_BASE_URL:http://localhost:${server.port:8080}}
     username: ${BLOG_ADMIN_USERNAME:admin}
-    password: ${BLOG_ADMIN_PASSWORD:Admin@123}
+    password: ${BLOG_ADMIN_PASSWORD:}
   ssh:
     host: ${OPS_SSH_HOST:107.175.36.50}
     port: ${OPS_SSH_PORT:22}

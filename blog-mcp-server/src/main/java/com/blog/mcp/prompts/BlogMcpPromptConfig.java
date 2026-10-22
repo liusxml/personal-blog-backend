@@ -139,8 +139,8 @@ public class BlogMcpPromptConfig {
                 请对我的个人博客系统执行一次完整的生产级健康巡检，按顺序执行以下工具调用：
                 
                 1. 调用 `checkBackendHealth` 检查博客后端 (8080) 的 Spring Boot Actuator 健康状态（数据库、Redis、磁盘）；
-                2. 调用 `checkServerResources` 通过 SSH 检查远程 VPS (107.175.36.50) 的 CPU 负载、内存占用率与磁盘剩余空间；
-                3. 调用 `checkDockerContainers` 检查远程 VPS 上 Docker Compose 各容器的运行与健康状态；
+                2. 调用 `checkServerResources` 通过 SSH 检查远程生产 VPS 服务器的 CPU 负载、内存占用率与磁盘剩余空间；
+                3. 调用 `checkDockerContainers` 检查远程生产 VPS 服务器上 Docker Compose 各容器的运行与健康状态；
                 %s
                 
                 最后，请以清晰的 Markdown 表格形式汇总巡检结果，并给出是否存在风险的明确结论。
