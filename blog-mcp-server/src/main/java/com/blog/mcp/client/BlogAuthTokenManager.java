@@ -46,7 +46,7 @@ public class BlogAuthTokenManager {
     @Value("${blog.api.username:admin}")
     private String username;
 
-    @Value("${blog.api.password:Admin@123}")
+    @Value("${blog.api.password:}")
     private String password;
 
     /**
@@ -62,66 +62,79 @@ public class BlogAuthTokenManager {
     /**
      * 获取合法的 Authorization 请求头值（格式：{@code Bearer <token>}）
      *
-     * <p>优先从当前 HTTP 请求头提取客户端传入的 Bearer Token；若不存在则走内存缓存或账号密码登录兜底。</p>
+     * <p>优先无锁从当前 HTTP 请求头提取客户端传入的 Bearer Token；若不存在则通过双重检查锁走内存缓存或账号密码登录兜底。</p>
      *
      * @return 完整的 Bearer Token 字符串
      */
-    public synchronized String getBearerToken() {
-        // 0. 优先从当前 MCP HTTP 请求上下文提取客户端传入的 Authorization: Bearer <token>
+    public String getBearerToken() {
+        // 0. 无锁快路径：优先从当前 MCP HTTP 请求上下文提取客户端传入的 Authorization: Bearer <token>
         if (RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes servletAttrs) {
             HttpServletRequest request = servletAttrs.getRequest();
             String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
             if (StringUtils.hasText(authHeader) && authHeader.startsWith("Bearer ")) {
+                log.debug("MCP 认证管理器: 已从当前 HTTP 请求上下文透传 Bearer Token");
                 return authHeader;
             }
         }
 
-        // 如果已缓存且未临近过期，直接返回复用
+        // 1. 无锁快路径：如果已缓存且未临近过期，直接返回复用
         if (StringUtils.hasText(cachedToken) && Instant.now().isBefore(tokenExpireAt)) {
             return "Bearer " + cachedToken;
         }
 
-        log.info("MCP 认证管理器: 正在登录博客后端获取新 JWT Token, username={}", username);
-
-        try {
-            // 1. 调用博客后端的登录接口 POST /api/v1/auth/login
-            String responseBody = blogRestClient.post()
-                    .uri("/api/v1/auth/login")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(Map.of(
-                            "username", username,
-                            "password", password
-                    ))
-                    .retrieve()
-                    .body(String.class);
-
-            // 2. 解析统一响应体 Result<LoginVO> 中的 data.token 和 data.expiresIn
-            JsonNode root = objectMapper.readTree(responseBody);
-            int code = root.path("code").asInt(-1);
-            if (code != 0 && code != 200) {
-                String msg = root.path("message").asText("未知登录错误");
-                throw new IllegalStateException("博客后端登录失败: " + msg);
+        // 2. 慢路径：双重检查锁（DCL）仅在需要发起后端登录刷新缓存时加锁
+        synchronized (this) {
+            if (StringUtils.hasText(cachedToken) && Instant.now().isBefore(tokenExpireAt)) {
+                return "Bearer " + cachedToken;
             }
 
-            JsonNode dataNode = root.path("data");
-            String token = dataNode.path("token").asText();
-            long expiresIn = dataNode.path("expiresIn").asLong(7200L);
-
-            if (!StringUtils.hasText(token)) {
-                throw new IllegalStateException("登录响应中未包含有效的 JWT Token");
+            if (!StringUtils.hasText(password)) {
+                throw new IllegalStateException(
+                        "当前请求未携带 Authorization: Bearer Token，且未配置兜底环境变量 BLOG_ADMIN_PASSWORD");
             }
 
-            // 3. 更新缓存与过期时间（扣除 5 分钟安全缓冲期）
-            this.cachedToken = token;
-            long validSeconds = Math.max(60L, expiresIn - EXPIRY_BUFFER_SECONDS);
-            this.tokenExpireAt = Instant.now().plusSeconds(validSeconds);
+            log.info("MCP 认证管理器: 正在使用兜底账号登录博客后端获取新 JWT Token, username={}", username);
 
-            log.info("MCP 认证管理器: JWT Token 获取成功，有效期 {} 秒", validSeconds);
-            return "Bearer " + this.cachedToken;
+            try {
+                // 调用博客后端的登录接口 POST /api/v1/auth/login
+                String responseBody = blogRestClient.post()
+                        .uri("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(Map.of(
+                                "username", username,
+                                "password", password
+                        ))
+                        .retrieve()
+                        .body(String.class);
 
-        } catch (Exception e) {
-            log.error("MCP 认证管理器: 获取 JWT Token 异常", e);
-            throw new IllegalStateException("无法获取博客管理员认证 Token: " + e.getMessage(), e);
+                // 解析统一响应体 Result<LoginVO> 中的 data.token 和 data.expiresIn
+                JsonNode root = objectMapper.readTree(responseBody);
+                int code = root.path("code").asInt(-1);
+                if (code != 0 && code != 200) {
+                    String msg = root.path("message").asText("未知登录错误");
+                    throw new IllegalStateException("博客后端登录失败: " + msg);
+                }
+
+                JsonNode dataNode = root.path("data");
+                String token = dataNode.path("token").asText();
+                long expiresIn = dataNode.path("expiresIn").asLong(7200L);
+
+                if (!StringUtils.hasText(token)) {
+                    throw new IllegalStateException("登录响应中未包含有效的 JWT Token");
+                }
+
+                // 更新缓存与过期时间（扣除 5 分钟安全缓冲期）
+                this.cachedToken = token;
+                long validSeconds = Math.max(60L, expiresIn - EXPIRY_BUFFER_SECONDS);
+                this.tokenExpireAt = Instant.now().plusSeconds(validSeconds);
+
+                log.info("MCP 认证管理器: 兜底 JWT Token 获取成功，有效期 {} 秒", validSeconds);
+                return "Bearer " + this.cachedToken;
+
+            } catch (Exception e) {
+                log.error("MCP 认证管理器: 获取 JWT Token 异常", e);
+                throw new IllegalStateException("无法获取博客管理员认证 Token: " + e.getMessage(), e);
+            }
         }
     }
 }

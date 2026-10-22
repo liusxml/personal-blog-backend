@@ -66,4 +66,24 @@ public interface ITagService extends IBaseService<ArticleTagEntity, TagVO, TagDT
      * @return 标签VO
      */
     Optional<TagVO> getBySlug(String slug);
+
+    /**
+     * 绑定文章与标签的关联关系（全量覆盖模式）
+     *
+     * <p>
+     * 先清理文章原有的标签关联，再写入新的标签关联，并自动重算受影响标签的文章计数。
+     * </p>
+     *
+     * @param articleId 文章ID
+     * @param tagIds    标签ID列表（为空集合时表示清空该文章的所有标签）
+     */
+    void bindArticleTags(Long articleId, List<Long> tagIds);
+
+    /**
+     * 根据文章ID查询关联的标签列表
+     *
+     * @param articleId 文章ID
+     * @return 标签VO列表
+     */
+    List<TagVO> listTagsByArticleId(Long articleId);
 }

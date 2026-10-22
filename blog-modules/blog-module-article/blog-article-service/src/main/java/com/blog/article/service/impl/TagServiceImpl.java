@@ -15,13 +15,18 @@ import com.blog.common.base.BaseServiceImpl;
 import com.blog.common.exception.BusinessException;
 import com.blog.common.exception.SystemErrorCode;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -146,6 +151,83 @@ public class TagServiceImpl
         tag.setId(tagId);
         tag.setArticleCount(count.intValue());
         tagMapper.updateById(tag);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void bindArticleTags(Long articleId, List<Long> tagIds) {
+        if (articleId == null) {
+            return;
+        }
+
+        // 1. 查询该文章现有的标签关联，记录旧标签ID以便后续重算文章数量
+        List<ArticleTagRelationEntity> oldRelations = tagRelationMapper.selectList(
+                Wrappers.lambdaQuery(ArticleTagRelationEntity.class)
+                        .eq(ArticleTagRelationEntity::getArticleId, articleId));
+        Set<Long> affectedTagIds = oldRelations.stream()
+                .map(ArticleTagRelationEntity::getTagId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(HashSet::new));
+
+        // 2. 物理删除该文章在中间表 art_article_tag 中的旧关联记录
+        if (!oldRelations.isEmpty()) {
+            tagRelationMapper.delete(
+                    Wrappers.lambdaQuery(ArticleTagRelationEntity.class)
+                            .eq(ArticleTagRelationEntity::getArticleId, articleId));
+        }
+
+        // 3. 去重并插入新的文章-标签关联记录
+        if (CollectionUtils.isNotEmpty(tagIds)) {
+            List<Long> distinctTagIds = tagIds.stream()
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .toList();
+            for (Long tagId : distinctTagIds) {
+                ArticleTagRelationEntity relation = new ArticleTagRelationEntity();
+                relation.setArticleId(articleId);
+                relation.setTagId(tagId);
+                tagRelationMapper.insert(relation);
+                affectedTagIds.add(tagId);
+            }
+        }
+
+        // 4. 刷新所有受影响标签（旧标签 ∪ 新标签）的关联文章数
+        for (Long affectedTagId : affectedTagIds) {
+            updateArticleCount(affectedTagId);
+        }
+
+        log.info("文章标签绑定完成: articleId={}, tagIds={}", articleId, tagIds);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TagVO> listTagsByArticleId(Long articleId) {
+        if (articleId == null) {
+            return Collections.emptyList();
+        }
+
+        List<ArticleTagRelationEntity> relations = tagRelationMapper.selectList(
+                Wrappers.lambdaQuery(ArticleTagRelationEntity.class)
+                        .eq(ArticleTagRelationEntity::getArticleId, articleId));
+        if (CollectionUtils.isEmpty(relations)) {
+            return Collections.emptyList();
+        }
+
+        List<Long> tagIds = relations.stream()
+                .map(ArticleTagRelationEntity::getTagId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        if (tagIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<ArticleTagEntity> tags = tagMapper.selectList(
+                Wrappers.lambdaQuery(ArticleTagEntity.class)
+                        .in(ArticleTagEntity::getId, tagIds));
+        return tags.stream()
+                .map(converter::entityToVo)
+                .collect(Collectors.toList());
     }
 
     @Override

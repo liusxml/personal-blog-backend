@@ -1,5 +1,6 @@
 package com.blog.system.controller;
 
+import com.blog.common.constants.CacheKeys;
 import com.blog.common.model.Result;
 import com.blog.common.utils.SecurityUtils;
 import com.blog.system.api.dto.LoginDTO;
@@ -13,12 +14,16 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.time.Duration;
 
 /**
  * 认证控制器
@@ -34,6 +39,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final IUserService userService;
+    private final StringRedisTemplate stringRedisTemplate;
 
     /**
      * 用户注册
@@ -88,5 +94,27 @@ public class AuthController {
         log.info("管理员请求签发 MCP Token: userId={}, expirationDays={}", currentUserId, expirationDays);
         LoginVO mcpTokenVO = userService.generateMcpToken(currentUserId, expirationDays);
         return Result.success(mcpTokenVO);
+    }
+
+    /**
+     * 吊销当前管理员已签发的所有 MCP 专用长效 Token（仅限管理员）
+     * <p>
+     * 将当前时间戳（向上取整 +1s 覆盖秒级 iat 截断）写入 Redis 键 {@code mcp:token:revoked_before:{userId}}，
+     * 使得此前签发的所有 MCP Token 立即失效。
+     *
+     * @return 空成功响应
+     */
+    @DeleteMapping("/mcp-token")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "吊销 MCP 专用 Token", description = "立即作废当前登录管理员此前签发的所有 MCP 客户端长效 Token")
+    public Result<Void> revokeMcpToken() {
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        long revokedBeforeMillis = System.currentTimeMillis() + 1000L;
+        stringRedisTemplate.opsForValue().set(
+                CacheKeys.mcpTokenRevokedBeforeKey(currentUserId),
+                String.valueOf(revokedBeforeMillis),
+                Duration.ofDays(365));
+        log.info("管理员已吊销所有历史 MCP Token: userId={}, revokedBeforeMillis={}", currentUserId, revokedBeforeMillis);
+        return Result.success();
     }
 }
