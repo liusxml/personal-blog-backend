@@ -50,6 +50,9 @@ public class ArticleDetailVO implements Serializable {
     @Schema(description = "封面图URL")
     private String coverImage;
 
+    @Schema(description = "封面图文件ID（String类型防止JS数字精度丢失，用于刷新过期预签名URL）")
+    private String coverImageId;
+
     @Schema(description = "作者信息")
     private AuthorVO author;
 

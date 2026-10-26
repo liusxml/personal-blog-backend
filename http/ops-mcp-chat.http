@@ -1,0 +1,55 @@
+### 1. 管理员登录获取 JWT Token
+# @name login
+# @no-log
+POST http://localhost:8080/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "{{$env.BLOG_ADMIN_PASSWORD}}"
+}
+
+> {%
+    if (response.status === 200 && response.body && response.body.data && response.body.data.token) {
+        client.global.set("authToken", response.body.data.token);
+    }
+%}
+
+### 2. 调用 Ops Agent（Spring AI + MCP Client 模式）流式巡检服务器状态
+# @name mcpChat
+# @timeout 60
+< {%
+    // 若尚未执行 login，则使用本地开发环境默认 jwt-secret 动态签发一个 5 分钟有效期的管理员测试 JWT
+    if (!client.global.get("authToken")) {
+        const b64url = (str) => btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+        const secret = "dev-blog-jwt-secret-key-minimum-256-bits-change-in-production-environment";
+        const nowSec = Math.floor(Date.now() / 1000);
+        const header = b64url(JSON.stringify({ alg: "HS512", typ: "JWT" }));
+        const payload = b64url(JSON.stringify({
+            sub: "admin",
+            userId: 1,
+            roles: ["ROLE_ADMIN"],
+            iat: nowSec,
+            exp: nowSec + 300
+        }));
+        const sig = crypto.hmac.sha512()
+            .withTextSecret(secret)
+            .updateWithText(header + "." + payload)
+            .digest()
+            .toBase64(true);
+        request.variables.set("token", header + "." + payload + "." + sig);
+    } else {
+        request.variables.set("token", client.global.get("authToken"));
+    }
+%}
+GET http://localhost:8080/api/v1/ops/mcp-chat
+    ?message=检查一下后端服务健康状态和服务器状态
+    &conversationId=http-test-01
+Accept: text/event-stream
+Authorization: Bearer {{token}}
+
+> {%
+    client.test("SSE status is 200", function () {
+        client.assert(response.status === 200, "Expected HTTP 200 but got " + response.status);
+    });
+%}

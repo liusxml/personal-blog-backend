@@ -1,9 +1,12 @@
 package com.blog.article.service.event;
 
 import com.blog.article.domain.event.ArticlePublishedEvent;
+import com.blog.article.infrastructure.mapper.ArticleMapper;
 import com.blog.article.infrastructure.vector.ArticleEmbeddingHandler;
+import com.blog.common.event.FileAccessUrlRefreshedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -33,7 +36,29 @@ import org.springframework.stereotype.Component;
 public class ArticleEventListener {
 
     private final ArticleEmbeddingHandler embeddingHandler;
+    private final ArticleMapper articleMapper;
     // 待实现: CacheManager, ArticleStatsService, NotificationService
+
+    /**
+     * 处理文件访问 URL 刷新事件：异步回写关联文章的封面图预签名 URL
+     *
+     * @param event 文件访问 URL 刷新完成事件
+     */
+    @Async
+    @EventListener
+    public void handleFileAccessUrlRefreshed(FileAccessUrlRefreshedEvent event) {
+        if (event == null || event.fileId() == null || StringUtils.isBlank(event.accessUrl())) {
+            return;
+        }
+        try {
+            int updatedRows = articleMapper.updateCoverImageByFileId(event.fileId(), event.accessUrl());
+            if (updatedRows > 0) {
+                log.info("已同步更新文章封面预签名URL: fileId={}, updatedRows={}", event.fileId(), updatedRows);
+            }
+        } catch (Exception e) {
+            log.error("同步更新文章封面预签名URL失败: fileId={}", event.fileId(), e);
+        }
+    }
 
     /**
      * 处理文章发布事件

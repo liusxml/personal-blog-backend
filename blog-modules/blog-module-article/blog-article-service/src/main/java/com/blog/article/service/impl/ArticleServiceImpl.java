@@ -23,9 +23,11 @@ import com.blog.article.service.chain.ContentProcessor;
 import com.blog.article.service.chain.ProcessResult;
 import com.blog.article.vo.TagVO;
 import com.blog.common.base.BaseServiceImpl;
+import com.blog.common.event.FileAccessUrlRefreshRequestEvent;
 import com.blog.common.exception.BusinessException;
 import com.blog.common.exception.SystemErrorCode;
 import com.blog.common.model.PageResult;
+import com.blog.common.utils.PresignedUrlUtils;
 import com.blog.common.utils.SecurityUtils;
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
@@ -282,6 +284,8 @@ public class ArticleServiceImpl
     public Optional<ArticleDetailVO> getVoById(Serializable id) {
         Optional<ArticleDetailVO> voOpt = super.getVoById(id);
         if (voOpt.isPresent() && id != null) {
+            ArticleDetailVO detailVo = voOpt.get();
+            detailVo.setCoverImage(resolveFreshCoverImage(detailVo.getCoverImageId(), detailVo.getCoverImage()));
             Long articleId = Long.parseLong(id.toString());
             List<TagVO> tags = tagService.listTagsByArticleId(articleId);
             List<ArticleDetailVO.TagVO> detailTags = tags.stream().map(tag -> {
@@ -292,7 +296,7 @@ public class ArticleServiceImpl
                 item.setColor(tag.getColor());
                 return item;
             }).toList();
-            voOpt.get().setTags(detailTags);
+            detailVo.setTags(detailTags);
         }
         return voOpt;
     }
@@ -451,7 +455,7 @@ public class ArticleServiceImpl
                         List<ArticleEntity> related = articleMapper.selectList(
                                 new LambdaQueryWrapper<ArticleEntity>().in(ArticleEntity::getId, ids));
                         if (!related.isEmpty()) {
-                            return related.stream().map(converter::entityToListVo).toList();
+                            return related.stream().map(this::mapListVoWithFreshCover).toList();
                         }
                     }
                 } catch (Exception e) {
@@ -465,18 +469,18 @@ public class ArticleServiceImpl
                 List<ArticleEntity> byCat = articleMapper.findByCategoryExcluding(
                         article.getCategoryId(), articleId, limit);
                 if (!byCat.isEmpty()) {
-                    return byCat.stream().map(converter::entityToListVo).toList();
+                    return byCat.stream().map(this::mapListVoWithFreshCover).toList();
                 }
             }
 
             // 最终降级：最新文章
             return articleMapper.findLatestArticlesExcluding(articleId, limit)
-                    .stream().map(converter::entityToListVo).toList();
+                    .stream().map(this::mapListVoWithFreshCover).toList();
 
         } catch (Exception e) {
             log.error("获取相关文章失败: articleId={}", articleId, e);
             return articleMapper.findLatestArticlesExcluding(articleId, limit)
-                    .stream().map(converter::entityToListVo).toList();
+                    .stream().map(this::mapListVoWithFreshCover).toList();
         }
     }
 
@@ -559,8 +563,8 @@ public class ArticleServiceImpl
         // 构建查询条件
         LambdaQueryWrapper<ArticleEntity> wrapper = buildQueryWrapper(query);
 
-        // 使用 BaseServiceImpl 的 pageWithConverter（直接 Entity -> ListVO）
-        IPage<ArticleListVO> listVoPage = this.pageWithConverter(page, wrapper, converter::entityToListVo);
+        // 使用 BaseServiceImpl 的 pageWithConverter（Entity -> ListVO 并自动刷新过期封面 URL）
+        IPage<ArticleListVO> listVoPage = this.pageWithConverter(page, wrapper, this::mapListVoWithFreshCover);
 
         // 转换为 PageResult
         return PageResult.of(listVoPage);
@@ -590,8 +594,8 @@ public class ArticleServiceImpl
         // 构建查询条件（管理端版本）
         LambdaQueryWrapper<ArticleEntity> wrapper = buildQueryWrapperForAdmin(query);
 
-        // 使用 BaseServiceImpl 的 pageWithConverter（直接 Entity -> ListVO）
-        IPage<ArticleListVO> listVoPage = this.pageWithConverter(page, wrapper, converter::entityToListVo);
+        // 使用 BaseServiceImpl 的 pageWithConverter（Entity -> ListVO 并自动刷新过期封面 URL）
+        IPage<ArticleListVO> listVoPage = this.pageWithConverter(page, wrapper, this::mapListVoWithFreshCover);
 
         // 转换为 PageResult
         return PageResult.of(listVoPage);
@@ -744,6 +748,50 @@ public class ArticleServiceImpl
             sb.append(StringUtils.left(article.getContent(), 500));
         }
         return sb.toString().trim();
+    }
+
+    /**
+     * 7 天有效期（分钟数）：7 * 24 * 60 = 10080
+     */
+    private static final int DEFAULT_COVER_EXPIRE_MINUTES = 10080;
+
+    /**
+     * 转换文章实体为列表 VO，并按需刷新已过期的 S3 预签名封面图 URL
+     *
+     * @param entity 文章实体
+     * @return 保证封面 URL 有效的文章列表 VO
+     */
+    private ArticleListVO mapListVoWithFreshCover(ArticleEntity entity) {
+        ArticleListVO vo = converter.entityToListVo(entity);
+        if (vo != null) {
+            vo.setCoverImage(resolveFreshCoverImage(vo.getCoverImageId(), vo.getCoverImage()));
+        }
+        return vo;
+    }
+
+    /**
+     * 检查封面图 S3 预签名 URL 是否已过期，若过期则通过事件总线同步刷新并返回新 URL
+     *
+     * @param coverImageId 封面图文件 ID
+     * @param coverImage   当前封面图 URL
+     * @return 有效的封面图 URL
+     */
+    private String resolveFreshCoverImage(String coverImageId, String coverImage) {
+        if (StringUtils.isBlank(coverImageId) || !PresignedUrlUtils.isPresignedUrlExpired(coverImage)) {
+            return coverImage;
+        }
+        try {
+            Long fileId = Long.parseLong(coverImageId);
+            FileAccessUrlRefreshRequestEvent requestEvent = new FileAccessUrlRefreshRequestEvent(
+                    fileId, DEFAULT_COVER_EXPIRE_MINUTES);
+            eventPublisher.publishEvent(requestEvent);
+            if (StringUtils.isNotBlank(requestEvent.getRefreshedAccessUrl())) {
+                return requestEvent.getRefreshedAccessUrl();
+            }
+        } catch (Exception e) {
+            log.warn("自动刷新文章过期封面URL失败: coverImageId={}, reason={}", coverImageId, e.getMessage());
+        }
+        return coverImage;
     }
 }
 

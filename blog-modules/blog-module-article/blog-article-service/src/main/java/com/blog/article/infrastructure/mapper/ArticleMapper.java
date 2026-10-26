@@ -45,6 +45,7 @@ public interface ArticleMapper extends BaseMapper<ArticleEntity> {
      */
     @Select("""
                 SELECT id, title, summary, cover_image as coverImage,
+                       cover_image_id as coverImageId,
                        author_id as authorId, category_id as categoryId,
                        publish_time as publishTime, is_top as isTop
                 FROM art_article
@@ -69,6 +70,7 @@ public interface ArticleMapper extends BaseMapper<ArticleEntity> {
      */
     @Select("""
                 SELECT id, title, summary, cover_image as coverImage,
+                       cover_image_id as coverImageId,
                        author_id as authorId, category_id as categoryId,
                        publish_time as publishTime, is_top as isTop
                 FROM art_article
@@ -96,4 +98,14 @@ public interface ArticleMapper extends BaseMapper<ArticleEntity> {
      */
     @Update("UPDATE art_article SET embedding = STRING_TO_VECTOR(#{vectorString}) WHERE id = #{articleId}")
     void updateEmbedding(@Param("articleId") Long articleId, @Param("vectorString") String vectorString);
+
+    /**
+     * 根据封面文件 ID 同步刷新文章封面预签名 URL
+     *
+     * @param fileId     文件 ID（关联 file_file.id）
+     * @param coverImage 新生成的预签名访问 URL
+     * @return 影响行数
+     */
+    @Update("UPDATE art_article SET cover_image = #{coverImage} WHERE cover_image_id = #{fileId} AND is_deleted = 0")
+    int updateCoverImageByFileId(@Param("fileId") Long fileId, @Param("coverImage") String coverImage);
 }

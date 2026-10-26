@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.blog.common.base.BaseServiceImpl;
+import com.blog.common.event.FileAccessUrlRefreshRequestEvent;
+import com.blog.common.event.FileAccessUrlRefreshedEvent;
 import com.blog.common.exception.BusinessException;
 import com.blog.common.model.PageResult;
 import com.blog.file.api.dto.FileDTO;
@@ -19,6 +21,8 @@ import com.blog.file.infrastructure.storage.FileStorageStrategy;
 import com.blog.file.infrastructure.storage.StorageContext;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -61,14 +65,18 @@ public class FileServiceImpl
 
     private final StorageContext storageContext;
     private final FileConverter converter;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 调用父类构造函数注入 converter
      */
-    public FileServiceImpl(StorageContext storageContext, FileConverter converter) {
+    public FileServiceImpl(StorageContext storageContext,
+                           FileConverter converter,
+                           ApplicationEventPublisher eventPublisher) {
         super(converter);
         this.storageContext = storageContext;
         this.converter = converter;
+        this.eventPublisher = eventPublisher;
     }
 
     // BaseServiceImpl 已注入：
@@ -224,7 +232,27 @@ public class FileServiceImpl
 
         FileStorageStrategy strategy = storageContext.getStrategy(file.getStorageType());
         // 使用 generateDownloadUrl 生成下载链接（GET），而不是 generatePresignedUrl（PUT）
-        return strategy.generateDownloadUrl(file.getFileKey(), expireMinutes);
+        String accessUrl = strategy.generateDownloadUrl(file.getFileKey(), expireMinutes);
+        eventPublisher.publishEvent(new FileAccessUrlRefreshedEvent(fileId, accessUrl));
+        return accessUrl;
+    }
+
+    /**
+     * 响应跨模块按需刷新文件预签名 URL 请求
+     *
+     * @param event 按需刷新请求事件
+     */
+    @EventListener
+    public void handleRefreshRequest(FileAccessUrlRefreshRequestEvent event) {
+        if (event == null || event.getFileId() == null) {
+            return;
+        }
+        try {
+            String freshUrl = getAccessUrl(event.getFileId(), event.getExpireMinutes());
+            event.setRefreshedAccessUrl(freshUrl);
+        } catch (Exception e) {
+            log.warn("按需刷新文件预签名URL失败: fileId={}, reason={}", event.getFileId(), e.getMessage());
+        }
     }
 
     /**
