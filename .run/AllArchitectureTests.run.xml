@@ -1,0 +1,18 @@
+<component name="ProjectRunConfigurationManager">
+    <configuration default="false" name="AllArchitectureTests" type="JUnit" factoryName="JUnit"
+                   folderName="后端 (backend)">
+        <module name="blog-application"/>
+        <extension name="coverage">
+            <pattern>
+                <option name="PATTERN" value="com.blog.architecture.*"/>
+                <option name="ENABLED" value="true"/>
+            </pattern>
+        </extension>
+        <option name="PACKAGE_NAME" value="com.blog.architecture"/>
+        <option name="MAIN_CLASS_NAME" value="com.blog.architecture.AllArchitectureTests"/>
+        <option name="TEST_OBJECT" value="class"/>
+        <method v="2">
+            <option name="Make" enabled="true"/>
+        </method>
+    </configuration>
+</component>

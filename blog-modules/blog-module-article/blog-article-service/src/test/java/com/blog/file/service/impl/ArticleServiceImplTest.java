@@ -16,6 +16,7 @@ import com.blog.article.service.chain.ContentProcessor;
 import com.blog.article.service.chain.ProcessResult;
 import com.blog.article.service.impl.ArticleServiceImpl;
 import com.blog.ai.api.service.TextEmbeddingService;
+import com.blog.common.event.FileAccessUrlRefreshRequestEvent;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,6 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -389,5 +391,50 @@ class ArticleServiceImplTest {
         // When & Then
         assertThatThrownBy(() -> articleService.publishArticle(null))
                 .isInstanceOf(Exception.class);
+    }
+
+    @Test
+    @DisplayName("封面图自动刷新 - 检测到过期S3预签名URL时自动刷新并替换")
+    void should_refreshExpiredCoverImage_when_queryingRelatedArticles() {
+        // Given
+        Long articleId = 1L;
+        Long fileId = 2033490364022177793L;
+        String expiredUrl = "https://s3.bitiful.net/blog-module-file/uploads/2026/03/16/cover.png"
+                + "?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20260323T154216Z&X-Amz-Expires=604800&X-Amz-Signature=abc";
+        String freshUrl = "https://s3.bitiful.net/blog-module-file/uploads/2026/03/16/cover.png"
+                + "?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20261026T030000Z&X-Amz-Expires=604800&X-Amz-Signature=def";
+
+        ArticleEntity currentArticle = new ArticleEntity();
+        currentArticle.setId(articleId);
+        currentArticle.setTitle(null);
+        currentArticle.setCategoryId(1L);
+
+        ArticleEntity catEntity = new ArticleEntity();
+        catEntity.setId(2L);
+        catEntity.setTitle("含S3封面的文章");
+        catEntity.setCoverImageId(fileId);
+        catEntity.setCoverImage(expiredUrl);
+
+        ArticleListVO catVo = new ArticleListVO();
+        catVo.setId("2");
+        catVo.setTitle("含S3封面的文章");
+        catVo.setCoverImageId(String.valueOf(fileId));
+        catVo.setCoverImage(expiredUrl);
+
+        when(articleMapper.selectById(articleId)).thenReturn(currentArticle);
+        when(articleMapper.findByCategoryExcluding(1L, articleId, 5)).thenReturn(List.of(catEntity));
+        when(converter.entityToListVo(catEntity)).thenReturn(catVo);
+        doAnswer(invocation -> {
+            FileAccessUrlRefreshRequestEvent event = invocation.getArgument(0);
+            event.setRefreshedAccessUrl(freshUrl);
+            return null;
+        }).when(eventPublisher).publishEvent(any(FileAccessUrlRefreshRequestEvent.class));
+
+        // When
+        List<ArticleListVO> result = articleService.getRelatedArticles(articleId, 5);
+
+        // Then
+        assertThat(result).hasSize(1);
+        assertThat(result.getFirst().getCoverImage()).isEqualTo(freshUrl);
     }
 }
