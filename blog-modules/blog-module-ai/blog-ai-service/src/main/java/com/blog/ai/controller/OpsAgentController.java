@@ -68,7 +68,17 @@ public class OpsAgentController {
     /**
      * Spring AI + MCP 模式默认主力模型（固定置顶于模型下拉框首项）
      */
-    private static final String DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
+    private static final String DEFAULT_GEMINI_MODEL = "gemini-flash-latest";
+
+    /**
+     * Gemini Developer API 推荐候选模型列表（置顶展示并作为远端拉取失败时的兜底）
+     */
+    private static final List<String> RECOMMENDED_GEMINI_MODELS = List.of(
+            "gemini-flash-latest",
+            "gemini-3-flash-preview",
+            "gemini-3.5-flash",
+            "gemini-3.8-flash"
+    );
 
     /**
      * 旧模式（LangChain4j + 本地 @Tool 直接执行 SSH）运维 Agent
@@ -166,17 +176,15 @@ public class OpsAgentController {
      */
     @Operation(
             summary = "获取 Spring AI + MCP 模式可用模型列表",
-            description = "优先从 Google GenAI API 动态拉取可用 Gemini 模型列表，失败时自动回退到 Spring AI 内置模型枚举"
+            description = "优先从 Google GenAI API 动态拉取可用 Gemini 模型列表，失败时自动回退到推荐模型列表与 Spring AI 内置模型枚举"
     )
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/mcp-models")
     public Result<List<String>> getMcpModels() {
-        Set<String> models = new LinkedHashSet<>();
-        // 1. 始终将 gemini-2.5-flash 固定排在第一位（默认 · 主力均衡）
-        models.add(DEFAULT_GEMINI_MODEL);
+        Set<String> models = new LinkedHashSet<>(RECOMMENDED_GEMINI_MODELS);
 
         Client genAiClient = genAiClientProvider.getIfAvailable();
-        if (genAiClient != null) {
+        if (genAiClient != null && !genAiClient.vertexAI()) {
             try {
                 for (Model model : genAiClient.models.list(ListModelsConfig.builder().pageSize(100).build())) {
                     String rawName = model.name().orElse("");
@@ -186,12 +194,12 @@ public class OpsAgentController {
                     }
                 }
             } catch (Exception e) {
-                log.warn("从 Google GenAI API 动态拉取模型列表失败，回退至 Spring AI 内置模型枚举: {}", e.getMessage());
+                log.warn("从 Google GenAI API 动态拉取模型列表失败，回退至内置推荐模型列表: {}", e.getMessage());
             }
         }
 
-        // 2. 若远端未返回额外模型，使用 Spring AI 官方内置的 Gemini 枚举兜底
-        if (models.size() <= 1) {
+        // 若远端未返回额外模型，补充 Spring AI 官方内置的 Gemini 枚举兜底
+        if (models.size() <= RECOMMENDED_GEMINI_MODELS.size()) {
             for (GoogleGenAiChatModel.ChatModel preset : GoogleGenAiChatModel.ChatModel.values()) {
                 String modelId = preset.getValue();
                 if (isSupportedGeminiChatModel(modelId)) {
@@ -245,8 +253,10 @@ public class OpsAgentController {
 
         // 优先使用显式传入的 conversationId，未传时自动回退到前端通用的 sessionId
         String activeConversationId = StringUtils.defaultIfBlank(conversationId, sessionId);
-        // 校验前端传入的模型名是否合法，不合法或为空时回退到默认 gemini-2.5-flash
-        String activeModel = isSupportedGeminiChatModel(model) ? model : DEFAULT_GEMINI_MODEL;
+        // 校验前端传入的模型名是否合法（对已停用的 gemini-2.5-flash 自动重定向到 gemini-flash-latest）
+        String activeModel = (isSupportedGeminiChatModel(model) && !"gemini-2.5-flash".equalsIgnoreCase(model))
+                ? model
+                : DEFAULT_GEMINI_MODEL;
         log.info("Ops MCP Agent chat: conversationId=[{}] model=[{}] message=[{}]",
                 activeConversationId, activeModel, message);
 

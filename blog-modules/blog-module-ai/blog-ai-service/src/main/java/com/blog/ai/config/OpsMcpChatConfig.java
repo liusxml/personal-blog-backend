@@ -13,13 +13,12 @@ import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.google.genai.GoogleGenAiChatModel;
 import org.springframework.ai.mcp.SyncMcpToolCallbackProvider;
-import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -48,7 +47,7 @@ import java.util.List;
  * @since 1.4.0
  */
 @Slf4j
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(prefix = "ops.mcp-chat", name = "enabled", havingValue = "true")
 public class OpsMcpChatConfig {
 
@@ -91,24 +90,23 @@ public class OpsMcpChatConfig {
             """;
 
     /**
-     * 自定义 Google GenAI {@link Client} Bean，自动兼容 Vertex AI Express Mode Key（{@code AQ.} 前缀）。
+     * 自定义 Google GenAI {@link Client} Bean，默认使用 Gemini Developer API 模式（{@code vertexAI(false)}）。
      *
-     * <p><b>为什么需要自定义此 Bean？</b><br>
-     * Spring AI 官方 {@code GoogleGenAiChatAutoConfiguration} 默认仅在配置了 {@code project-id} 和 {@code location}
-     * 时才调用 {@code builder.vertexAI(true)}。而 Google Cloud Vertex AI Express Mode 签发的 {@code AQ.} 前缀 API Key
-     * 只需 API Key 即可免 Project ID 调用，但底层 SDK 强制要求开启 {@code vertexAI(true)}。
-     * 由于官方自动配置标记了 {@code @ConditionalOnMissingBean}，在此声明自定义 {@link Client} 即可无缝接管。</p>
+     * <p><b>为什么注入 {@link Environment} 而不是使用 {@code @Value}？</b><br>
+     * Spring AI 的 {@code CachedContentServiceCondition} 会在配置类解析阶段（{@code BeanDefinitionRegistryPostProcessor} 阶段）
+     * 提前触发 {@code GoogleGenAiChatModel} 与本 {@link Client} Bean 的实例化，此时负责解析 {@code @Value("${...}")}
+     * 的 {@code PropertySourcesPlaceholderConfigurer} 尚未执行，会导致 {@code @Value} 注入未解析的字面量字符串。
+     * 直接通过 {@link Environment#getProperty(String, String)} 读取可确保在容器任意生命周期阶段均能正确解析环境变量。</p>
      *
-     * @param apiKey 从环境变量 {@code GEMINI_API_KEY} 注入的密钥
+     * @param environment Spring 环境上下文（直接解析 {@code spring.ai.google.genai.api-key} 与 {@code GEMINI_API_KEY}）
      * @return 构建完成的 Google GenAI Client 实例
      */
     @Bean
-    public Client genAiClient(@Value("${spring.ai.google.genai.api-key}") String apiKey) {
+    public Client genAiClient(Environment environment) {
+        String apiKey = StringUtils.trimToEmpty(
+                environment.getProperty("spring.ai.google.genai.api-key", "gemini-dev-placeholder"));
         Client.Builder builder = Client.builder().apiKey(apiKey);
-        if (apiKey != null && apiKey.startsWith("AQ.")) {
-            log.info("检测到 Vertex AI Express Mode API Key (AQ. 前缀)，自动开启 Google GenAI Client vertexAI(true) 模式");
-            builder.vertexAI(true);
-        }
+        // 不要因为 AQ. 前缀开启 vertexAI(true)，AI Studio 新版密钥同样以 AQ. 开头但仅限 generativelanguage.googleapis.com
         return builder.build();
     }
 
@@ -123,15 +121,16 @@ public class OpsMcpChatConfig {
      *       既严格走完 Spring Security {@code /mcp} 鉴权过滤链，又免去手动复制粘贴 Token 的繁琐步骤。</li>
      * </ol>
      *
-     * @param configuredMcpToken 配置文件中注入的 {@code ops.mcp-chat.mcp-token}
-     * @param jwtTokenProvider   JWT 令牌签发器
+     * @param environment      Spring 环境上下文（读取 {@code ops.mcp-chat.mcp-token}）
+     * @param jwtTokenProvider JWT 令牌签发器
      * @return HTTP 请求定制器
      */
     @Bean
     public McpSyncHttpClientRequestCustomizer opsMcpHttpClientRequestCustomizer(
-            @Value("${ops.mcp-chat.mcp-token:}") String configuredMcpToken,
+            Environment environment,
             JwtTokenProvider jwtTokenProvider) {
 
+        String configuredMcpToken = environment.getProperty("ops.mcp-chat.mcp-token", "");
         return (builder, method, endpoint, body, context) -> {
             String tokenToUse = configuredMcpToken;
             if (StringUtils.isBlank(tokenToUse)) {
