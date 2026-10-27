@@ -114,7 +114,7 @@ spring:
         api-key: ${GEMINI_API_KEY:gemini-dev-placeholder}
         chat:
           options:
-            model: ${GEMINI_MODEL:gemini-2.5-flash} # 默认使用速度与工具调用兼优的 gemini-2.5-flash
+            model: ${GEMINI_MODEL:gemini-flash-latest} # 默认使用速度与工具调用兼优的 gemini-flash-latest
             temperature: 0.7
 
     mcp:
